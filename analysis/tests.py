@@ -8,6 +8,8 @@ from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from .models import AuthInfo, UserInfo
 from . import views, views_mobile
+from django.db import connection
+
 
 base_url = 'http://localhost:8000/'
 mobile_uid = 'qwer'
@@ -85,6 +87,10 @@ class UrlsTestCase(SimpleTestCase):
 
 class GaitResultTests(TestCase):
     def setUp(self):
+        with connection.cursor() as cursor:
+            cursor.execute("ALTER SEQUENCE analysis_gaitresult_id_seq RESTART WITH 1")
+            cursor.execute("ALTER SEQUENCE analysis_bodyresult_id_seq RESTART WITH 1")
+
         self.kiosk_client = APIClient()
 
         # Create the required objects
@@ -148,7 +154,8 @@ class GaitResultTests(TestCase):
 
     def test_get_gait_result_success(self):
         # First, create a gait result
-        self.kiosk_client.post(base_url + 'api/analysis/gait/create_result/', self.gait_data, format='json')
+        created_response = self.kiosk_client.post(base_url + 'api/analysis/gait/create_result/', self.gait_data, format='json')
+        self.assertEqual(created_response.status_code, status.HTTP_200_OK)
 
         # Case 1 : using jwt Tokens (mobile)
         response = self.mobile_client.get(base_url + 'api/analysis/gait/get_result/', {'id': 1}, format='json')
