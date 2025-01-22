@@ -55,7 +55,7 @@ jobs:
 
       - name: Run Tests
         run: |
-         yes | python manage.py test --reverse
+         python manage.py test --reverse --noinput
 
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v0.1.7
