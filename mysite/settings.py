@@ -32,9 +32,6 @@ if ENVIRONMENT == 'dev':
 else:
     DEBUG = False
 
-
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -254,12 +251,12 @@ PROMETHEUS_EXPORT_MIGRATIONS = False  # 기본 설정 유지
 # CSRF Https 적용 옵션
 USE_X_FORWARDED_HOST = True
 
-CSRF_TRUSTED_ORIGINS = [
+CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
     'http://aicu-office.iptime.org:65002'
 ]
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
