@@ -44,11 +44,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-9wy2fexy%wsoo1s7gywnx4poto(=$vl#odi+5v@24_21qc)r&h'
 
-
-
-ALLOWED_HOSTS = ['*']
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -256,10 +251,24 @@ SCHEDULER_DEFAULT = True
 # Prometheus Exporter 설정
 PROMETHEUS_EXPORT_MIGRATIONS = False  # 기본 설정 유지
 
-# CSRF Https 허용
+# CSRF Https 적용 옵션
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = ['https://www.body.aicu.life', 'https://body.aicu.life, http://aicu-office.iptime.org:65002']
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.body.aicu.life',
+    'https://body.aicu.life',
+    'http://aicu-office.iptime.org:65002'
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+ALLOWED_HOSTS = [
+    'body.aicu.life',
+    'www.body.aicu.life',
+    'aicu-office.iptime.org'
+]
+
 
 # 부정접속 로깅 설정
 LOGGING = {
