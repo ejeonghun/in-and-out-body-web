@@ -27,11 +27,11 @@ ENVIRONMENT = os.getenv('ENVIRONMENT') # 운영 환경
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# if ENVIRONMENT == 'dev':
-#     DEBUG = True
-# else:
-#     DEBUG = False
-DEBUG = True
+if ENVIRONMENT == 'dev':
+    DEBUG = True
+else:
+    DEBUG = False
+
 
 
 
