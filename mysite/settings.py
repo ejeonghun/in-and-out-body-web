@@ -27,11 +27,11 @@ ENVIRONMENT = os.getenv('ENVIRONMENT') # 운영 환경
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIRONMENT == 'dev':
-    DEBUG = True
-else:
-    DEBUG = False
-
+# if ENVIRONMENT == 'dev':
+#     DEBUG = True
+# else:
+#     DEBUG = False
+DEBUG = True
 
 
 
@@ -253,15 +253,18 @@ PROMETHEUS_EXPORT_MIGRATIONS = False  # 기본 설정 유지
 
 # CSRF Https 적용 옵션
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 CSRF_TRUSTED_ORIGINS = [
-    'https://www.body.aicu.life',
     'https://body.aicu.life',
     'http://aicu-office.iptime.org:65002'
 ]
 
-CSRF_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+
 
 ALLOWED_HOSTS = [
     'body.aicu.life',
