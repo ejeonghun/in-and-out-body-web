@@ -259,7 +259,11 @@ PROMETHEUS_EXPORT_MIGRATIONS = False  # 기본 설정 유지
 # CSRF Https 허용
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = ['https://www.body.aicu.life', 'https://body.aicu.life, http://aicu-office.iptime.org:65002']
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.body.aicu.life',
+    'https://body.aicu.life',
+    'http://aicu-office.iptime.org:65002'
+]
 
 # 부정접속 로깅 설정
 LOGGING = {
