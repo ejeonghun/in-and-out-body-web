@@ -257,8 +257,13 @@ CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+
+
+"""추 후 HTTP를 완전히 없앨 때 해당 옵션들을 True로 바꿔주어야 함
+   현재 HTTP, HTTPS 둘 다 사용하려고 비활성화시켜놓은 상태
+"""
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 
 
