@@ -16,7 +16,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report
+    calculate_normal_ratio, create_excel_report, session_check_expired
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
@@ -2024,6 +2024,31 @@ def end_session(request):
     session_info.delete()
     return Response({'data': {'message': 'session_closed', 'status': 200}, 'message': 'session_closed', 'status': 200})
 
+@swagger_auto_schema(
+    method='get',
+    operation_description="Check if the session key is valid",
+    manual_parameters=[
+        openapi.Parameter('session_key', openapi.IN_QUERY, description="Session key", type=openapi.TYPE_STRING),
+    ],
+    responses={
+        200: 'Success',
+        400: 'Bad Request; session_key is not provided in the request body',
+        404: 'Not Found; session_key is not found',
+        403: 'Forbidden; session is expired',
+    },
+    tags=['kiosk']
+)
+@api_view(['GET'])
+def check_session(request):
+    session_key = request.query_params.get('session_key')
+    if not session_key:
+        return Response({'data': {'message': 'session_key_required', 'status': 400}})
+    try:
+        session_info = SessionInfo.objects.get(session_key=session_key)
+    except SessionInfo.DoesNotExist:
+        return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
 
-
+    if session_check_expired(session_info, check="T"): # 체크만 수행하고 갱신하지 않음
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
+    return Response({'data': {'message': 'session_valid', 'status': 200}})

@@ -9,7 +9,7 @@ from analysis.custom import metrics
 
 class CodeInfo(models.Model):
     group_id = models.CharField(max_length=4)
-    code_id = models.CharField(max_length=20)
+    code_id = models.CharField(max_length=40)
     code_name = models.CharField(max_length=100)
     min_value = models.FloatField(null=True)
     max_value = models.FloatField(null=True)
@@ -46,12 +46,13 @@ class AuthInfo(models.Model):
 
 
 class SessionInfo(models.Model):
-    req_type = models.CharField(max_length=1)
+    req_type = models.CharField(max_length=1, null=True, blank=True)
     session_key = models.CharField(max_length=100)
     user_id = models.BigIntegerField(null=True)
     kiosk_id = models.CharField(max_length=100, null=True, blank=True)
     is_issued = models.BooleanField(default=False)
     created_dt = models.DateTimeField(auto_now_add=True)
+    last_active_dt = models.DateTimeField(auto_now_add=True, null=True, blank=True)  # 마지막 활동 시간
 
 
 class SchoolInfo(ExportModelOperationsMixin('school_info'), models.Model):
