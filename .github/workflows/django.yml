@@ -65,8 +65,8 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            source ~/.zshrc
             docker exec in-and-out-body-web-dev2-container bash -c "
-              source ~/.zshrc &&
               git pull origin feature-test &&
               pip install -r requirements.txt &&
               rm -rf analysis/migrations &&
