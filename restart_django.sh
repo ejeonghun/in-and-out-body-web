@@ -17,7 +17,7 @@ fi
 # Check the environment and run collectstatic only if ENVIRONMENT is "prod"
 if [ "$ENVIRONMENT" == "prod" ]; then
     echo "Running collectstatic..."
-    echo "yes" | python manage.py collectstatic
+    echo "yes" | python manage.py collectstatic > /dev/null 2>&1
 else
     echo "Skipping collectstatic because ENVIRONMENT is not 'prod'."
 fi
