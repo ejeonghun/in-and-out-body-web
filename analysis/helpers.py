@@ -369,7 +369,7 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
 
     - 세션 만료를 체크하면서 동시에 세션의 마지막 활동시간을 갱신한다.
     """
-    session_status = session.last_active_dt < dt.now() - timedelta(minutes=1)
+    session_status = session.last_active_dt < dt.now() - timedelta(minutes=50)
 
     if check is not None:
         # 세션 만료 체크만 수행
