@@ -266,14 +266,18 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
+import ipaddress
+
+# 192.168.0.x 대역 전체를 추가
+allowed_ips = [str(ip) for ip in ipaddress.IPv4Network('192.168.0.0/24')]
 
 
 ALLOWED_HOSTS = [
     'body.aicu.life',
     'www.body.aicu.life',
     'aicu-office.iptime.org',
-    'localhost'
-]
+    'localhost',
+] + allowed_ips # 내부망 모두 허용
 
 
 # 부정접속 로깅 설정
