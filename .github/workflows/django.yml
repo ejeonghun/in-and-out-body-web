@@ -32,7 +32,7 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
           echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
           echo "AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}" >> .env
-          echo "ENVIRONMENT"=prod >> .env
+          echo "ENVIRONMENT=dev" >> .env
           cat .env
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -65,7 +65,7 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            docker exec -it in-and-out-body-web-dev2-container bash -c "
+            docker exec in-and-out-body-web-dev2-container bash -c "
               source ~/.zshrc &&
               git pull origin feature-test &&
               pip install -r requirements.txt &&
