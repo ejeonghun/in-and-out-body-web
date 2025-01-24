@@ -2049,6 +2049,6 @@ def check_session(request):
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
 
-    if session_check_expired(session_info, check="T"): # 체크만 수행하고 갱신하지 않음
+    if session_check_expired(session_info, check=True): # 체크만 수행하고 갱신하지 않음
         return Response({'data': {'message': 'session_expired', 'status': 403}})
     return Response({'data': {'message': 'session_valid', 'status': 200}})

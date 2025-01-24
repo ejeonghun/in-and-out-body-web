@@ -2,7 +2,7 @@ name: Django CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["feature-test"]
 #  pull_request:
 #    branches: ["main"]
 
@@ -19,11 +19,11 @@ jobs:
 
       - name: Set up environment variables
         run: |
-          echo "POSTGRES_DB_NAME=${{ secrets.POSTGRES_DB_NAME }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
-          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+          echo "POSTGRES_DB_NAME=${{ secrets.DEV_POSTGRES_DB_NAME }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.DEV_POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.DEV_POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_HOST=${{ secrets.DEV_POSTGRES_HOST }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.DEV_POSTGRES_PORT }}" >> .env
           echo "EMAIL_HOST=${{ secrets.EMAIL_HOST }}" >> .env
           echo "EMAIL_USER=${{ secrets.EMAIL_USER }}" >> .env
           echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
@@ -65,10 +65,12 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd ~/project/in-and-out-body-web
-            source ~/.zshrc
-            git pull origin main
-            conda activate django
-            pip install -r requirements.txt
-            python manage.py migrate
-            bash ./restart_django.sh
+            docker exec -it in-and-out-body-web-dev2-container bash -c "
+              source ~/.zshrc &&
+              git pull origin feature-test &&
+              pip install -r requirements.txt &&
+              rm -rf analysis/migrations &&
+              python manage.py makemigrations analysis &&
+              python manage.py migrate &&
+              bash ./restart_django.sh >> logs/server.log 2>&1
+              "

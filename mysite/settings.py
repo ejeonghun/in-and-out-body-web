@@ -254,7 +254,8 @@ USE_X_FORWARDED_HOST = True
 
 CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
-    'http://aicu-office.iptime.org:65002'
+    'http://aicu-office.iptime.org:65002',
+    'https://test-body.aicu.life',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
@@ -272,7 +273,8 @@ ALLOWED_HOSTS = [
     'body.aicu.life',
     'www.body.aicu.life',
     'aicu-office.iptime.org',
-    'localhost'
+    'localhost',
+    'test-body.aicu.life',
 ]
 
 
