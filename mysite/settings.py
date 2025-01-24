@@ -170,6 +170,7 @@ else:
             'TEST': {
                 'NAME': 'test_' + os.environ['POSTGRES_DB_NAME'],
                 'MIGRATE': True,
+                'SERIALIZE': False,
                 'DEPENDENCIES': [],
             },
         }
@@ -270,7 +271,8 @@ CSRF_COOKIE_SECURE = False
 ALLOWED_HOSTS = [
     'body.aicu.life',
     'www.body.aicu.life',
-    'aicu-office.iptime.org'
+    'aicu-office.iptime.org',
+    'localhost'
 ]
 
 

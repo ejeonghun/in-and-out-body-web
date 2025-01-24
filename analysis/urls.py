@@ -64,6 +64,7 @@ urlpatterns = [
     path('api/login-kiosk-id/', views.login_kiosk_id, name='login_kiosk_id'),
     path('api/get-userinfo-session/', views.get_userinfo_session, name='get_userinfo_session'),
     path('api/end-session/', views.end_session, name='end_session'),
+    path('api/checksession/', views.check_session, name='check_session'),
 
     path('api/analysis/gait/create_result/', views.create_gait_result, name='create_gait_result'),
     path('api/analysis/gait/get_result/', views.get_gait_result, name='get_gait_result'),
@@ -96,7 +97,6 @@ urlpatterns = [
     path('api/mobile/body/sync_body_result/',   views_mobile.mobile_body_sync,   name='mobile-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
     # path('api/mobile/gait/sync_gait_result/',   views_mobile.mobile_gait_sync,   name='mobile-gait-mobile_gait_sync'),   # 보행 결과 동기화(gaitresults의 ID값만 반환함)
     path('api/mobile/login-mobile-id/',         views_mobile.login_mobile_id,    name='mobile-auth-request_auth_id'),     # ID 로그인 요청 (ID를 사용하여 로그인)
-
 
     # 디버그 환경이 아닐 때도 Swagger에 접근이 가능하나 단, 허용된 IP만 접근 가능
     re_path(r'^docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name="schema-json"),

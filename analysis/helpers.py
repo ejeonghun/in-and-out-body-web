@@ -355,3 +355,34 @@ def measure_time(func):
     func()
     end_time = time.perf_counter()
     print(f'실행 시간: {(end_time - start_time):.4f}초')
+
+
+from analysis.models import SessionInfo
+from datetime import datetime as dt, timedelta
+
+
+def session_check_expired(session: SessionInfo, check=None) -> bool:
+    """세션 만료 체크 및 세션 마지막 활동시간 갱신 함수
+    :param session: 세션 정보
+    :param check: 세션 갱신 여부
+    :return: 세션이 만료되었는지 여부
+
+    - 세션 만료를 체크하면서 동시에 세션의 마지막 활동시간을 갱신한다.
+    """
+    session_status = session.last_active_dt < dt.now() - timedelta(minutes=1)
+
+    if check is not None:
+        # 세션 만료 체크만 수행
+        if session_status:
+            session.delete()  # 세션 삭제
+            return True
+        return False
+    else:
+        if session_status:
+            # 세션 활성화 시간이 50분 이상 경과한 경우
+            session.delete()  # 세션 삭제
+            return True  # 세션 만료
+
+        session.last_active_dt = dt.now()
+        session.save()  # 세션 갱신
+        return False  # 세션 미만료
