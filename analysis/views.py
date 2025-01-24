@@ -1397,6 +1397,7 @@ def policy(request):
         200: 'OK; created_gait_result successfully',
         400: 'Bad Request; (session_key | gait_data) is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key is not found',
         500: 'Internal Server Error'
     },
@@ -1415,6 +1416,9 @@ def create_gait_result(request):
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(id=session_info.user_id)
@@ -1463,6 +1467,7 @@ def create_gait_result(request):
         200: GaitResponseSerializer,
         400: 'Bad Request; session_key is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key or gait result is not found',
     },
     tags=['analysis results']
@@ -1478,6 +1483,9 @@ def get_gait_result(request):
             session_info = SessionInfo.objects.get(session_key=session_key)
         except SessionInfo.DoesNotExist:
             return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+        if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
+            return Response({'data': {'message': 'session_expired', 'status': 403}})
 
         try:
             user_info = UserInfo.objects.get(id=session_info.user_id)
@@ -1642,6 +1650,7 @@ def get_info(requests):
                 }
             }
         ),
+        403: openapi.Response(description='session_expired'),
         404: openapi.Response(
             description='Not Found; session_key is not found',
             examples={
@@ -1672,6 +1681,7 @@ def create_body_result(request):
                         status=HTTP_400_BAD_REQUEST)
 
     body_data = request.data.get('body_data')
+
     # body_data가 없는 경우
     if not body_data:
         return Response({'data': {'message': 'body_data_required', 'status': HTTP_400_BAD_REQUEST}},
@@ -1684,6 +1694,9 @@ def create_body_result(request):
         # 세션 정보가 없는 경우
         return Response({'data': {'message': 'session_key_not_found', 'status': HTTP_404_NOT_FOUND}},
                         status=HTTP_404_NOT_FOUND)
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         # 세션 정보에서 사용자 정보 조회
@@ -1783,6 +1796,7 @@ def create_body_result(request):
         200: BodyResultSerializer(many=True),
         400: 'Bad Request; session_key is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key is not found',
         500: 'Internal Server Error'
     },
@@ -1799,6 +1813,9 @@ def get_body_result(request):
             session_info = SessionInfo.objects.get(session_key=session_key)
         except SessionInfo.DoesNotExist:
             return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+        if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
+            return Response({'data': {'message': 'session_expired', 'status': 403}})
 
         try:
             user_info = UserInfo.objects.get(id=session_info.user_id)
@@ -1915,6 +1932,7 @@ def login_kiosk(request):
         200: 'Login Success',
         400: 'Bad Request; (session_key | phone_number | password) is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key is not found',
     },
     tags=['kiosk']
@@ -1935,6 +1953,9 @@ def login_kiosk_id(request):
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(phone_number=phone_number)
@@ -1972,6 +1993,7 @@ def login_kiosk_id(request):
                 )})),
         400: 'Bad Request; session_key is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expried',
         404: 'Not Found; session_key is not found',
     },
     tags=['kiosk']
@@ -1985,6 +2007,9 @@ def get_userinfo_session(request):
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(id=session_info.user_id)
