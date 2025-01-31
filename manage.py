@@ -16,6 +16,13 @@ def main():
         ) from exc
     execute_from_command_line(sys.argv)
 
+    # 만약 프로젝트 루트폴더에 logs 폴더가 없다면 생성
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+        # 만약 logs폴더안에 'bad_access.log' 파일이 없다면 생성
+        with open('logs/bad_access.log', 'w') as f:
+            f.write('')
+
 
 if __name__ == '__main__':
     main()
