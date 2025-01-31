@@ -1882,6 +1882,7 @@ def get_body_result(request):
 
 @swagger_auto_schema(
     method='post',
+    operation_summary="키오스크 세션 생성 및 키오스크 버전 체크",
     operation_description="Login to the kiosk using kiosk_id and kiosk version check logic, returning session key",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -1940,7 +1941,6 @@ def login_kiosk(request):
 
 @swagger_auto_schema(
     method='post',
-    operation_summary="키오스크 세션 생성 및 키오스크 버전 체크",
     operation_description="Login to the kiosk using session key, phone number, and password",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
