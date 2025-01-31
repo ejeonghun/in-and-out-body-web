@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_prometheus',
     'django_apscheduler',
+    'whitenoise.runserver_nostatic',
 ]
 
 REST_FRAMEWORK = {
@@ -115,6 +116,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'mysite.urls'

@@ -391,10 +391,17 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
 
 """ 키오스크 최신 버전 캐싱 함수 """
 def get_kiosk_latest_version():
-    # 캐시에서 KIOSK_LATEST_VERSION 값을 가져오거나, 없으면 새로 계산
     version = cache.get('KIOSK_LATEST_VERSION')
+
     if version is None:
-        # 최신 버전을 DB에서 가져와 캐시에 저장 (30분 동안 유지)
-        version = KioskInfo.objects.filter(id=-1).first().version
-        cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)  # 30분 (초 단위)
+        # id=-1 데이터를 가져오거나 없으면 새로 생성
+        kiosk, created = KioskInfo.objects.get_or_create(
+            id=-1,
+            defaults={'version': '1.0.0'}  # 기본 버전 설정
+        )
+        version = kiosk.version
+
+        # 캐시에 저장 (30분 동안 유지)
+        cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)
+
     return version

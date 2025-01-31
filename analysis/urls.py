@@ -1,5 +1,6 @@
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.conf.urls.static import static
 
 from analysis.custom.custom_token import CustomTokenObtainPairView, CustomTokenRefreshView
 
@@ -103,8 +104,12 @@ urlpatterns = [
     re_path(r'^docs/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
-    re_path(r'^static/(?P<path>.*)$', serve, {'document_root':settings.STATIC_ROOT}),
+    # re_path(r'^static/(?P<path>.*)$', serve, {'document_root':settings.STATIC_ROOT}),   
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root = settings.STATIC_URL)
 
 # 디버그 시 실행 부분
 # if settings.DEBUG:
