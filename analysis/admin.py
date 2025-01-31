@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserInfo, GaitResult, BodyResult, SessionInfo, SchoolInfo, UserHist
+from .models import UserInfo, GaitResult, BodyResult, SessionInfo, SchoolInfo, UserHist, KioskInfo
 
 
 @admin.register(BodyResult)
@@ -45,4 +45,4 @@ class UserInfoAdmin(admin.ModelAdmin):
 
 
 # Register your models here.
-admin.site.register([GaitResult, SessionInfo, SchoolInfo, UserHist])
+admin.site.register([GaitResult, SessionInfo, SchoolInfo, UserHist, KioskInfo])

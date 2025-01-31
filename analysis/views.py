@@ -16,8 +16,9 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist
+    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
+    KioskInfo
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
 
@@ -35,6 +36,8 @@ from urllib.parse import quote
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
+
+KIOSK_LATEST_VERSION = get_kiosk_latest_version()
 
 
 def home(request):
@@ -1417,7 +1420,7 @@ def create_gait_result(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
@@ -1695,7 +1698,7 @@ def create_body_result(request):
         return Response({'data': {'message': 'session_key_not_found', 'status': HTTP_404_NOT_FOUND}},
                         status=HTTP_404_NOT_FOUND)
 
-    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
@@ -1878,7 +1881,8 @@ def get_body_result(request):
 
 @swagger_auto_schema(
     method='post',
-    operation_description="Login to the kiosk using kiosk_id, returning session key",
+    operation_summary="키오스크 세션 생성 및 키오스크 버전 체크",
+    operation_description="Login to the kiosk using kiosk_id and kiosk version check logic, returning session key",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -1897,20 +1901,38 @@ def get_body_result(request):
                     }),
             })),
         400: 'Bad Request; kiosk_id is not provided in the request body',
+        401: 'kiosk_update_required or kiosk_inactive',
     },
     tags=['kiosk']
 )
 @api_view(['POST'])
 def login_kiosk(request):
     kiosk_id = request.data.get('kiosk_id')
+    kiosk_version = request.data.get('version')
     if not kiosk_id:
         return Response({'data': {'message': 'kiosk_id_required', 'status': 400}})
+
+    # if not kiosk_version:
+    #     return Response({'data': {'message': 'kiosk_version_required', 'status': 400}})
+
+    # 최신버전 체크 (키오스크 버전이 최신이 아닌 경우)
+    # if kiosk_version != KIOSK_LATEST_VERSION:
+    #     return Response({'data': {'message': 'kiosk_update_required', 'status': 401}})
+
+    kiosk_info, created = KioskInfo.objects.update_or_create(  # 키오스크 버전 정보 업데이트 또는 생성
+        kiosk_id=kiosk_id,  # 키오스크 ID
+        defaults={'version': kiosk_version}  # version을 갱신
+    )
+
+    # 키오스크 활성화 여부 체크
+    # if not kiosk_info.active:
+    #     return Response({'data': {'message': 'kiosk_inactive', 'status': 401}})
 
     # POST 메소드를 사용하여 키오스크 로그인 요청 처리
     session_key = uuid.uuid4().hex
     SessionInfo.objects.update_or_create(
         session_key=session_key,
-        kiosk_id=kiosk_id,
+        kiosk_id=kiosk_info,
     )
 
     return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
@@ -1954,7 +1976,7 @@ def login_kiosk_id(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
@@ -2008,7 +2030,7 @@ def get_userinfo_session(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
@@ -2049,6 +2071,7 @@ def end_session(request):
     session_info.delete()
     return Response({'data': {'message': 'session_closed', 'status': 200}, 'message': 'session_closed', 'status': 200})
 
+
 @swagger_auto_schema(
     method='get',
     operation_description="Check if the session key is valid",
@@ -2073,7 +2096,6 @@ def check_session(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-
-    if session_check_expired(session_info, check="T"): # 체크만 수행하고 갱신하지 않음
+    if session_check_expired(session_info, check=True):  # 체크만 수행하고 갱신하지 않음
         return Response({'data': {'message': 'session_expired', 'status': 403}})
     return Response({'data': {'message': 'session_valid', 'status': 200}})
