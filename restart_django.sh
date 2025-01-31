@@ -5,7 +5,7 @@ if [ -f .env ]; then
 fi
 
 # Kill existing Gunicorn process
-PID=$(pgrep -f "gunicorn.*:8000")
+PID=$(pgrep -f "gunicorn.*:44561")
 if [ -n "$PID" ]; then
     echo "Stopping Gunicorn process: $PID"
     kill -9 $PID
@@ -17,5 +17,5 @@ if [ "$ENVIRONMENT" == "prod" ]; then
     echo "yes" | python manage.py collectstatic > /dev/null 2>&1
 fi
 
-echo "Starting Gunicorn..."
-gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application --daemon
+echo "Starting Gunicorn... port : 44561"
+gunicorn --bind 0.0.0.0:44561 mysite.wsgi:application --daemon
