@@ -59,6 +59,9 @@ INSTALLED_APPS = [
     'django_apscheduler',
 ]
 
+if DEBUG:
+    INSTALLED_APPS += ['whitenoise.runserver_nostatic']
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
@@ -116,6 +119,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
+
+if DEBUG:
+    MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
 
 ROOT_URLCONF = 'mysite.urls'
 
@@ -254,7 +260,8 @@ USE_X_FORWARDED_HOST = True
 
 CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
-    'http://aicu-office.iptime.org:65002'
+    'http://aicu-office.iptime.org:65002',
+    'https://test-body.aicu.life',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
@@ -266,10 +273,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-import ipaddress
-
-# 192.168.0.x 대역 전체를 추가
-allowed_ips = [str(ip) for ip in ipaddress.IPv4Network('192.168.0.0/24')]
 
 
 ALLOWED_HOSTS = [
@@ -277,7 +280,8 @@ ALLOWED_HOSTS = [
     'www.body.aicu.life',
     'aicu-office.iptime.org',
     'localhost',
-] + allowed_ips # 내부망 모두 허용
+    'test-body.aicu.life',
+]
 
 
 # 부정접속 로깅 설정
