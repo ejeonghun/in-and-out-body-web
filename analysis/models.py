@@ -45,11 +45,31 @@ class AuthInfo(models.Model):
     created_dt = models.DateTimeField(auto_now_add=True)
 
 
+class KioskInfo(models.Model):
+    kiosk_id = models.CharField(max_length=100, unique=True)           # 키오스크 ID - 중복 불가
+    version = models.CharField(max_length=50, null=True, blank=True)   # 키오스크 버전 정보 기록
+    location = models.CharField(max_length=100, null=True, blank=True) # 키오스크 설치 위치 정보
+    manager = models.CharField(max_length=50, null=True, blank=True)   # 담당자 정보
+    remark = models.CharField(max_length=100, null=True, blank=True)   # 비고
+    active = models.BooleanField(default=True)                         # 활성화 여부
+    created_dt = models.DateTimeField(auto_now_add=True)               # 생성일
+
+    def __str__(self):
+        return f"{self.kiosk_id} (Version: {self.version}) at {self.location}"
+
+
 class SessionInfo(models.Model):
     req_type = models.CharField(max_length=1, null=True, blank=True)
     session_key = models.CharField(max_length=100)
     user_id = models.BigIntegerField(null=True)
-    kiosk_id = models.CharField(max_length=100, null=True, blank=True)
+    kiosk_id = models.ForeignKey(
+        KioskInfo,
+        on_delete=models.SET_NULL,  # KioskInfo가 삭제되면 kiosk_id를 NULL로 설정
+        null=True,
+        blank=True,
+        to_field='kiosk_id',  # KioskInfo의 kiosk_id 필드를 참조
+        db_column='kiosk_id'  # DB에서 kiosk_id로 저장
+    )
     is_issued = models.BooleanField(default=False)
     created_dt = models.DateTimeField(auto_now_add=True)
     last_active_dt = models.DateTimeField(auto_now_add=True, null=True, blank=True)  # 마지막 활동 시간

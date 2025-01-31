@@ -11,7 +11,7 @@ from PIL import Image
 import boto3
 from django.conf import settings
 import requests
-from .models import BodyResult, CodeInfo
+from .models import BodyResult, CodeInfo, KioskInfo
 from django.db.models import Q
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
@@ -20,6 +20,7 @@ import pandas as pd
 import io as excel_io
 import botocore
 from boto3.s3.transfer import TransferConfig
+from django.core.cache import cache
 
 # 전역 변수 S3 클라이언트 생성
 s3_client = None
@@ -386,3 +387,14 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
         session.last_active_dt = dt.now()
         session.save()  # 세션 갱신
         return False  # 세션 미만료
+
+
+""" 키오스크 최신 버전 캐싱 함수 """
+def get_kiosk_latest_version():
+    # 캐시에서 KIOSK_LATEST_VERSION 값을 가져오거나, 없으면 새로 계산
+    version = cache.get('KIOSK_LATEST_VERSION')
+    if version is None:
+        # 최신 버전을 DB에서 가져와 캐시에 저장 (30분 동안 유지)
+        version = KioskInfo.objects.filter(id=-1).first().version
+        cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)  # 30분 (초 단위)
+    return version

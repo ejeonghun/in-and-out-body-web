@@ -16,8 +16,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist
+    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
 
@@ -36,7 +36,11 @@ from urllib.parse import quote
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
 
-# 홈 라우팅
+
+
+KIOSK_LATEST_VERSION = get_kiosk_latest_version()
+
+
 def home(request):
     if request.user.is_authenticated:
         return redirect('main')
@@ -1397,6 +1401,7 @@ def policy(request):
         200: 'OK; created_gait_result successfully',
         400: 'Bad Request; (session_key | gait_data) is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key is not found',
         500: 'Internal Server Error'
     },
@@ -1415,6 +1420,9 @@ def create_gait_result(request):
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(id=session_info.user_id)
@@ -1463,6 +1471,7 @@ def create_gait_result(request):
         200: GaitResponseSerializer,
         400: 'Bad Request; session_key is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key or gait result is not found',
     },
     tags=['analysis results']
@@ -1478,6 +1487,9 @@ def get_gait_result(request):
             session_info = SessionInfo.objects.get(session_key=session_key)
         except SessionInfo.DoesNotExist:
             return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+        if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
+            return Response({'data': {'message': 'session_expired', 'status': 403}})
 
         try:
             user_info = UserInfo.objects.get(id=session_info.user_id)
@@ -1642,6 +1654,7 @@ def get_info(requests):
                 }
             }
         ),
+        403: openapi.Response(description='session_expired'),
         404: openapi.Response(
             description='Not Found; session_key is not found',
             examples={
@@ -1672,6 +1685,7 @@ def create_body_result(request):
                         status=HTTP_400_BAD_REQUEST)
 
     body_data = request.data.get('body_data')
+
     # body_data가 없는 경우
     if not body_data:
         return Response({'data': {'message': 'body_data_required', 'status': HTTP_400_BAD_REQUEST}},
@@ -1684,6 +1698,9 @@ def create_body_result(request):
         # 세션 정보가 없는 경우
         return Response({'data': {'message': 'session_key_not_found', 'status': HTTP_404_NOT_FOUND}},
                         status=HTTP_404_NOT_FOUND)
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         # 세션 정보에서 사용자 정보 조회
@@ -1783,6 +1800,7 @@ def create_body_result(request):
         200: BodyResultSerializer(many=True),
         400: 'Bad Request; session_key is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key is not found',
         500: 'Internal Server Error'
     },
@@ -1799,6 +1817,9 @@ def get_body_result(request):
             session_info = SessionInfo.objects.get(session_key=session_key)
         except SessionInfo.DoesNotExist:
             return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+        if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
+            return Response({'data': {'message': 'session_expired', 'status': 403}})
 
         try:
             user_info = UserInfo.objects.get(id=session_info.user_id)
@@ -1861,7 +1882,7 @@ def get_body_result(request):
 
 @swagger_auto_schema(
     method='post',
-    operation_description="Login to the kiosk using kiosk_id, returning session key",
+    operation_description="Login to the kiosk using kiosk_id and kiosk version check logic, returning session key",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -1880,20 +1901,38 @@ def get_body_result(request):
                     }),
             })),
         400: 'Bad Request; kiosk_id is not provided in the request body',
+        401: 'kiosk_update_required or kiosk_inactive',
     },
     tags=['kiosk']
 )
 @api_view(['POST'])
 def login_kiosk(request):
     kiosk_id = request.data.get('kiosk_id')
+    kiosk_version = request.data.get('version')
     if not kiosk_id:
         return Response({'data': {'message': 'kiosk_id_required', 'status': 400}})
+    
+    # if not kiosk_version:
+    #     return Response({'data': {'message': 'kiosk_version_required', 'status': 400}})
+
+    # 최신버전 체크 (키오스크 버전이 최신이 아닌 경우)
+    # if kiosk_version != KIOSK_LATEST_VERSION:
+    #     return Response({'data': {'message': 'kiosk_update_required', 'status': 401}})
+
+    kiosk_info, created = KioskInfo.objects.update_or_create( # 키오스크 버전 정보 업데이트 또는 생성
+        kiosk_id=kiosk_id,  # 키오스크 ID
+        defaults={'version': kiosk_version}  # version을 갱신
+    )
+
+    # 키오스크 활성화 여부 체크
+    # if not kiosk_info.active:
+    #     return Response({'data': {'message': 'kiosk_inactive', 'status': 401}})
 
     # POST 메소드를 사용하여 키오스크 로그인 요청 처리
     session_key = uuid.uuid4().hex
     SessionInfo.objects.update_or_create(
         session_key=session_key,
-        kiosk_id=kiosk_id,
+        kiosk_id=kiosk_info,
     )
 
     return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
@@ -1901,6 +1940,7 @@ def login_kiosk(request):
 
 @swagger_auto_schema(
     method='post',
+    operation_summary="키오스크 세션 생성 및 키오스크 버전 체크",
     operation_description="Login to the kiosk using session key, phone number, and password",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
@@ -1915,6 +1955,7 @@ def login_kiosk(request):
         200: 'Login Success',
         400: 'Bad Request; (session_key | phone_number | password) is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expired',
         404: 'Not Found; session_key is not found',
     },
     tags=['kiosk']
@@ -1935,6 +1976,9 @@ def login_kiosk_id(request):
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(phone_number=phone_number)
@@ -1972,6 +2016,7 @@ def login_kiosk_id(request):
                 )})),
         400: 'Bad Request; session_key is not provided in the request body',
         401: 'Unauthorized; incorrect user or password',
+        403: 'session_expried',
         404: 'Not Found; session_key is not found',
     },
     tags=['kiosk']
@@ -1985,6 +2030,9 @@ def get_userinfo_session(request):
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+        return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(id=session_info.user_id)
