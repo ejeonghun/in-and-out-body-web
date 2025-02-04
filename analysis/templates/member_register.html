@@ -766,6 +766,23 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStatusClasses();
     }
 
+    function updateStatusClasses() {
+        const rows = dataTable.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const statusCell = row.lastElementChild; // 마지막 <td> 요소 선택
+            if (statusCell) {
+                const statusText = statusCell.textContent.trim();
+                if (statusText.startsWith('신규 등록')) {
+                    statusCell.classList.add('status-new');
+                } else if (statusText.startsWith('기존 유저 갱신')) {
+                    statusCell.classList.add('status-update');
+                } else if (statusText.startsWith('이전 학교')) {
+                    statusCell.classList.add('text-danger'); // 빨간색 하이라이트
+                }
+            }
+        });
+    }
+
     // 페이지네이션 업데이트
     function updatePagination(totalUsers) {
         const totalPages = Math.ceil(totalUsers / rowsPerPage);
@@ -868,20 +885,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('resetButton').addEventListener('click', () => {
         resetInterface();
     });
-
-    function updateStatusClasses() { // '상태' 값 CSS 클래스 일괄 처리
-        const rows = dataTable.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const statusCell = row.lastElementChild; // 마지막 <td> 요소 선택
-            if (statusCell) {
-                if (statusCell.textContent.trim() === '신규 등록') {
-                    statusCell.classList.add('status-new');
-                } else if (statusCell.textContent.trim() === '기존 유저 갱신') {
-                    statusCell.classList.add('status-update');
-                }
-            }
-        });
-    }
 
     function displayMemeberStatus(totalCount, currentPage, newMemberCount, existingMemberCount) {
             document.getElementById('totalCount').innerText = totalCount;

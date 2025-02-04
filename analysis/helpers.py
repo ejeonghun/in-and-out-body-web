@@ -205,7 +205,12 @@ def fetch_recent_mails(email_host, email_user, email_password, minutes=1,
 
 
 def extract_digits(text):
-    return re.search(r'\d+', text).group()
+    phone_number = str(text).replace('-', '').strip()
+    if phone_number.startswith('10'):  # 10 으로 시작하는 경우 0 추가
+        phone_number = '0' + phone_number
+    return phone_number
+
+
 
 
 """ CodeInfo는 캐싱처리 """

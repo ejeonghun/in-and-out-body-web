@@ -233,7 +233,7 @@ def member_register(request):
                 # 데이터 전처리
                 users = []
                 phone_numbers = df['전화번호'].unique()  # 중복 제거된 전화번호 리스트
-                cleaned_phone_numbers = [extract_digits(str(phone_number)) for phone_number in phone_numbers] # 숫자만 추출
+                cleaned_phone_numbers = [extract_digits(phone_number) for phone_number in phone_numbers] # 숫자만 추출
                 existing_users = UserInfo.objects.filter(phone_number__in=cleaned_phone_numbers)  # DB에서 존재하는 전화번호 필터링
                 expected_columns.append('상태')  # 상태 컬럼 추가
                 other_org = None   # 다른 학교/기관 에 소속된 유저가 있는 경우 확인 용도
@@ -242,7 +242,6 @@ def member_register(request):
 
                 for _, row in df.iterrows():
                     user_data = {}
-                    phone_number = extract_digits(str(row['전화번호']))  # 전화번호 추출
 
                     for col in expected_columns:
                         if pd.notna(row[col]):
@@ -253,8 +252,8 @@ def member_register(request):
                                 user_data[col] = str(row[col]).strip()
 
                     if len(user_data) == len(expected_columns):  # 모든 필수 컬럼이 있는 경우만 추가
-                        existing_user = existing_users.filter(phone_number=phone_number).first()  # 존재하는 사용자 확인
-
+                        phone_number = cleaned_phone_numbers.pop(0)  # 맨 앞 요소를 꺼내고 리스트에서 제거
+                        existing_user = existing_users.filter(phone_number=phone_number).first()
 
                         if existing_user:
                             existing_member += 1
@@ -281,9 +280,7 @@ def member_register(request):
                     new_member = 0;
                     with transaction.atomic():  # 트랜잭션 시작
                         for user_data in users:
-                            phone_number = extract_digits(str(user_data['전화번호']).replace('-', ''))
-                            if phone_number.startswith('10'):  # 10 으로 시작하는 경우 0 추가
-                                phone_number = '0' + phone_number
+                            phone_number = extract_digits(user_data['전화번호'])
 
                             if type == 'S':  # 학생인 경우
                                 school_info = SchoolInfo.objects.get(school_name=user.school.school_name)
@@ -464,9 +461,7 @@ def register(request):
                                 'address': user.school.address,
                             }
                         )
-                        phone_number = extract_digits(str(row['전화번호']).strip().replace('-', ''))
-                        if phone_number.startswith('10'):
-                            phone_number = '0' + phone_number
+                        phone_number = extract_digits(row['전화번호'])
 
                         # 회원가입이 되어 있는지 확인
                         user_info = UserInfo.objects.filter(phone_number=phone_number).first()
@@ -521,9 +516,7 @@ def register(request):
                                 'address': user.organization.address
                             },
                         )
-                        phone_number = extract_digits(str(row['전화번호']).strip().replace('-', ''))
-                        if phone_number.startswith('10'):
-                            phone_number = '0' + phone_number
+                        phone_number = extract_digits(row['전화번호'])
                         user_info, created = UserInfo.objects.update_or_create(
                             phone_number=phone_number,
                             defaults=dict(
