@@ -1,10 +1,10 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 10m
 
 scrape_configs:
   - job_name: 'django'
     static_configs:
-      - targets: ['host.docker.internal:8000']
+      - targets: ['body.aicu.life']
     relabel_configs:
       - source_labels: [__param_path]
         regex: "/metrics"
