@@ -31,6 +31,8 @@ from datetime import datetime as dt
 from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
+from django.db.models import Q
+
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
@@ -194,6 +196,32 @@ def main(request):  # 추후 캐싱 기법 적용
     context['has_affiliation'] = has_affiliation
     return render(request, 'main.html', context)
 
+@login_required
+def search_user(request):
+    user_id = request.user.id
+    user = UserInfo.objects.get(id=user_id)
+    user_type = user.user_type
+
+    query = request.GET.get('query', '')
+    
+    user_dept = user.school.school_name if user_type == 'S' else user.organization.organization_name
+
+    if not query:
+        return JsonResponse({'results': []})
+
+    if user_type == 'S':  # 학교
+        users = UserInfo.objects.filter(Q(student_name__icontains=query),
+                                        Q(school__school_name__icontains=user_dept))  # 이름으로 검색
+    
+        results = [{'id': user.id, 'student_name': user.student_name, 'student_grade': user.student_grade, 'student_class': user.student_class} for user in users]
+
+    elif user_type == 'O':
+        users = UserInfo.objects.filter(Q(student_name__icontains=query),
+                                        Q(organization__organization_name__icontains=user_dept))
+        results = [{'id': user.id, 'student_name': user.student_name, 'department': user.department} for user in users]
+    
+    return JsonResponse({'results': results, 'user_type': user_type})
+
 
 def org_register(request):
     return render(request, 'org_register.html')
@@ -265,7 +293,8 @@ def member_register(request):
                                 else:
                                     user_data['상태'] = '기존 유저 갱신'
                             else:
-                                user_data['상태'] = '기존 유저 갱신'
+                                if existing_user.organization: # 기관 소속이 있는 경우
+                                    user_data['상태'] = f'이전 소속 - {existing_user.organization.organization_name}'  # 이전 기관 정보 추가
                         else:  # 신규 등록인 경우 빈 문자열 설정
                             user_data['상태'] = '신규 등록'  # 신규 등록 상태 추가
                             new_member += 1
