@@ -12,7 +12,7 @@ if [ -n "$PID" ]; then
 fi
 
 # 운영 환경일 때만 collectstatic
-if [ "$ENVIRONMENT" == "prod" ]; then
+if [ "$ENVIRONMENT" == "prod" ] || [ "$ENVIRONMENT" == "dev" ]; then
     echo "Running collectstatic..."
     echo "yes" | python manage.py collectstatic > /dev/null 2>&1
 fi

@@ -1221,6 +1221,32 @@ label {
     #searchButton:hover {
         background-color: #357abd; /* 호버 시 배경색 변경 */
     }
+
+    #searchModal {
+        overflow: hidden;
+    }
+
+    
+    /* 검색 결과 스타일 */
+    #searchResults {
+        margin-top: 20px;
+        height: 40vh;
+        overflow-y: auto;
+    }
+    
+    #searchResults div {
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    #searchResults div:last-child {
+        border-bottom: none; /* 마지막 항목의 경계선 제거 */
+    }
+    
+    #searchResults p {
+        margin: 0;
+        font-size: 16px;
+        color: #333;
+    }
     
     /* 모달 스타일 */
     .modal {
@@ -1273,30 +1299,5 @@ label {
         to { transform: translateY(0); opacity: 1; }
     }
 
-    #searchModal {
-        overflow: hidden;
-    }
 
-    
-    /* 검색 결과 스타일 */
-    #searchResults {
-        margin-top: 20px;
-        height: 40vh;
-        overflow-y: auto;
-    }
-    
-    #searchResults div {
-        padding: 10px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    
-    #searchResults div:last-child {
-        border-bottom: none; /* 마지막 항목의 경계선 제거 */
-    }
-    
-    #searchResults p {
-        margin: 0;
-        font-size: 16px;
-        color: #333;
-    }
 

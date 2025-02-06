@@ -230,17 +230,35 @@ function displaySearchResults(results, user_type) {
         if (user_type === 'S') {
             results.forEach(user => {
                 const userDiv = document.createElement('div');
+                userDiv.className = 'user-card';
                 userDiv.innerHTML = `
-                    <p>${user.student_name} (${user.student_grade}학년 ${user.student_class}반)</p>
+                    <div class="s-user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <p class="user-name">${user.student_name}</p>
+                            <p class="user-class">${user.student_grade}학년 ${user.student_class}반</p>
+                        </div>
+                    </div>
                 `;
                 resultsContainer.appendChild(userDiv);
-                
             });
+            
         } else {
             results.forEach(user => {
                 const userDiv = document.createElement('div');
+                userDiv.className = 'user-card';
                 userDiv.innerHTML = `
-                    <p>${user.student_name} (${user.department})</p>
+                    <div class="s-user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <p class="user-name">${user.student_name}</p>
+                            <p class="user-class">${user.department}</p>
+                        </div>
+                    </div>
                 `;
                 resultsContainer.appendChild(userDiv);
             });
@@ -589,6 +607,61 @@ document.querySelector('.close-button').addEventListener('click', function() {
     visibility: visible;
     opacity: 1;
 }
+
+.search-results-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.s-user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-details {
+    flex-grow: 1;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.user-class {
+    color: #666;
+    font-size: 0.9em;
+    margin: 0;
+}
+
 
 
 /* 반응형 디자인 */
