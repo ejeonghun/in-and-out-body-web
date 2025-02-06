@@ -274,7 +274,7 @@ def member_register(request):
                     for col in expected_columns:
                         if pd.notna(row[col]):
                             # 숫자형 컬럼 처리
-                            if col in ['학년', '반', '번호'] and pd.notna(row[col]):
+                            if col in ['학년', '번호'] and pd.notna(row[col]):
                                 user_data[col] = str(int(row[col]))  # float를 int로 변환 후 문자열로
                             else:
                                 user_data[col] = str(row[col]).strip()
@@ -768,7 +768,7 @@ def report(request):
                 error_message = '해당 연도는 검사 결과가 없습니다.'
 
             # 정규 표현식으로 학년과 반 추출
-            match = re.search(r"(\d+)학년 (\d+)반", selected_group)
+            match = re.search(r"(\d+)학년 (\w+)반", selected_group)
 
             # 당년도
             if selected_year == str(dt.now().year) and match:
@@ -955,7 +955,7 @@ def report_download(request):
 
     # 사용자 목록 조회
     if user_type == 'S':  # 학교 사용자
-        match = re.search(r"(\d+)학년 (\d+)반", selected_group)
+        match = re.search(r"(\d+)학년 (\w+)반", selected_group) 
         if selected_year == str(dt.now().year) and match:  # 현재 년도 조회
             users = UserInfo.objects.filter(
                 school__school_name=user.school.school_name,

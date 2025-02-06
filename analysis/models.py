@@ -103,7 +103,7 @@ class UserInfo(ExportModelOperationsMixin('user_info'), AbstractUser):
                                      blank=True)  # Allow null values
     department = models.CharField(max_length=100, null=True, blank=True)
     student_grade = models.IntegerField(null=True, blank=True)
-    student_class = models.IntegerField(null=True, blank=True)
+    student_class = models.CharField(null=True, blank=True)
     student_number = models.IntegerField(null=True, blank=True)
     student_name = models.CharField(max_length=100, null=True, blank=True)
     user_display_name = models.CharField(max_length=100, null=True, blank=True)
