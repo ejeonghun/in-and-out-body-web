@@ -23,6 +23,7 @@ dev : 개발 환경
 """
 
 ENVIRONMENT = os.getenv('ENVIRONMENT') # 운영 환경
+SECRETKEY = os.getenv('SECRET_KEY') # 시크릿
 
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
@@ -39,8 +40,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9wy2fexy%wsoo1s7gywnx4poto(=$vl#odi+5v@24_21qc)r&h'
-
+SECRET_KEY = SECRETKEY
 # Application definition
 
 INSTALLED_APPS = [
