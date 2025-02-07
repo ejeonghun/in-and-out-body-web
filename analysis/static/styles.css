@@ -1184,3 +1184,120 @@ label {
 
 }
 
+
+    /* 검색창 스타일 */
+    .search-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    #userSearch {
+        width: 300px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+
+    #userSearch:focus {
+        border-color: #4a90e2; /* 포커스 시 테두리 색상 변경 */
+        outline: none; /* 기본 아웃라인 제거 */
+    }
+
+    #searchButton {
+        padding: 10px 15px;
+        margin-left: 10px;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    #searchButton:hover {
+        background-color: #357abd; /* 호버 시 배경색 변경 */
+    }
+
+    #searchModal {
+        overflow: hidden;
+    }
+
+
+    /* 검색 결과 스타일 */
+    #searchResults {
+        margin-top: 20px;
+        height: 40vh;
+        overflow-y: auto;
+    }
+
+    #searchResults div {
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    #searchResults div:last-child {
+        border-bottom: none; /* 마지막 항목의 경계선 제거 */
+    }
+
+    #searchResults p {
+        margin: 0;
+        font-size: 16px;
+        color: #333;
+    }
+
+    /* 모달 스타일 */
+    .modal {
+        display: none; /* 기본적으로 숨김 */
+        position: fixed;
+        z-index: 1000; /* 모달이 다른 요소 위에 표시되도록 설정 */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.7); /* 반투명 배경 */
+        animation: fadeIn 0.3s; /* 모달 등장 애니메이션 */
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto; /* 화면 중앙에 위치 */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px; /* 최대 너비 설정 */
+        border-radius: 10px; /* 모서리 둥글게 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
+        animation: slideIn 0.3s; /* 모달 내용 등장 애니메이션 */
+    }
+
+    .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: black;
+        text-decoration: none;
+    }
+
+    /* 애니메이션 효과 */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+
+
