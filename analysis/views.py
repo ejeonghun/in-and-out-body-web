@@ -32,6 +32,7 @@ from datetime import datetime as dt
 from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
+from django.db.models import Q
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
@@ -194,6 +195,34 @@ def main(request):  # 추후 캐싱 기법 적용
     return render(request, 'main.html', context)
 
 
+@login_required
+def search_user(request):
+    user_id = request.user.id
+    user = UserInfo.objects.get(id=user_id)
+    user_type = user.user_type
+
+    query = request.GET.get('query', '')
+
+    user_dept = user.school.school_name if user_type == 'S' else user.organization.organization_name
+
+    if not query:
+        return JsonResponse({'results': []})
+
+    if user_type == 'S':  # 학교
+        users = UserInfo.objects.filter(Q(student_name__icontains=query),
+                                        Q(school__school_name__icontains=user_dept))  # 이름으로 검색
+
+        results = [{'id': user.id, 'student_name': user.student_name, 'student_grade': user.student_grade,
+                    'student_class': user.student_class} for user in users]
+
+    elif user_type == 'O':
+        users = UserInfo.objects.filter(Q(student_name__icontains=query),
+                                        Q(organization__organization_name__icontains=user_dept))
+        results = [{'id': user.id, 'student_name': user.student_name, 'department': user.department} for user in users]
+
+    return JsonResponse({'results': results, 'user_type': user_type})
+
+
 def org_register(request):
     return render(request, 'org_register.html')
 
@@ -204,9 +233,7 @@ def member_register(request):
     new_member = 0  # 신규 회원 카운팅
 
     user_id = request.user.id
-
     user = UserInfo.objects.get(id=user_id)
-
     type = user.user_type
 
     if type not in ['S', 'O']:  # 'G' == 게스트(일반 사용자)
@@ -220,7 +247,7 @@ def member_register(request):
             try:
                 excel_file = request.FILES['file']
                 df = pd.read_excel(excel_file,
-                                   dtype={'전화번호': str})  # 전화번호를 문자열로 읽음( 01000010001, 010-0001-0001) 다중 처리 위해서
+                                   dtype={'전화번호': str})  # 전화번호를 문자열로 읽음
 
                 # 컬럼 검증
                 expected_columns = ['학년', '반', '번호', '이름', '전화번호'] if type == 'S' else ['부서명', '이름', '전화번호']
@@ -233,26 +260,57 @@ def member_register(request):
 
                 # 데이터 전처리
                 users = []
+                phone_numbers = df['전화번호'].unique()  # 중복 제거된 전화번호 리스트
+                cleaned_phone_numbers = [extract_digits(phone_number) for phone_number in phone_numbers]  # 숫자만 추출
+                existing_users = UserInfo.objects.filter(phone_number__in=cleaned_phone_numbers)  # DB에서 존재하는 전화번호 필터링
+                expected_columns.append('상태')  # 상태 컬럼 추가
+                other_org = None  # 다른 학교/기관 에 소속된 유저가 있는 경우 확인 용도
+
+                df['상태'] = ''  # 상태 컬럼 초기화
+
                 for _, row in df.iterrows():
                     user_data = {}
+
                     for col in expected_columns:
                         if pd.notna(row[col]):
                             # 숫자형 컬럼 처리
-                            if col in ['학년', '반', '번호'] and pd.notna(row[col]):
+                            if col in ['학년', '번호'] and pd.notna(row[col]):
                                 user_data[col] = str(int(row[col]))  # float를 int로 변환 후 문자열로
                             else:
                                 user_data[col] = str(row[col]).strip()
 
                     if len(user_data) == len(expected_columns):  # 모든 필수 컬럼이 있는 경우만 추가
-                        users.append(user_data)
+                        phone_number = cleaned_phone_numbers.pop(0)  # 맨 앞 요소를 꺼내고 리스트에서 제거
+                        existing_user = existing_users.filter(phone_number=phone_number).first()
+
+                        if existing_user:
+                            existing_member += 1
+                            # 존재하는 유저의 소속 정보 추가
+                            if existing_user.school:  # 학교 소속이 있는 경우
+                                if existing_user.school.school_name != orgName:  # 다른 학교에 소속된 경우
+                                    user_data['상태'] = f"이전 학교 - {existing_user.school.school_name}"  # 이전 학교 정보 추가
+                                    other_org = True  # 다른 학교에 소속된 경우
+                                else:
+                                    user_data['상태'] = '기존 유저 갱신'
+                            else:
+                                if existing_user.organization:  # 기관 소속이 있는 경우
+                                    user_data[
+                                        '상태'] = f'이전 소속 - {existing_user.organization.organization_name}'  # 이전 기관 정보 추가
+                        else:  # 신규 등록인 경우 빈 문자열 설정
+                            user_data['상태'] = '신규 등록'  # 신규 등록 상태 추가
+                            new_member += 1
+
+                        # 중복 추가 방지
+                        if user_data not in users:
+                            users.append(user_data)  # 사용자 데이터 추가
 
                 # 저장 요청인 경우
                 if request.POST.get('save') == 'true':
+                    existing_member = 0;  # 기존 회원 초기화
+                    new_member = 0;
                     with transaction.atomic():  # 트랜잭션 시작
                         for user_data in users:
-                            phone_number = extract_digits(str(user_data['전화번호']).replace('-', ''))
-                            if phone_number.startswith('10'):  # 10 으로 시작하는 경우 0 추가(int로 입력이 들어오면 맨 앞에 0이 빠지기 때문)
-                                phone_number = '0' + phone_number
+                            phone_number = extract_digits(user_data['전화번호'])
 
                             if type == 'S':  # 학생인 경우
                                 school_info = SchoolInfo.objects.get(school_name=user.school.school_name)
@@ -331,7 +389,9 @@ def member_register(request):
                 # 미리보기 요청인 경우
                 return JsonResponse({
                     'users': users,
-                    'columns': expected_columns
+                    'columns': expected_columns,
+                    'new_member': new_member,
+                    'existing_member': existing_member
                 })
 
             except Exception as e:
@@ -431,9 +491,7 @@ def register(request):
                                 'address': user.school.address,
                             }
                         )
-                        phone_number = extract_digits(str(row['전화번호']).strip().replace('-', ''))
-                        if phone_number.startswith('10'):
-                            phone_number = '0' + phone_number
+                        phone_number = extract_digits(row['전화번호'])
 
                         # 회원가입이 되어 있는지 확인
                         user_info = UserInfo.objects.filter(phone_number=phone_number).first()
@@ -488,9 +546,7 @@ def register(request):
                                 'address': user.organization.address
                             },
                         )
-                        phone_number = extract_digits(str(row['전화번호']).strip().replace('-', ''))
-                        if phone_number.startswith('10'):
-                            phone_number = '0' + phone_number
+                        phone_number = extract_digits(row['전화번호'])
                         user_info, created = UserInfo.objects.update_or_create(
                             phone_number=phone_number,
                             defaults=dict(
@@ -705,14 +761,16 @@ def report(request):
 
         # 학교별 년도 정보 가져오기 -> select 태그에 들어가는 값
         # school_id에 해당하는 BodyResult 데이터에서 created_dt의 최소/최대 연도를 가져오기
-        years = list(year_group_map.keys())
+
+        years = [year for year in year_group_map.keys() if
+                 year != 'None' and isinstance(year, str)]  # year_group_map의 키에서 None을 제외하고 int만 포함
 
         if selected_year and selected_group:
             if selected_year != str(dt.now().year) and selected_year not in year_group_map:
                 error_message = '해당 연도는 검사 결과가 없습니다.'
 
             # 정규 표현식으로 학년과 반 추출
-            match = re.search(r"(\d+)학년 (\d+)반", selected_group)
+            match = re.search(r"(\d+)학년 (\w+)반", selected_group)
 
             # 당년도
             if selected_year == str(dt.now().year) and match:
@@ -899,7 +957,7 @@ def report_download(request):
 
     # 사용자 목록 조회
     if user_type == 'S':  # 학교 사용자
-        match = re.search(r"(\d+)학년 (\d+)반", selected_group)
+        match = re.search(r"(\d+)학년 (\w+)반", selected_group)
         if selected_year == str(dt.now().year) and match:  # 현재 년도 조회
             users = UserInfo.objects.filter(
                 school__school_name=user.school.school_name,

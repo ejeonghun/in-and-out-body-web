@@ -48,6 +48,8 @@ urlpatterns = [
     path('policy/', views.policy, name='policy'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
+    path('search_user/', views.search_user, name='search_user'),
+
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('password-change/', views.CustomPasswordChangeView.as_view(), name='password_change'),
     path('password-change-done/', auth_views.PasswordChangeDoneView.as_view(template_name='password_change_done.html'), name='password_change_done'),

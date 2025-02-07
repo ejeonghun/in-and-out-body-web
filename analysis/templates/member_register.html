@@ -85,6 +85,57 @@
     {% endif %}
      </div>
 
+     <!-- 첫 번째 모달 (입력 폼) -->
+    <div id="inputModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" id="closeInputModal">&times;</span>
+            <h2><i class="fas fa-user-plus"></i> 수동 추가</h2>
+            <form id="manualEntryForm">
+                <div>
+                    <label for="name">이름:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div>
+                    <label for="phone">전화번호:</label>
+                    <input type="text" id="phone" name="phone" required>
+                </div>
+                {% if user_type == 'S' %}
+                <div>
+                    <label for="grade">학년:</label>
+                    <input type="text" id="grade" name="grade" required>
+                </div>
+                <div>
+                    <label for="class">반:</label>
+                    <input type="text" id="class" name="class" required>
+                </div>
+                <div>
+                    <label for="number">번호:</label>
+                    <input type="text" id="number" name="number" required>
+                </div>
+                {% elif user_type == 'O' %}
+                <div>
+                    <label for="dept">부서명:</label>
+                    <input type="text" id="dept" name="dept" required>
+                </div>
+                {% endif %}
+                <button type="submit" id="openManualEntryModal" class="add-btn">추가</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 저장 확인 모달창 -->
+    <div id="confirmDiv" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" id="closeModal">&times;</span>
+            <p id="manualEntryInfo">내용</p>
+            <div class="modal-buttons">
+                <button id="saveButton">저장</button>
+                <button id="cancelButton">취소</button>
+            </div>
+        </div>
+    </div>
+
+
      <!-- 템플릿 다운로드 섹션 -->
     <div class="content-grid" id="initialContent">
         <div class="card-container">
@@ -95,10 +146,12 @@
                     <h4>교직원용 템플릿</h4>
                 </div>
                 <div class="card-body">
-                    <p>학교 구성원 등록용</p>
+                    {% comment %} <p>학교 구성원 등록용</p> {% endcomment %}
+                    <br/>
                     <a href="{% static '교직원용 템플릿.xlsx' %}" download class="download-btn">
                         다운로드 <i class="fas fa-arrow-down"></i>
                     </a>
+                    <button type="button" id="openInputModal" class="add-btn">수동 추가<i class="fas fa-add"></i></button> <!-- 수동 추가 버튼 -->
                 </div>
             </div>
             {% elif user_type == 'O' %}
@@ -108,10 +161,12 @@
                     <h4>일반 기관용 템플릿</h4>
                 </div>
                 <div class="card-body">
-                    <p>기업/기관 구성원 등록용</p>
+                    {% comment %} <p>기업/기관 구성원 등록용</p> {% endcomment %}
+                    <br/>
                     <a href="{% static '일반기관용 템플릿.xlsx' %}" download class="download-btn">
                         다운로드 <i class="fas fa-arrow-down"></i>
                     </a>
+                    <button type="button" id="openInputModal" class="add-btn">수동 추가<i class="fas fa-add"></i></button> <!-- 수동 추가 버튼 -->
                 </div>
             </div>
             {% endif %}
@@ -155,7 +210,12 @@
     <div id="tableContainer" class="result-section" style="display: none;">
         <div class="result-header">
             <h3><i class="fas fa-list"></i> 등록 현황</h3>
-            <span class="total-count">총 <strong id="totalCount">0</strong>명</span>
+            <div class="summary-info">
+                <span class="total-count">총 <strong id="totalCount">0</strong>명</span>
+                <span class="current-page">현재 페이지: <strong id="currentPage"></strong></span>
+                <span class="new-member-status">신규 등록: <strong id="newMemberCount">0</strong>명</span>
+                <span class="existing-member-status">기존 유저 갱신: <strong id="existingMemberCount">0</strong>명</span>
+            </div>
         </div>
         <div class="table-wrapper">
             <table id="dataTable">
@@ -186,15 +246,18 @@
     <!-- 로딩 스피너 -->
     <div id="spinnerContainer" class="spinner-container" style="display: none;">
         <div class="spinner"></div>
-        <p>업로드 중입니다...</p>
+        <p>잠시만 기다려주세요.. 업로드 된 파일을 확인중입니다.</p>
     </div>
 </div>
 </div>
+
+
 <style>
 .dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
+    padding-bottom: 1rem;
     display: flex;
     flex-direction: column;
     text-align: center;
@@ -277,6 +340,7 @@
 
 .content-grid {
     padding: 2rem;
+    padding-top: 0;
     margin-top: 2rem;
 }
 
@@ -378,17 +442,36 @@
 
 .table-wrapper {
     margin: 1rem 0;
+    border-radius: 8px;
+    overflow: auto; /* 수평 스크롤 가능하게 설정 */
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
+    background-color: #fff;
+    min-width: 600px; /* 최소 너비 설정 */
+    table-layout: auto; /* 자동 레이아웃 설정 */
+}
+
+tbody {
+    overflow: hidden;
 }
 
 th, td {
     padding: 1rem;
     text-align: left;
     border-bottom: 1px solid #dee2e6;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+}
+
+tr:hover {
+    background-color: #f1f1f1; /* 행 hover 시 색상 변경 */
 }
 
 .pagination {
@@ -405,17 +488,27 @@ th, td {
     background: #4CAF50;
     color: white;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .page-btn:hover {
     background: #45a049;
+    transform: scale(1.05); /* 버튼 hover 시 약간 커짐 */
+}
+
+.page-btn:disabled {
+    background: #ccc; /* 비활성화된 버튼 색상 */
+    cursor: not-allowed;
 }
 
 /* 페이지 트랜지션 스타일 */
 .page-transition-wrapper {
     animation: fadeIn 0.3s ease-in;
 }
+
+#spinnerContainer > p {
+    color: #333;
+ }
 
 @media (max-width: 768px) {
     .card-container {
@@ -424,6 +517,15 @@ th, td {
     
     .feature-card {
         margin: 0 1rem;
+    }
+
+    table {
+        width: 100%; /* 작은 화면에서 테이블 너비를 100%로 설정 */
+        font-size: 0.9rem; /* 폰트 크기 조정 */
+    }
+
+    th, td {
+        padding: 0.5rem; /* 패딩 조정 */
     }
 }
 
@@ -443,7 +545,6 @@ th, td {
     padding: 15px;
     margin: 20px 0;
     border-radius: 8px;
-    display: none;
 }
 
 .alert-success {
@@ -456,6 +557,22 @@ th, td {
     background-color: #f8d7da;
     border-color: #f5c6cb;
     color: #721c24;
+}
+
+.alert-info {
+    background-color: #e2e3e5;
+    border-color: #d6d8db;
+    color: #383d41;
+}
+
+.text-danger {
+    color: red; /* 빨간색으로 하이라이트 */
+    font-weight: bold;
+}
+
+.text-danger2 {
+    color: #ff8686; /* 빨간색으로 하이라이트 */
+    font-weight: bold;
 }
 
 /* 스피너 스타일 */
@@ -539,6 +656,153 @@ th, td {
 .reset-btn:hover {
     background: #c82333;
 }
+
+.status-new {
+    color: green;
+    font-weight: bold;
+}
+.status-update {
+    color: blue;
+    font-weight: bold;
+}
+
+.summary-info {
+    display: flex;
+    justify-content: space-around; /* 요소 간격을 균등하게 배치 */
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa; /* 배경색 추가 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+}
+
+.summary-info span {
+    font-size: 1rem; /* 글자 크기 조정 */
+    color: #333; /* 글자 색상 */
+}
+
+/* 신규 등록 및 기존 유저 갱신 상태 강조 */
+.new-member-status strong {
+    color: green; /* 신규 등록 색상 */
+}
+
+.existing-member-status strong {
+    color: blue; /* 기존 유저 갱신 색상 */
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: slideDown 0.3s ease-out;
+}
+
+.modal-content h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modal-content form div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.modal-content label {
+    color: #4a5568;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.modal-content input {
+    padding: 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.modal-content input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.close {
+    color: #aaa;
+    float: right; /* 오른쪽 정렬 */
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.add-btn {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: #4CAF50;
+    color: white;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+    margin-top: 1rem;
+    background: #007bff;
+}
+
+.add-btn:hover {
+    background: #458ad4;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
+}
+
 </style>
     <!-- Include SheetJS Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
@@ -639,7 +903,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 미리보기 표시 함수
     function displayPreview(data) {
-        const { users, columns } = data;
+        const { users, columns, new_member, existing_member } = data;
         
         // 테이블 헤더 생성
         const headerRow = dataTable.querySelector('thead tr');
@@ -648,6 +912,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // 데이터 표시
         displayTablePage(users, currentPage);
         
+        // 신규/기존 회원 상태 표시
+        displayMemeberStatus(totalCount, currentPage, new_member, existing_member);
+
         // 총 개수 업데이트
         totalCountElement.textContent = users.length;
         
@@ -665,11 +932,35 @@ document.addEventListener('DOMContentLoaded', function() {
         const pageUsers = users.slice(start, end);
 
         const tbody = dataTable.querySelector('tbody');
-        tbody.innerHTML = pageUsers.map(user => `
-            <tr>
-                ${Object.values(user).map(value => `<td>${value}</td>`).join('')}
-            </tr>
-        `).join('');
+        tbody.innerHTML = pageUsers.map(user => {
+            return `
+                <tr>
+                    ${Object.values(user).map(value => `<td>${value || ''}</td>`).join('')}
+                </tr>
+            `;
+        }).join('');
+
+        // 상태 클래스 업데이트
+        updateStatusClasses();
+    }
+
+    function updateStatusClasses() {
+        const rows = dataTable.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const statusCell = row.lastElementChild; // 마지막 <td> 요소 선택
+            if (statusCell) {
+                const statusText = statusCell.textContent.trim();
+                if (statusText.startsWith('신규 등록')) {
+                    statusCell.classList.add('status-new');
+                } else if (statusText.startsWith('기존 유저 갱신')) {
+                    statusCell.classList.add('status-update');
+                } else if (statusText.startsWith('이전 학교')) {
+                    statusCell.classList.add('text-danger'); // 빨간색 하이라이트
+                } else if (statusText.startsWith('이전 소속')) {
+                    statusCell.classList.add('text-danger2'); // 빨간색 하이라이트
+                }
+            }
+        });
     }
 
     // 페이지네이션 업데이트
@@ -677,6 +968,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalPages = Math.ceil(totalUsers / rowsPerPage);
         document.getElementById('prevPage').disabled = currentPage === 1;
         document.getElementById('nextPage').disabled = currentPage === totalPages;
+
+        document.getElementById('currentPage').textContent = `${currentPage} / ${totalPages}`; // 현재 페이지 표시
     }
 
     // 페이지네이션 이벤트 리스너
@@ -772,6 +1065,184 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('resetButton').addEventListener('click', () => {
         resetInterface();
     });
+
+    function displayMemeberStatus(totalCount, currentPage, newMemberCount, existingMemberCount) {
+            document.getElementById('totalCount').innerText = totalCount;
+            document.getElementById('currentPage').innerText = currentPage;
+            document.getElementById('newMemberCount').innerText = newMemberCount;
+            document.getElementById('existingMemberCount').innerText = existingMemberCount;
+
+        // 상태값에 따라 하이라이트 추가
+        const rows = dataTable.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const statusCell = row.lastElementChild; // 마지막 <td> 요소 선택
+            if (statusCell) {
+                const statusText = statusCell.textContent.trim();
+                if (statusText.startsWith('이전 학교')) {
+                    statusCell.classList.add('text-danger'); // 빨간색 하이라이트
+                } else if (statusText.startsWith('이전 소속')) {
+                    statusCell.classList.add('text-danger2'); // 빨간색 하이라이트
+                }
+            }
+        });
+    }
+
+    // 수동 추가 버튼 클릭 시 모달 열기
+    document.getElementById('openManualEntryModal').addEventListener('click', function() {
+        openModal('confirm'); // 모달 열기 함수 호출
+    });
+
+    document.getElementById('openInputModal').addEventListener('click', function() {
+        openModal('input'); // 모달 열기 함수 호출
+    });
+
+
+    document.getElementById('closeModal').addEventListener('click', function() {
+        closeModal('confirm'); // 모달 닫기 함수 호출
+    });
+
+    document.getElementById('cancelButton').addEventListener('click', function() {
+        closeModal('confirm'); // 모달 닫기 함수 호출
+    });
+
+    document.getElementById('closeInputModal').addEventListener('click', function() {
+        closeModal('input'); // 모달 닫기 함수 호출
+    });
+
+    // 모달 열기
+    function openModal(type) {
+        if (type === 'input') {
+            document.getElementById('inputModal').style.display = 'block';
+        } else if (type === 'confirm') {
+        document.getElementById('confirmDiv').style.display = 'block';
+        }
+    }
+
+    // 모달 닫기
+    function closeModal(type) {
+        if (type === 'input') {
+            document.getElementById('inputModal').style.display = 'none';
+        } else if (type === 'confirm') {
+        document.getElementById('confirmDiv').style.display = 'none';
+        }
+    }
+
+    // 이벤트 리스너 추가
+
+
+    // 모달 외부 클릭 시 닫기
+    window.onclick = function(event) {
+        const modal = document.getElementById('confirmDiv');
+        const modal2 = document.getElementById('inputModal');
+        if (event.target === modal) {
+            closeModal('confirm');
+        }
+        if (event.target === modal2) {
+            closeModal('input');
+        }
+    };
+
+    const manualEntryForm = document.getElementById('manualEntryForm');
+    manualEntryForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // 엑셀 파일 생성
+        const workbook = XLSX.utils.book_new();
+        
+        const formInputs = new FormData(manualEntryForm);
+        const data = {
+            이름: formInputs.get('name'),
+            전화번호: formInputs.get('phone'),
+            {% if user_type == 'S' %}
+            학년: formInputs.get('grade'),
+            반: formInputs.get('class'),
+            번호: formInputs.get('number'),
+            {% elif user_type == 'O' %}
+            부서명: formInputs.get('dept')
+            {% endif %}
+        };
+    
+        // 워크시트 생성
+        const worksheet = XLSX.utils.json_to_sheet([data]);
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    
+        // 엑셀 파일로 변환
+        const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+        const excelFile = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+        try {
+            // 먼저 검증 요청 보내기
+            const sendFormData = new FormData();
+            sendFormData.append('file', excelFile, 'manual_entry.xlsx');
+            
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: sendFormData
+            });
+    
+            const result = await response.json();
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+    
+            // 검증 데이터 표시 및 확인 요청
+            var user = result.users;
+            // console.log(user);
+
+            if (user.length === 1) { // 검증
+                user = user[0];
+                const fieldsToCheck = ['이름', '전화번호', '학년', '반', '번호'];
+            
+                fieldsToCheck.forEach(field => {
+                    if (data[field] !== user[field]) {
+                        throw new Error(`${field} 값이 일치하지 않습니다.`);
+                    }
+                });
+                // 통과 메시지 표시
+                manualEntryInfo.textContent = `${user['이름']} 님의 정보가 확인되었습니다. 저장하시겠습니까?`;
+                confirmDiv.style.display = 'block';
+            }
+
+            document.getElementById('saveButton').onclick = async function() {
+                // 저장 요청 보내기
+                const saveFormData = new FormData();
+                saveFormData.append('file', excelFile, 'manual_entry.xlsx');
+                saveFormData.append('save', 'true');
+                
+                const saveResponse = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: saveFormData
+                });
+    
+                const saveResult = await saveResponse.json();
+                
+                if (saveResult.error) {
+                    throw new Error(saveResult.error);
+                }
+                
+                showSuccess("사용자가 성공적으로 저장되었습니다.");
+                resetManualEntryForm();
+                closeModal('input');
+                closeModal('confirm');
+            }
+        } catch (error) {
+            showError(error.message);
+        } 
+    });
+    
+
+    // 수동 추가 폼 초기화 함수
+    function resetManualEntryForm() {
+        manualEntryForm.reset();
+    }
+
 });
 </script>
 {% endblock %}

@@ -46,9 +46,19 @@
     <p style="color:red;">{{ error_message }}</p>
 {% endif %}
 
-{% if is_registered == False %}
+{% if request.user.user_type == 'S' %}
+    {% if is_registered == False or years|length == 0 %}
+        <p style="color:red;">등록된 사용자 정보가 없습니다. 사용자 정보 등록을 먼저 진행해주세요 😅</p>
+    {% endif %}
+{% elif request.user.user_type == 'O' %}
+    {% if is_registered == False or groups|length == 0 %}
+        <p style="color:red;">등록된 사용자 정보가 없습니다. 사용자 정보 등록을 먼저 진행해주세요 😅</p>
+    {% endif %}
+{% else %}
     <p style="color:red;">등록된 사용자 정보가 없습니다. 사용자 정보 등록을 먼저 진행해주세요 😅</p>
 {% endif %}
+
+
 
 {% if user_results %}
 <div style="display: flex; align-items: center; gap: 10px; margin-top:10px;" id="report-header">
