@@ -34,7 +34,6 @@ jobs:
           echo "AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}" >> .env
           echo "SECRET_KEY=\"${{ secrets.SECRET_KEY }}\"" >> .env
           echo "ENVIRONMENT"=prod >> .env
-          cat .env
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
