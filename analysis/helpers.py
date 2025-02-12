@@ -129,6 +129,12 @@ def generate_presigned_url(file_keys, expiration=settings.AWS_PRESIGNED_EXPIRATI
 
 
 def parse_userinfo(userinfo_obj):
+    def safe_int(value, default=-1):
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return default
+
     return {
         'user_id': userinfo_obj.id,
         'user_type': userinfo_obj.user_type if userinfo_obj.user_type else 'N/A',
@@ -139,7 +145,7 @@ def parse_userinfo(userinfo_obj):
         'school_name': userinfo_obj.school.school_name if userinfo_obj.school else 'N/A',
         'student_grade': userinfo_obj.student_grade if userinfo_obj.student_grade else -1,
         'student_class': userinfo_obj.student_class if userinfo_obj.student_class else -1,
-        'student_number': userinfo_obj.student_number if userinfo_obj.student_number else -1,
+        'student_class': safe_int(userinfo_obj.student_class, -1),  # 형변환 실패 시 1 반환
         'student_name': userinfo_obj.student_name if userinfo_obj.student_name else 'N/A',
         'phone_number': userinfo_obj.phone_number if userinfo_obj.phone_number else 'N/A',
         'user_display_name': userinfo_obj.user_display_name if userinfo_obj.user_display_name else 'N/A',
@@ -209,8 +215,6 @@ def extract_digits(text):
     if phone_number.startswith('10'):  # 10 으로 시작하는 경우 0 추가
         phone_number = '0' + phone_number
     return phone_number
-
-
 
 
 """ CodeInfo는 캐싱처리 """
@@ -395,6 +399,8 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
 
 
 """ 키오스크 최신 버전 캐싱 함수 """
+
+
 def get_kiosk_latest_version():
     version = cache.get('KIOSK_LATEST_VERSION')
 
