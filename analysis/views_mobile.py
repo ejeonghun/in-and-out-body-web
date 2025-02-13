@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from analysis.custom.metrics import calculate_active_users
-from analysis.helpers import generate_presigned_url, measure_time, parse_userinfo, upload_image_to_s3, verify_image
+from analysis.helpers import generate_presigned_url, measure_time, parse_userinfo_mobile, upload_image_to_s3, verify_image
 from analysis.models import GaitResult, AuthInfo, UserInfo, CodeInfo, BodyResult, SessionInfo, SchoolInfo
 from analysis.serializers import GaitResultSerializer, CodeInfoSerializer, BodyResultSerializer, KeypointSerializer
 
@@ -101,7 +101,7 @@ def login_mobile(request):
     access_token = str(token.access_token)
 
     data_obj = {
-        'user_info': parse_userinfo(authorized_user_info),
+        'user_info': parse_userinfo_mobile(authorized_user_info),
         'jwt_tokens': {
             'access_token': access_token,
             'refresh_token': refresh_token,
@@ -213,7 +213,7 @@ def login_mobile_id(request):
 
         # 데이터 응답 준비
         data_obj = {
-            'user_info': parse_userinfo(req_user_info),
+            'user_info': parse_userinfo_mobile(req_user_info),
             'jwt_tokens': {
                 'access_token': access_token,
                 'refresh_token': refresh_token,
@@ -296,7 +296,7 @@ def login_mobile_uuid(request):
     access_token = str(token.access_token)
 
     data_obj = {
-        'user_info': parse_userinfo(authorized_user_info),
+        'user_info': parse_userinfo_mobile(authorized_user_info),
         'jwt_tokens': {
             'access_token': access_token,
             'refresh_token': refresh_token,
@@ -430,7 +430,7 @@ def get_user(request):
             {
                 'message': 'user_not_found'
             })
-    user_info = parse_userinfo(user)
+    user_info = parse_userinfo_mobile(user)
     data_obj = {
         'user_info': user_info,
         'message': 'success',
