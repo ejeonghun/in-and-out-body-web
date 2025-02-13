@@ -131,9 +131,11 @@ def generate_presigned_url(file_keys, expiration=settings.AWS_PRESIGNED_EXPIRATI
 def parse_userinfo(userinfo_obj):
     def safe_int(value, default=-1):
         try:
-            return int(value)
+            if value is None: # None 이면 -1
+                return -1
+            return int(value) 
         except (ValueError, TypeError):
-            return default
+            return default    # String이면 -2
         
     return {
         'user_id': userinfo_obj.id,
@@ -144,7 +146,7 @@ def parse_userinfo(userinfo_obj):
         'school_id': userinfo_obj.school_id if userinfo_obj.school_id else -1,
         'school_name': userinfo_obj.school.school_name if userinfo_obj.school else 'N/A',
         'student_grade': userinfo_obj.student_grade if userinfo_obj.student_grade else -1,
-        'student_class': safe_int(userinfo_obj.student_class, -1),  # 형변환 실패 시 1 반환
+        'student_class': safe_int(userinfo_obj.student_class, -2),
         'student_number': userinfo_obj.student_number if userinfo_obj.student_number else -1,
         'student_name': userinfo_obj.student_name if userinfo_obj.student_name else 'N/A',
         'phone_number': userinfo_obj.phone_number if userinfo_obj.phone_number else 'N/A',
@@ -153,6 +155,7 @@ def parse_userinfo(userinfo_obj):
         'gender': userinfo_obj.gender if userinfo_obj.gender else 'N/A',
         'height': userinfo_obj.height if userinfo_obj.height else -1,
         'dob': userinfo_obj.dob if userinfo_obj.dob else 'N/A',
+        'student_class_str': userinfo_obj.student_class if userinfo_obj.student_class else 'N/A',
     }
 
 
