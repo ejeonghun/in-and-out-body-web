@@ -12,12 +12,18 @@
                 <label for="year">연도 선택</label>
                 <select name="year" id="year">
                     <option value="">-- 연도 선택 --</option>
-                    {% for year in years %}
-                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
-                    {% endfor %}
-        </select>
-    </div>
-    {% endif %}
+                    {% if selected_year in years %}
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    {% else %}
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if forloop.last %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+        </div>
+        {% endif %}
 
             <div style="display: inline-block;">
                 <label for="group">그룹 선택</label>

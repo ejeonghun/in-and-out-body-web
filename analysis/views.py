@@ -15,7 +15,7 @@ from django.contrib.auth.views import PasswordChangeView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
-from .helpers import extract_digits, generate_presigned_url, parse_userinfo, upload_image_to_s3, verify_image, \
+from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
     calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
     KioskInfo
@@ -1895,7 +1895,8 @@ def get_body_result(request):
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
         if not isinstance(end_date, datetime):
             end_date = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
-        body_results = BodyResult.objects.filter(user_id=user_id, created_dt__range=(start_date, end_date)).order_by(
+        body_results = BodyResult.objects.filter(user_id=user_id, created_dt__range=(start_date, end_date),
+                                                 mobile_yn='n').order_by(
             '-created_dt')
     else:
         body_results = BodyResult.objects.filter(user_id=user_id).order_by('-created_dt')
@@ -2096,7 +2097,7 @@ def get_userinfo_session(request):
     except UserInfo.DoesNotExist:
         return Response({"data": {"message": "user_not_found", "status": 401}})
 
-    return Response({'data': parse_userinfo(user_info), 'message': 'OK', 'status': 200})
+    return Response({'data': parse_userinfo_kiosk(user_info), 'message': 'OK', 'status': 200})
 
 
 @swagger_auto_schema(
