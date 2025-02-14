@@ -1893,7 +1893,7 @@ def get_body_result(request):
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
         if not isinstance(end_date, datetime):
             end_date = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
-        body_results = BodyResult.objects.filter(user_id=user_id, created_dt__range=(start_date, end_date)).order_by(
+        body_results = BodyResult.objects.filter(user_id=user_id, created_dt__range=(start_date, end_date), mobile_yn='n').order_by(
             '-created_dt')
     else:
         body_results = BodyResult.objects.filter(user_id=user_id).order_by('-created_dt')
