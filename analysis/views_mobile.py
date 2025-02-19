@@ -121,8 +121,10 @@ def login_mobile(request):
 
     if check_user_info.exists():                            # 회원이 존재한다면
         authorized_user_info = check_user_info.first()
-    else:                                                   # ㅎ회원이 존재하지 않는다면
-        return Response({'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}, status=status.HTTP_200_OK)
+    else:                                                   # 회원이 존재하지 않는다면
+        auth_info.delete()                                                   
+        return Response({'data': {'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}}, status=status.HTTP_200_OK)
+        
 
     if authorized_user_info.school is not None:
         authorized_user_info.user_type = 'S'

@@ -27,7 +27,7 @@ fi
 
 # mail_fetch_thread.py를 백그라운드에서 실행하고 PID를 저장
 echo "Starting mail_fetch_thread.py..."
-python /path/to/mail_fetch_thread.py &  # &를 사용하여 백그라운드에서 실행
+python mail_fetch_thread.py &  # 백그라운드 실행
 MAIL_FETCH_PID=$!
 echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
