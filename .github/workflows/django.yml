@@ -73,6 +73,7 @@ jobs:
             source ~/.zshrc
             docker exec in-and-out-body-web-dev2-container bash -c "
               git pull origin feature-test &&
+              pip install --upgrade pip &&
               pip install -r requirements.txt &&
               rm -rf analysis/migrations &&
               python manage.py makemigrations analysis &&
