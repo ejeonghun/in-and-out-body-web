@@ -101,11 +101,12 @@ kst = pytz.timezone('Asia/Seoul')
 def login_mobile(request):
     mobile_uid = request.data.get('mobile_uid')
     if not mobile_uid:
-        return Response({'message': 'mobile_uid_required', 'status': status.HTTP_400_BAD_REQUEST}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'data': {'message': 'mobile_uid_required', 'status': status.HTTP_400_BAD_REQUEST}}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        auth_info = AuthInfo.objects.get(uid=mobile_uid) # 인증번호만 받음
+        auth_info = AuthInfo.objects.get(uid=mobile_uid) # AuthInfo 테이블에서 mobile_uid로 검색
     except AuthInfo.DoesNotExist:
+        # AuthInfo를 찾을 수 없는 경우 처리 (인증번호 안옴)
         return Response({'data': {'message': 'Not received', 'status': status.HTTP_404_NOT_FOUND}}, status=status.HTTP_200_OK)
 
 
@@ -117,12 +118,13 @@ def login_mobile(request):
     #         password=make_password(os.environ['DEFAULT_PASSWORD']),
     #     ))
     
+    # 인증번호 발신자 전화번호로 DB 쿼리
     check_user_info = UserInfo.objects.filter(phone_number=auth_info.phone_number)
 
     if check_user_info.exists():                            # 회원이 존재한다면
-        authorized_user_info = check_user_info.first()
+        authorized_user_info = check_user_info.first() # 쿼리셋 당김 
     else:                                                   # 회원이 존재하지 않는다면
-        auth_info.delete()                                                   
+        auth_info.delete()                # 인증테이블에서 인증번호 정보 삭제                                   
         return Response({'data': {'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}}, status=status.HTTP_200_OK)
         
 
