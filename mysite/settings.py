@@ -262,6 +262,7 @@ CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
     'http://aicu-office.iptime.org:65002',
     'https://test-body.aicu.life',
+    'http://10.0.2.2'
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
@@ -281,6 +282,7 @@ ALLOWED_HOSTS = [
     'aicu-office.iptime.org',
     'localhost',
     'test-body.aicu.life',
+    '10.0.2.2' # Android Emulator
 ]
 
 

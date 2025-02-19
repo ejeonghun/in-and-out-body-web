@@ -63,31 +63,70 @@ kst = pytz.timezone('Asia/Seoul')
                                                                     }
                                                                 ),
                                                         })),
-        400: 'Bad Request; mobile_uid is not provided in the request body',
-        401: 'Unauthorized; incorrect user or password',
+        400: openapi.Response(
+            description="Bad Request; 예시: mobile_uid_required",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        example='mobile_uid_required'
+                    ),
+                    'status': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        example=400
+                    )
+                }
+            )
+        ),
+        401: openapi.Response(
+            description="Unauthorized; 예시: incorrect user or password",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        example='incorrect user or password'
+                    ),
+                    'status': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        example=401
+                    )
+                }
+            )
+        ),
     }
 )
 @api_view(['POST'])
 def login_mobile(request):
     mobile_uid = request.data.get('mobile_uid')
     if not mobile_uid:
-        return Response({'message': 'mobile_uid_required'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'mobile_uid_required', 'status': status.HTTP_400_BAD_REQUEST}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        auth_info = AuthInfo.objects.get(uid=mobile_uid)
+        auth_info = AuthInfo.objects.get(uid=mobile_uid) # 인증번호만 받음
     except AuthInfo.DoesNotExist:
-        return Response({'message': 'user_not_found'}, status=status.HTTP_200_OK)
+        return Response({'data': {'message': 'Not received', 'status': status.HTTP_404_NOT_FOUND}}, status=status.HTTP_200_OK)
 
-    authorized_user_info, user_created = UserInfo.objects.get_or_create(
-        phone_number=auth_info.phone_number,
-        defaults=dict(
-            username=auth_info.phone_number,
-            password=make_password(os.environ['DEFAULT_PASSWORD']),
-        ))
+
+    # 기존 회원가입 or 로그인 로직
+    # authorized_user_info, user_created = UserInfo.objects.get_or_create(
+    #     phone_number=auth_info.phone_number,
+    #     defaults=dict(
+    #         username=auth_info.phone_number,
+    #         password=make_password(os.environ['DEFAULT_PASSWORD']),
+    #     ))
+    
+    check_user_info = UserInfo.objects.filter(phone_number=auth_info.phone_number)
+
+    if check_user_info.exists():                            # 회원이 존재한다면
+        authorized_user_info = check_user_info.first()
+    else:                                                   # ㅎ회원이 존재하지 않는다면
+        return Response({'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}, status=status.HTTP_200_OK)
 
     if authorized_user_info.school is not None:
         authorized_user_info.user_type = 'S'
-    elif authorized_user_info.organization is not None:  # if -> elif로 수정
+    elif authorized_user_info.organization is not None:
         authorized_user_info.user_type = 'O'
     else:
         authorized_user_info.user_type = 'G'
@@ -106,6 +145,8 @@ def login_mobile(request):
             'access_token': access_token,
             'refresh_token': refresh_token,
         },
+        'message': 'success',
+        'status': status.HTTP_200_OK,
     }
 
     auth_info.delete()
@@ -187,6 +228,7 @@ def login_mobile(request):
     }
 )
 @api_view(['POST'])
+##### ['데이브']쪽에서 사용하는 로직 #####
 def login_mobile_id(request):
     id = request.data.get('id')  # phone_number
     password = request.data.get('password')
@@ -196,8 +238,14 @@ def login_mobile_id(request):
 
     try:
         req_user_info = UserInfo.objects.get(Q(phone_number=id))
+
+         # 등록된 회원이 존재하지 않을 때 처리 -> 관리자가 시스템에 회원을 등록하지 않았을 때
+        if req_user_info.DoesNotExist:
+            return Response({'data': {'message': 'user_not_found', 'status':status.HTTP_404_NOT_FOUND}}, status=status.HTTP_200_OK)
+
         if not check_password(password, req_user_info.password):
-            return Response({'message': 'user_not_found'}, status=status.HTTP_200_OK)
+            return Response({'message': 'user_not_found', 'status': status.HTTP_404_NOT_FOUND}, status=status.HTTP_200_OK)
+
 
         # 마지막 로그인 시간 갱신
         req_user_info.last_login = dt.now()
@@ -1251,6 +1299,7 @@ def create_body_result(request) -> Response:
     },
 )
 @api_view(['GET'])
+###### 해당 코드는 ['Jerry']님 쪽에서 사용되는 로직 ######
 @permission_classes([permissions.IsAuthenticated])
 def mobile_body_sync(request):
     # 사용자 Id
