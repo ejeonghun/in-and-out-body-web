@@ -237,11 +237,13 @@ def login_mobile_id(request):
         return Response({'message': 'id_password_required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        req_user_info = UserInfo.objects.get(Q(phone_number=id))
+        req_user_info = UserInfo.objects.filter(phone_number=id)
 
-         # 등록된 회원이 존재하지 않을 때 처리 -> 관리자가 시스템에 회원을 등록하지 않았을 때
-        if req_user_info.DoesNotExist:
-            return Response({'data': {'message': 'user_not_found', 'status':status.HTTP_404_NOT_FOUND}}, status=status.HTTP_200_OK)
+        # 등록된 회원이 존재하지 않을 때 처리 -> 관리자가 시스템에 회원을 등록하지 않았을 때
+        if not req_user_info.exists():
+            return Response({'data': {'message': 'user_not_found', 'status': status.HTTP_404_NOT_FOUND}}, status=status.HTTP_200_OK)
+        else:
+            req_user_info = req_user_info.first()
 
         if not check_password(password, req_user_info.password):
             return Response({'message': 'user_not_found', 'status': status.HTTP_404_NOT_FOUND}, status=status.HTTP_200_OK)
