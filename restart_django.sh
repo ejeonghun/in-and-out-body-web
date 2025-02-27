@@ -5,7 +5,7 @@ if [ -f .env ]; then
 fi
 
 # Gunicorn 프로세스 종료
-GUNICORN_PID=$(pgrep -f "gunicorn.*:44561")
+GUNICORN_PID=$(pgrep -f "gunicorn.*:8000")
 if [ -n "$GUNICORN_PID" ]; then
     echo "Stopping Gunicorn process: $GUNICORN_PID"
     kill -9 $GUNICORN_PID
@@ -34,4 +34,4 @@ echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
 # Gunicorn 시작
 echo "Starting Gunicorn..."
-nohup gunicorn --bind 0.0.0.0:44561 mysite.wsgi:application > logs/gunicorn.log 2>&1 < /dev/null &
+gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application > logs/gunicorn.log 2>&1 < /dev/null &
