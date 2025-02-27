@@ -40,17 +40,38 @@ class GaitResultSerializer(serializers.ModelSerializer):
     user_type = serializers.CharField(source='user.user_type', read_only=True)
     student_name = serializers.CharField(source='user.student_name', read_only=True)
     school_name = serializers.CharField(source='school.school_name', read_only=True)
+    student_class = serializers.SerializerMethodField()
+
 
     class Meta:
         model = GaitResult
         fields = '__all__'
         read_only_fields = ['id', 'created_dt']
 
+    def get_student_class(self, obj):
+        # student_class가 정수로 변환 가능한지 확인
+        try:
+            return int(obj.student_class)
+        except (ValueError, TypeError):
+            # 변환할 수 없으면 원래 문자열 반환
+            return obj.student_class
+
 class BodyResultSerializer(serializers.ModelSerializer):
+    student_class = serializers.SerializerMethodField()
+    
     class Meta:
         model = BodyResult
         fields = '__all__'
         read_only_fields = ['id', 'created_dt']
+    
+    def get_student_class(self, obj):
+        # student_class가 정수로 변환 가능한지 확인
+        try:
+            return int(obj.student_class)
+        except (ValueError, TypeError):
+            # 변환할 수 없으면 원래 문자열 반환
+            return obj.student_class
+
 
 class GaitResponseSerializer(serializers.Serializer):
     data = GaitResultSerializer(many=True)
