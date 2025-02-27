@@ -24,7 +24,6 @@ dev : 개발 환경
 
 ENVIRONMENT = os.getenv('ENVIRONMENT') # 운영 환경
 SECRETKEY = os.getenv('SECRET_KEY') # 시크릿
-LOCAL = os.getenv('LOCAL')
 
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
@@ -60,7 +59,7 @@ INSTALLED_APPS = [
     'django_apscheduler',
 ]
 
-if DEBUG or LOCAL is not None:
+if DEBUG:
     INSTALLED_APPS += ['whitenoise.runserver_nostatic']
 
 REST_FRAMEWORK = {
@@ -121,7 +120,7 @@ MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
-if DEBUG or LOCAL is not None:
+if DEBUG:
     MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
 
 ROOT_URLCONF = 'mysite.urls'
@@ -263,6 +262,7 @@ CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
     'http://aicu-office.iptime.org:65002',
     'https://test-body.aicu.life',
+    'http://10.0.2.2'
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
@@ -282,6 +282,7 @@ ALLOWED_HOSTS = [
     'aicu-office.iptime.org',
     'localhost',
     'test-body.aicu.life',
+    '10.0.2.2' # Android Emulator
 ]
 
 
