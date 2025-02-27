@@ -78,5 +78,5 @@ jobs:
               rm -rf analysis/migrations &&
               python manage.py makemigrations analysis &&
               python manage.py migrate &&
-              bash ./restart_django.sh >> logs/server.log 2>&1
+              bash ./restart_django.sh
               "
