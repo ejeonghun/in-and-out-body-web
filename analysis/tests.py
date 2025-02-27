@@ -258,6 +258,7 @@ class mobileTest(TestCase):
         self.client = APIClient()
 
         # Create the required objects
+        self.auth_info = AuthInfo.objects.create(uid=mobile_uid, phone_number=phone_number)
         self.user_info = UserInfo.objects.create(
             username=phone_number,
             phone_number=phone_number,

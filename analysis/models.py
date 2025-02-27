@@ -132,7 +132,7 @@ class UserHist(models.Model):
     organization = models.ForeignKey(OrganizationInfo, on_delete=models.CASCADE, null=True,
                                      blank=True)  # Allow null values
     student_grade = models.IntegerField(null=True)
-    student_class = models.IntegerField(null=True)
+    student_class = models.CharField(null=True, blank=True)
     student_number = models.IntegerField(null=True)
     student_name = models.CharField(max_length=100, null=True, blank=True)
     department = models.CharField(max_length=100, null=True, blank=True)
@@ -144,7 +144,7 @@ class GaitResult(ExportModelOperationsMixin('gait_result'), models.Model):
     user = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
     school = models.ForeignKey(SchoolInfo, on_delete=models.CASCADE)
     student_grade = models.IntegerField(null=True)
-    student_class = models.IntegerField(null=True)
+    student_class = models.CharField(null=True, blank=True)
     student_number = models.IntegerField(null=True)
     score = models.FloatField(null=True)
     velocity = models.FloatField(null=True)
@@ -274,7 +274,7 @@ class BodyResult(ExportModelOperationsMixin('body_result'), models.Model):
     user = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
     school = models.ForeignKey(SchoolInfo, on_delete=models.CASCADE)
     student_grade = models.IntegerField(null=True)
-    student_class = models.IntegerField(null=True)
+    student_class = models.CharField(null=True, blank=True)
     student_number = models.IntegerField(null=True)
     face_level_angle = models.FloatField(null=True)
     shoulder_level_angle = models.FloatField(null=True)

@@ -11,7 +11,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from analysis.custom.metrics import calculate_active_users
-from analysis.helpers import generate_presigned_url, measure_time, parse_userinfo_mobile, upload_image_to_s3, verify_image
+from analysis.helpers import generate_presigned_url, measure_time, parse_userinfo_mobile, upload_image_to_s3, \
+    verify_image
 from analysis.models import GaitResult, AuthInfo, UserInfo, CodeInfo, BodyResult, SessionInfo, SchoolInfo
 from analysis.serializers import GaitResultSerializer, CodeInfoSerializer, BodyResultSerializer, KeypointSerializer
 
@@ -187,6 +188,7 @@ def login_mobile(request):
     }
 )
 @api_view(['POST'])
+##### ['데이브']쪽에서 사용하는 로직 #####
 def login_mobile_id(request):
     id = request.data.get('id')  # phone_number
     password = request.data.get('password')
@@ -195,9 +197,18 @@ def login_mobile_id(request):
         return Response({'message': 'id_password_required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        req_user_info = UserInfo.objects.get(Q(phone_number=id))
+        req_user_info = UserInfo.objects.filter(phone_number=id)
+
+        # 등록된 회원이 존재하지 않을 때 처리 -> 관리자가 시스템에 회원을 등록하지 않았을 때
+        if not req_user_info.exists():
+            return Response({'data': {'message': 'user_not_found', 'status': status.HTTP_404_NOT_FOUND}},
+                            status=status.HTTP_200_OK)
+        else:
+            req_user_info = req_user_info.first()
+
         if not check_password(password, req_user_info.password):
-            return Response({'message': 'user_not_found'}, status=status.HTTP_200_OK)
+            return Response({'message': 'user_not_found', 'status': status.HTTP_404_NOT_FOUND},
+                            status=status.HTTP_200_OK)
 
         # 마지막 로그인 시간 갱신
         req_user_info.last_login = dt.now()
@@ -1251,6 +1262,7 @@ def create_body_result(request) -> Response:
     },
 )
 @api_view(['GET'])
+###### 해당 코드는 ['Jerry']님 쪽에서 사용되는 로직 ######
 @permission_classes([permissions.IsAuthenticated])
 def mobile_body_sync(request):
     # 사용자 Id
