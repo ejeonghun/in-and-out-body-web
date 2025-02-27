@@ -32,10 +32,13 @@ fi
 
 # mail_fetch_thread.py를 백그라운드에서 실행하고 PID를 저장
 echo "Starting mail_fetch_thread.py..."
-nohup python mail_fetch_thread.py > /dev/null &  # 백그라운드 실행
+nohup python mail_fetch_thread.py >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
 MAIL_FETCH_PID=$!
 echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
 # Gunicorn 시작
 echo "Starting Gunicorn..."
-nohup gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application > logs/gunicorn.log 2>&1
+nohup gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
+
+# 스크립트 완료 메시지 출력 (GitHub Actions용)
+echo "restart_django.sh script completed successfully."
