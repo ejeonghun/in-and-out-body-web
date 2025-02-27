@@ -32,10 +32,10 @@ fi
 
 # mail_fetch_thread.py를 백그라운드에서 실행하고 PID를 저장
 echo "Starting mail_fetch_thread.py..."
-nohup python mail_fetch_thread.py &  # 백그라운드 실행
+nohup python mail_fetch_thread.py >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
 MAIL_FETCH_PID=$!
 echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
 # Gunicorn 시작
 echo "Starting Gunicorn... port: 44561"
-nohup gunicorn --bind 0.0.0.0:44561 mysite.wsgi:application > logs/gunicorn.log 2>&1
+nohup gunicorn --bind 0.0.0.0:44561 mysite.wsgi:application >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
