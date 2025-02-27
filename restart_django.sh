@@ -34,4 +34,4 @@ echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
 # Gunicorn 시작
 echo "Starting Gunicorn..."
-nohup gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application --daemon &
+nohup gunicorn --bind 0.0.0.0:44561 mysite.wsgi:application > logs/gunicorn.log 2>&1 < /dev/null &
