@@ -28,7 +28,7 @@ SECRETKEY = os.getenv('SECRET_KEY') # 시크릿
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIRONMENT == 'dev':
+if ENVIRONMENT == 'dev' or ENVIRONMENT == 'debug':
     DEBUG = True
 else:
     DEBUG = False
