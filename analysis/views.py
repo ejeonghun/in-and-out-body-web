@@ -1792,6 +1792,7 @@ def create_body_result(request):
     if serializer.is_valid():
         # 데이터 저장
         serializer.save()
+        print(serializer.data)
         # 저장된 데이터의 생성 시간으로 파일 이름 생성
         created_dt = dt.strptime(serializer.data['created_dt'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y%m%dT%H%M%S%f')
         image_front_bytes = request.data.get('image_front', None)
