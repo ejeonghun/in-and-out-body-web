@@ -65,10 +65,13 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd ~/project/in-and-out-body-web
             source ~/.zshrc
-            git pull origin main
-            conda activate django
-            pip install -r requirements.txt
-            python manage.py migrate
-            bash ./restart_django.sh
+            docker exec in-and-out-body-web_prod bash -c "
+              git pull origin main &&
+              pip install --upgrade pip &&
+              pip install -r requirements.txt &&
+              rm -rf analysis/migrations &&
+              python manage.py makemigrations analysis &&
+              python manage.py migrate &&
+              bash ./restart_django.sh
+              "
