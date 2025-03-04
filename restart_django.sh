@@ -31,8 +31,11 @@ if [ "$ENVIRONMENT" == "prod" ] || [ "$ENVIRONMENT" == "dev" ]; then
 fi
 
 # mail_fetch_thread.py를 백그라운드에서 실행하고 PID를 저장
-echo "Starting mail_fetch_thread.py..."
-nohup python mail_fetch_thread.py >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
+echo "Starting mail_fetch_thread.py with hourly restart..."
+nohup bash -c "while true; do
+    timeout 3600 python mail_fetch_thread.py
+    sleep 1
+done" >/dev/null 2>&1 &
 MAIL_FETCH_PID=$!
 echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
