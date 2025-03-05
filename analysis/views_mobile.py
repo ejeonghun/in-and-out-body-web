@@ -64,31 +64,75 @@ kst = pytz.timezone('Asia/Seoul')
                                                                     }
                                                                 ),
                                                         })),
-        400: 'Bad Request; mobile_uid is not provided in the request body',
-        401: 'Unauthorized; incorrect user or password',
+        400: openapi.Response(
+            description="Bad Request; 예시: mobile_uid_required",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        example='mobile_uid_required'
+                    ),
+                    'status': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        example=400
+                    )
+                }
+            )
+        ),
+        401: openapi.Response(
+            description="Unauthorized; 예시: incorrect user or password",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        example='incorrect user or password'
+                    ),
+                    'status': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        example=401
+                    )
+                }
+            )
+        ),
     }
 )
 @api_view(['POST'])
 def login_mobile(request):
     mobile_uid = request.data.get('mobile_uid')
     if not mobile_uid:
-        return Response({'message': 'mobile_uid_required'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'data': {'message': 'mobile_uid_required', 'status': status.HTTP_400_BAD_REQUEST}},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        auth_info = AuthInfo.objects.get(uid=mobile_uid)
+        auth_info = AuthInfo.objects.get(uid=mobile_uid)  # AuthInfo 테이블에서 mobile_uid로 검색
     except AuthInfo.DoesNotExist:
-        return Response({'message': 'user_not_found'}, status=status.HTTP_200_OK)
+        # AuthInfo를 찾을 수 없는 경우 처리 (인증번호 안옴)
+        return Response({'data': {'message': 'Not received', 'status': status.HTTP_404_NOT_FOUND}},
+                        status=status.HTTP_200_OK)
 
-    authorized_user_info, user_created = UserInfo.objects.get_or_create(
-        phone_number=auth_info.phone_number,
-        defaults=dict(
-            username=auth_info.phone_number,
-            password=make_password(os.environ['DEFAULT_PASSWORD']),
-        ))
+    # 기존 회원가입 or 로그인 로직
+    # authorized_user_info, user_created = UserInfo.objects.get_or_create(
+    #     phone_number=auth_info.phone_number,
+    #     defaults=dict(
+    #         username=auth_info.phone_number,
+    #         password=make_password(os.environ['DEFAULT_PASSWORD']),
+    #     ))
+
+    # 인증번호 발신자 전화번호로 DB 쿼리
+    check_user_info = UserInfo.objects.filter(phone_number=auth_info.phone_number)
+
+    if check_user_info.exists():  # 회원이 존재한다면
+        authorized_user_info = check_user_info.first()  # 쿼리셋 당김
+    else:  # 회원이 존재하지 않는다면
+        auth_info.delete()  # 인증테이블에서 인증번호 정보 삭제
+        return Response({'data': {'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}},
+                        status=status.HTTP_200_OK)
 
     if authorized_user_info.school is not None:
         authorized_user_info.user_type = 'S'
-    elif authorized_user_info.organization is not None:  # if -> elif로 수정
+    elif authorized_user_info.organization is not None:
         authorized_user_info.user_type = 'O'
     else:
         authorized_user_info.user_type = 'G'
@@ -107,6 +151,8 @@ def login_mobile(request):
             'access_token': access_token,
             'refresh_token': refresh_token,
         },
+        'message': 'success',
+        'status': status.HTTP_200_OK,
     }
 
     auth_info.delete()
@@ -989,8 +1035,12 @@ def delete_body_result(request):
     if not body_id:
         return Response({'data': {'message': 'body_id_required', 'status': 400}})
     current_result = BodyResult.objects.filter(user_id=user_id, id=body_id).first()
+
+    ### 모바일 생성 바디스캐너 결과의 경우 KeyPoint도 같이 삭제됨(Keypoint의 Cascade 옵션)
+
     if not current_result:
-        return Response({"message": "body_result_not_found"}, )
+        return Response({"message": "body_result_not_found", 'status': status.HTTP_404_NOT_FOUND}, )
+
     current_result.delete()
 
     # Serialize the BodyResult objects
