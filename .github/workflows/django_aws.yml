@@ -99,4 +99,5 @@ jobs:
               python manage.py makemigrations analysis &&
               python manage.py migrate &&
               bash ./restart_django.sh > logs/ci_cd.log
+              echo "Finished Deploying to Server"
               "
