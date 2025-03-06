@@ -1,0 +1,99 @@
+name: Django AWS CI
+
+# 운영  서버 CI/CD
+
+on:
+  push:
+    branches: ["main"]
+#  pull_request:
+#    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.12]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up environment variables
+        run: |
+          echo "POSTGRES_DB_NAME=${{ secrets.POSTGRES_DB_NAME }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+          echo "EMAIL_HOST=${{ secrets.EMAIL_HOST }}" >> .env
+          echo "EMAIL_USER=${{ secrets.EMAIL_USER }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+          echo "DEFAULT_PASSWORD=${{ secrets.DEFAULT_PASSWORD }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+          echo "AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}" >> .env
+          echo "SECRET_KEY=\"${{ secrets.SECRET_KEY }}\"" >> .env
+          echo "ENVIRONMENT"=prod >> .env
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          mkdir -p logs
+
+      - name: Install PostgreSQL Client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+
+      # 데이터베이스 백업 생성
+      - name: Backup Database and Upload to S3
+        run: |
+          timestamp=$(date +"%Y%m%d_%H%M%S")
+          backup_file="body_db_backup_${timestamp}.sql"
+          
+          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} pg_dump \
+            -h ${{ secrets.POSTGRES_HOST }} \
+            -U ${{ secrets.POSTGRES_USER }} \
+            -d ${{ secrets.POSTGRES_DB_NAME }} \
+            -F c -b -v -f $backup_file
+
+          aws s3 cp $backup_file s3://${{ secrets.AWS_STORAGE_BUCKET_NAME }}/db_backup/$backup_file \
+            --region ${{ secrets.AWS_S3_REGION_NAME }}
+
+          echo "Backup uploaded: $backup_file"
+
+      - name: DB migration
+        run: |
+          rm -rf analysis/migrations
+          python manage.py makemigrations analysis
+          python manage.py migrate
+
+      - name: Run Tests
+        run: |
+         python manage.py test --reverse --noinput
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            source ~/.zshrc
+            docker exec in-and-out-body-web_prod bash -c "
+              git pull origin main &&
+              pip install --upgrade pip &&
+              pip install -r requirements.txt &&
+              rm -rf analysis/migrations &&
+              python manage.py makemigrations analysis &&
+              python manage.py migrate &&
+              bash ./restart_django.sh > logs/ci_cd.log
+              "
