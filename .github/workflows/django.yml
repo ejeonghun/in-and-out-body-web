@@ -65,10 +65,10 @@ jobs:
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
+          host: ${{ secrets.DEV_SSH_HOST }}
+          username: ${{ secrets.DEV_SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.DEV_SSH_PORT }}
           script: |
             source ~/.zshrc
             docker exec in-and-out-body-web-dev2-container bash -c "

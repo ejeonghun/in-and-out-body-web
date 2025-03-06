@@ -129,13 +129,6 @@ def generate_presigned_url(file_keys, expiration=settings.AWS_PRESIGNED_EXPIRATI
 
 
 def parse_userinfo_kiosk(userinfo_obj):
-    def safe_int(value, default=-1):
-        try:
-            if value is None: # None 이면 -1
-                return -1
-            return int(value) 
-        except (ValueError, TypeError):
-            return default    # String이면 -2
         
     return {
         'user_id': userinfo_obj.id,
@@ -146,7 +139,7 @@ def parse_userinfo_kiosk(userinfo_obj):
         'school_id': userinfo_obj.school_id if userinfo_obj.school_id else -1,
         'school_name': userinfo_obj.school.school_name if userinfo_obj.school else 'N/A',
         'student_grade': userinfo_obj.student_grade if userinfo_obj.student_grade else -1,
-        'student_class': safe_int(userinfo_obj.student_class, -2),
+        'student_class': userinfo_obj.student_class if userinfo_obj.student_class else -1,
         'student_number': userinfo_obj.student_number if userinfo_obj.student_number else -1,
         'student_name': userinfo_obj.student_name if userinfo_obj.student_name else 'N/A',
         'phone_number': userinfo_obj.phone_number if userinfo_obj.phone_number else 'N/A',
@@ -160,16 +153,6 @@ def parse_userinfo_kiosk(userinfo_obj):
 
 
 def parse_userinfo_mobile(userinfo_obj):
-    def safe_int(value, default=-1):
-        try:
-            if value is None: # None 이면 -1
-                return -1
-            return int(value) 
-        except (ValueError, TypeError):
-            return default    # String이면 -2
-        
-        ### 만약 바디스캐너 어플리케이션이 업데이트 되면 safe_int를 제거하고 DB의 student_class를 바로 파싱해서 보내줘도 플러터 내부에서 알아서 처리함
-        ### 플러터에서는 Object? 로 값을 파싱을 하고 보여줄때는 .toString()을 사용하기에 Int, String 두 타입 혼용 가능 하도록 변경하였음
 
     return { 
         'user_id': userinfo_obj.id,
@@ -180,7 +163,6 @@ def parse_userinfo_mobile(userinfo_obj):
         'school_id': userinfo_obj.school_id if userinfo_obj.school_id else -1,
         'school_name': userinfo_obj.school.school_name if userinfo_obj.school else 'N/A',
         'student_grade': userinfo_obj.student_grade if userinfo_obj.student_grade else -1,
-        # 'student_class': safe_int(userinfo_obj.student_class, -1),
         'student_class': userinfo_obj.student_class if userinfo_obj.student_class else -1,
         'student_number': userinfo_obj.student_number if userinfo_obj.student_number else -1,
         'student_name': userinfo_obj.student_name if userinfo_obj.student_name else 'N/A',

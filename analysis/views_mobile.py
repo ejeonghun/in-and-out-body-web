@@ -29,68 +29,108 @@ kst = pytz.timezone('Asia/Seoul')
 
 @swagger_auto_schema(
     method='post',
-    operation_summary="모바일 로그인/회원가입(토큰 발급) - mobile_uid",
-    operation_description="Authenticate mobile device using mobile_uid",
+    operation_summary="모바일 로그인(토큰 발급) - mobile_uid",
+    operation_description="mobile_uid를 사용하여 모바일 기기 인증",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
             'mobile_uid': openapi.Schema(type=openapi.TYPE_STRING,
-                                         description='Unique identifier for the mobile device'),
+                                         description='SMS 인증번호'),
         },
         required=['mobile_uid'],
     ),
     responses={
-        200: openapi.Response('Success', openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                        properties={
-                                                            'data':
-                                                                openapi.Schema(
-                                                                    type=openapi.TYPE_OBJECT,
-                                                                    properties={
-                                                                        'user_info': openapi.Schema(
-                                                                            type=openapi.TYPE_OBJECT,
-                                                                            description='User information'),
-                                                                        'jwt_tokens': openapi.Schema(
-                                                                            type=openapi.TYPE_OBJECT,
-                                                                            properties={
-                                                                                'access_token': openapi.Schema(
-                                                                                    type=openapi.TYPE_STRING,
-                                                                                    description='Access token'),
-                                                                                'refresh_token': openapi.Schema(
-                                                                                    type=openapi.TYPE_STRING,
-                                                                                    description='Refresh token'),
-                                                                            }
-                                                                        ),
-                                                                    }
-                                                                ),
-                                                        })),
+        200: openapi.Response('Success', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'data': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'user_info': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            description='사용자 정보'),
+                        'jwt_tokens': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'access_token': openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    description='Access token'),
+                                'refresh_token': openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    description='Refresh token'),
+                            }
+                        ),
+                        'message': openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example='success'
+                        ),
+                        'status': openapi.Schema(
+                            type=openapi.TYPE_INTEGER,
+                            example=200
+                        )
+                    }
+                )
+            }
+        )),
         400: openapi.Response(
             description="Bad Request; 예시: mobile_uid_required",
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'message': openapi.Schema(
-                        type=openapi.TYPE_STRING,
-                        example='mobile_uid_required'
-                    ),
-                    'status': openapi.Schema(
-                        type=openapi.TYPE_INTEGER,
-                        example=400
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example='mobile_uid_required'
+                            ),
+                            'status': openapi.Schema(
+                                type=openapi.TYPE_INTEGER,
+                                example=400
+                            )
+                        }
                     )
                 }
             )
         ),
-        401: openapi.Response(
-            description="Unauthorized; 예시: incorrect user or password",
+        404: openapi.Response(
+            description="Not Found; 예시: Not received",
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'message': openapi.Schema(
-                        type=openapi.TYPE_STRING,
-                        example='incorrect user or password'
-                    ),
-                    'status': openapi.Schema(
-                        type=openapi.TYPE_INTEGER,
-                        example=401
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example='Not received'
+                            ),
+                            'status': openapi.Schema(
+                                type=openapi.TYPE_INTEGER,
+                                example=404
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+        403: openapi.Response(
+            description="Forbidden; 예시: unregistered user",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example='unregistered user'
+                            ),
+                            'status': openapi.Schema(
+                                type=openapi.TYPE_INTEGER,
+                                example=403
+                            )
+                        }
                     )
                 }
             )
@@ -1032,8 +1072,12 @@ def delete_body_result(request):
     if not body_id:
         return Response({'data': {'message': 'body_id_required', 'status': 400}})
     current_result = BodyResult.objects.filter(user_id=user_id, id=body_id).first()
+
+    ### 모바일 생성 바디스캐너 결과의 경우 KeyPoint도 같이 삭제됨(Keypoint의 Cascade 옵션)
+
     if not current_result:
-        return Response({"message": "body_result_not_found"}, )
+        return Response({"message": "body_result_not_found", 'status': status.HTTP_404_NOT_FOUND}, )
+
     current_result.delete()
 
     # Serialize the BodyResult objects
