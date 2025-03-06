@@ -48,27 +48,6 @@ jobs:
           pip install -r requirements.txt
           mkdir -p logs
 
-      - name: Install PostgreSQL Client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-
-      # 데이터베이스 백업 생성
-      - name: Backup Database and Upload to S3
-        run: |
-          timestamp=$(date +"%Y%m%d_%H%M%S")
-          backup_file="body_db_backup_${timestamp}.sql"
-          
-          PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} pg_dump \
-            -h ${{ secrets.POSTGRES_HOST }} \
-            -U ${{ secrets.POSTGRES_USER }} \
-            -d ${{ secrets.POSTGRES_DB_NAME }} \
-            -F c -b -v -f $backup_file
-
-          aws s3 cp $backup_file s3://${{ secrets.AWS_STORAGE_BUCKET_NAME }}/db_backup/$backup_file \
-            --region ${{ secrets.AWS_S3_REGION_NAME }}
-
-          echo "Backup uploaded: $backup_file"
-
       - name: DB migration
         run: |
           rm -rf analysis/migrations
@@ -78,6 +57,30 @@ jobs:
       - name: Run Tests
         run: |
          python manage.py test --reverse --noinput
+
+      # 데이터베이스 백업 생성
+      - name: Backup Database and Upload to S3
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            timestamp=$(date +"%Y%m%d_%H%M%S")
+            backup_file="body_db_backup_${timestamp}.sql"
+            
+            pg_dump \
+              -h localhost \
+              -U ${{ secrets.POSTGRES_USER }} \
+              -d ${{ secrets.POSTGRES_DB_NAME }} \
+              -p 5432 \
+              -F c -b -v -f $backup_file
+  
+            aws s3 cp $backup_file s3://${{ secrets.AWS_STORAGE_BUCKET_NAME }}/db_backup/$backup_file \
+              --region ${{ secrets.AWS_S3_REGION_NAME }}
+  
+            echo "Backup uploaded: $backup_file"        
 
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v0.1.7

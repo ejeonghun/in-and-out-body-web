@@ -282,7 +282,8 @@ ALLOWED_HOSTS = [
     'aicu-office.iptime.org',
     'localhost',
     'test-body.aicu.life',
-    '10.0.2.2' # Android Emulator
+    '10.0.2.2', # Android Emulator
+    'host.docker.internal' # HOST OS addr
 ]
 
 
