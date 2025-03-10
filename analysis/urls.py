@@ -84,7 +84,7 @@ urlpatterns = [
     path('', include('django_prometheus.urls')),
 
     ## 모바일 전용 API (모바일 이외의 용도로 사용하지 말것)
-    path('api/mobile/login-mobile/',            views_mobile.login_mobile,       name='mobile-auth-request_auth'),       # 휴대폰 인증 요청 (이메일 인증 필요)
+    path('api/mobile/login-mobile/',            views_mobile.login_mobile,       name='mobile-auth-request_auth'),       # 휴대폰 인증 요청 ( 로그인 )
     path('api/mobile/login-mobile-qr/',         views_mobile.login_mobile_qr,    name='login_mobile_qr'),                # 휴대폰에서 QR 인증 요청,
     path('api/mobile/login-mobile-uuid/',       views_mobile.login_mobile_uuid,  name='mobile-auth-request_auth_uuid'),  # 휴대폰 인증 요청 (UUID를 사용하여 인증-테스트 목적)
     path('api/mobile/user/get_user/',           views_mobile.get_user,           name='mobile-user-get_user'),           # 사용자 정보 가져오기
@@ -100,6 +100,7 @@ urlpatterns = [
     path('api/mobile/body/sync_body_result/',   views_mobile.mobile_body_sync,   name='mobile-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
     # path('api/mobile/gait/sync_gait_result/',   views_mobile.mobile_gait_sync,   name='mobile-gait-mobile_gait_sync'),   # 보행 결과 동기화(gaitresults의 ID값만 반환함)
     path('api/mobile/login-mobile-id/',         views_mobile.login_mobile_id,    name='mobile-auth-request_auth_id'),     # ID 로그인 요청 (ID를 사용하여 로그인)
+    path('api/mobile/login-mobile-register/',  views_mobile.login_mobile_register, name='mobile-auth-request_auth_register'), # 휴대폰 인증 요청 (회원가입 / 로그인)
 
     # 디버그 환경이 아닐 때도 Swagger에 접근이 가능하나 단, 허용된 IP만 접근 가능
     re_path(r'^docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name="schema-json"),
