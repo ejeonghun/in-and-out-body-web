@@ -30,7 +30,7 @@ kst = pytz.timezone('Asia/Seoul')
 @swagger_auto_schema(
     method='post',
     operation_summary="모바일 로그인(토큰 발급) - mobile_uid",
-    operation_description="mobile_uid를 사용하여 모바일 기기 인증",
+    operation_description="mobile_uid를 사용하여 모바일 기기 인증(로그인 만) - Dave님 쪽 Logic ",
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -138,7 +138,7 @@ kst = pytz.timezone('Asia/Seoul')
     }
 )
 @api_view(['POST'])
-def login_mobile(request):
+def login_mobile(request): # 데이브님 쪽 로직 --> 로그인만 가능 (회원가입 불가)
     mobile_uid = request.data.get('mobile_uid')
     if not mobile_uid:
         return Response({'data': {'message': 'mobile_uid_required', 'status': status.HTTP_400_BAD_REQUEST}}, status=status.HTTP_400_BAD_REQUEST)
@@ -196,6 +196,174 @@ def login_mobile(request):
     auth_info.delete()
 
     return Response({'data': {k: v for k, v in data_obj.items() if v is not None}}, status=status.HTTP_200_OK)
+
+
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="모바일 로그인(토큰 발급) - mobile_uid",
+    operation_description="mobile_uid를 사용하여 모바일 기기 인증 후 로그인 또는 회원가입 진행 - Jerry 님 Logic",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'mobile_uid': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='SMS 인증번호'
+            ),
+        },
+        required=['mobile_uid'],
+    ),
+    responses={
+        200: openapi.Response(
+            'Success',
+            openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'user_info': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                description='사용자 정보',
+                                nullable=True
+                            ),
+                            'jwt_tokens': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'access_token': openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        description='Access token'
+                                    ),
+                                    'refresh_token': openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        description='Refresh token'
+                                    ),
+                                }
+                            ),
+                            'message': openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example='success'
+                            ),
+                            'status': openapi.Schema(
+                                type=openapi.TYPE_INTEGER,
+                                example=200
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+        400: openapi.Response(
+            description="Bad Request; mobile_uid가 제공되지 않음",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example='mobile_uid_required'
+                            ),
+                            'status': openapi.Schema(
+                                type=openapi.TYPE_INTEGER,
+                                example=400
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+        404: openapi.Response(
+            description="Not Found; mobile_uid로 인증 정보 없음",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        example='user_not_found'
+                    ),
+                    'status': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        example=200
+                    )
+                }
+            )
+        ),
+        403: openapi.Response(
+            description="Forbidden; 등록되지 않은 사용자",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example='unregistered user'
+                            ),
+                            'status': openapi.Schema(
+                                type=openapi.TYPE_INTEGER,
+                                example=403
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+    }
+)
+@api_view(['POST'])
+def login_mobile_register(request): # 제리님 쪽 로직 --> 로그인 / 회원가입 가능 
+    mobile_uid = request.data.get('mobile_uid')
+    if not mobile_uid:
+        return Response({'data': {'message': 'mobile_uid_required', 'status': status.HTTP_400_BAD_REQUEST}}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        auth_info = AuthInfo.objects.get(uid=mobile_uid) # AuthInfo 테이블에서 mobile_uid로 검색
+    except AuthInfo.DoesNotExist:
+        # AuthInfo를 찾을 수 없는 경우 처리 (인증번호 안옴)
+            return Response({'message': 'user_not_found'}, status=status.HTTP_200_OK)
+
+
+    # 회원가입 or 로그인 로직
+    authorized_user_info, user_created = UserInfo.objects.get_or_create(
+        phone_number=auth_info.phone_number,
+        defaults=dict(
+            username=auth_info.phone_number,
+            password=make_password(os.environ['DEFAULT_PASSWORD']),
+        ))
+
+    if authorized_user_info.school is not None:
+        authorized_user_info.user_type = 'S'
+    elif authorized_user_info.organization is not None:
+        authorized_user_info.user_type = 'O'
+    else:
+        authorized_user_info.user_type = 'G'
+
+    # authenticate 사용안함 -> last_login 직접 갱신
+    authorized_user_info.last_login = dt.now()
+    authorized_user_info.save()
+
+    token = TokenObtainPairSerializer.get_token(authorized_user_info)
+    refresh_token = str(token)
+    access_token = str(token.access_token)
+
+    data_obj = {
+        'user_info': parse_userinfo_mobile(authorized_user_info),
+        'jwt_tokens': {
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+        },
+        'message': 'success',
+        'status': status.HTTP_200_OK,
+    }
+
+    auth_info.delete()
+
+    return Response({'data': {k: v for k, v in data_obj.items() if v is not None}}, status=status.HTTP_200_OK)
+
 
 
 @swagger_auto_schema(
