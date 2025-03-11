@@ -7,7 +7,7 @@ from analysis.custom.custom_token import CustomTokenObtainPairView, CustomTokenR
 from analysis.custom.permissions import IsAllowedIP
 from django.views.static import serve
 
-from . import views, views_mobile
+from . import views, views_mobile, views_aos, views_kiosk
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -63,17 +63,17 @@ urlpatterns = [
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 
     # for custom authentication process
-    path('api/login-kiosk/', views.login_kiosk, name='login_kiosk'),
-    path('api/login-kiosk-id/', views.login_kiosk_id, name='login_kiosk_id'),
-    path('api/get-userinfo-session/', views.get_userinfo_session, name='get_userinfo_session'),
-    path('api/end-session/', views.end_session, name='end_session'),
-    path('api/checksession/', views.check_session, name='check_session'),
+    path('api/login-kiosk/', views_kiosk.login_kiosk, name='login_kiosk'),
+    path('api/login-kiosk-id/', views_kiosk.login_kiosk_id, name='login_kiosk_id'),
+    path('api/get-userinfo-session/', views_kiosk.get_userinfo_session, name='get_userinfo_session'),
+    path('api/end-session/', views_kiosk.end_session, name='end_session'),
+    path('api/checksession/', views_kiosk.check_session, name='check_session'),
 
-    path('api/analysis/gait/create_result/', views.create_gait_result, name='create_gait_result'),
-    path('api/analysis/gait/get_result/', views.get_gait_result, name='get_gait_result'),
-    path('api/analysis/body/create_result/', views.create_body_result, name='create_body_result'),
-    path('api/analysis/body/get_result/', views.get_body_result, name='get_body_result'),
-    path('api/analysis/get_info/', views.get_info, name='get_info'),
+    path('api/analysis/gait/create_result/', views_kiosk.create_gait_result, name='create_gait_result'),
+    path('api/analysis/gait/get_result/', views_kiosk.get_gait_result, name='get_gait_result'),
+    path('api/analysis/body/create_result/', views_kiosk.create_body_result, name='create_body_result'),
+    path('api/analysis/body/get_result/', views_kiosk.get_body_result, name='get_body_result'),
+    path('api/analysis/get_info/', views_kiosk.get_info, name='get_info'),
 
     # 기관 정보 조회 api
     path('api/search-organization/', views.search_organization, name='search_organization'),
@@ -96,11 +96,14 @@ urlpatterns = [
     path('api/mobile/body/get_body_result/',    views_mobile.get_body_result,    name='mobile-body-get_body_result'),    # 체형 결과 가져오기
     path('api/mobile/gait/delete_gait_result/', views_mobile.delete_gait_result, name='mobile-body-delete_gait_result'), # 보행 결과 삭제
     path('api/mobile/body/delete_body_result/', views_mobile.delete_body_result, name='mobile-body-delete_body_result'), # 체형 결과 삭제
-    path('api/mobile/body/create_body_result/', views_mobile.create_body_result, name='mobile-body-create_body_result'), # 체형 결과 생성
-    path('api/mobile/body/sync_body_result/',   views_mobile.mobile_body_sync,   name='mobile-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
     # path('api/mobile/gait/sync_gait_result/',   views_mobile.mobile_gait_sync,   name='mobile-gait-mobile_gait_sync'),   # 보행 결과 동기화(gaitresults의 ID값만 반환함)
     path('api/mobile/login-mobile-id/',         views_mobile.login_mobile_id,    name='mobile-auth-request_auth_id'),     # ID 로그인 요청 (ID를 사용하여 로그인)
-    path('api/mobile/login-mobile-register/',  views_mobile.login_mobile_register, name='mobile-auth-request_auth_register'), # 휴대폰 인증 요청 (회원가입 / 로그인)
+    
+
+    ## AOS(체형분석앱) 전용 API
+    path('api/mobile/login-mobile-register/',  views_aos.login_mobile_register, name='mobile-auth-request_auth_register'), # 휴대폰 인증 요청 (회원가입 / 로그인)
+    path('api/mobile/body/create_body_result/', views_aos.create_body_result, name='mobile-body-create_body_result'), # 체형 결과 생성
+    path('api/mobile/body/sync_body_result/',   views_aos.mobile_body_sync,   name='mobile-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
 
     # 디버그 환경이 아닐 때도 Swagger에 접근이 가능하나 단, 허용된 IP만 접근 가능
     re_path(r'^docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name="schema-json"),
