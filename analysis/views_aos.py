@@ -15,6 +15,8 @@ from analysis.helpers import parse_userinfo_mobile, upload_image_to_s3, verify_i
 from concurrent.futures import ThreadPoolExecutor  # 병렬 처리
 from django.db import transaction  # DB 트랜잭션
 
+from datetime import datetime as dt
+
 # / *********************************************************************** /
 
 # / ***********************  (체형분석앱) 로직   ****************************** /
