@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from .models import AuthInfo, UserInfo
-from . import views, views_mobile
+from . import views, views_mobile, views_kiosk, views_aos
 
 base_url = 'http://localhost:8000/'
 mobile_uid = 'qwer'
@@ -68,19 +68,19 @@ class UrlsTestCase(SimpleTestCase):
 
     def test_login_kiosk_url(self):
         url = reverse('login_kiosk')
-        self.assertEqual(resolve(url).func, views.login_kiosk)
+        self.assertEqual(resolve(url).func, views_kiosk.login_kiosk)
 
     def test_login_kiosk_id_url(self):
         url = reverse('login_kiosk_id')
-        self.assertEqual(resolve(url).func, views.login_kiosk_id)
+        self.assertEqual(resolve(url).func, views_kiosk.login_kiosk_id)
 
     def test_get_userinfo_session_url(self):
         url = reverse('get_userinfo_session')
-        self.assertEqual(resolve(url).func, views.get_userinfo_session)
+        self.assertEqual(resolve(url).func, views_kiosk.get_userinfo_session)
 
     def test_end_session_url(self):
         url = reverse('end_session')
-        self.assertEqual(resolve(url).func, views.end_session)
+        self.assertEqual(resolve(url).func, views_kiosk.end_session)
 
 
 class GaitResultTests(TestCase):
