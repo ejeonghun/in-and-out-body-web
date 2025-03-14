@@ -1,27 +1,42 @@
+# analysis/views.py
+
+import json
 import os
-
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
-from django.contrib.auth.hashers import make_password
-from rest_framework.response import Response
-from analysis.models import AuthInfo, UserInfo, BodyResult, SchoolInfo
-from analysis.serializers import BodyResultSerializer, KeypointSerializer
+import re
+import uuid
+import pandas as pd
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password, check_password
 import requests
-from analysis.custom.metrics import calculate_active_users
-from rest_framework import permissions, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from analysis.helpers import parse_userinfo_mobile, upload_image_to_s3, verify_image
-from concurrent.futures import ThreadPoolExecutor  # 병렬 처리
-from django.db import transaction  # DB 트랜잭션
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.contrib.auth.views import PasswordChangeView
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from datetime import datetime, timedelta
+from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
+    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo
+from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
+from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
 
+from django.db.models import Min, Max, Exists, OuterRef, Count
+from django.db.models.functions import ExtractYear
+from django.db import transaction
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from datetime import datetime as dt
+from collections import defaultdict
+from django.http import JsonResponse, HttpResponse
+from urllib.parse import quote
+from django.db.models import Q
 
 # / *********************************************************************** /
 
 # / ***********************  (체형분석앱) 로직   ****************************** /
 
-import datetime as dt
 from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_
 
 import pytz
