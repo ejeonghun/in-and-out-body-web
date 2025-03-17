@@ -41,7 +41,8 @@ echo "mail_fetch_thread.py PID: $MAIL_FETCH_PID"
 
 # Gunicorn 시작
 echo "Starting Gunicorn..."
-nohup gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
+# nohup gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application >/dev/null 2>&1 &  # 백그라운드 실행 및 출력 닫기
+nohup gunicorn --bind 0.0.0.0:8000 mysite.wsgi:application --access-logfile /app/logs/gunicorn-access.log --error-logfile /app/logs/gunicorn-error.log &
 
 # 스크립트 완료 메시지 출력 (GitHub Actions용)
 echo "restart_django.sh script completed successfully."

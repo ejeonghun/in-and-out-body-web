@@ -293,23 +293,23 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s, %(message)s',  # 시간과 메시지 포맷
-            'datefmt': '%Y-%m-%d %H:%M:%S',  # 날짜 형식
+            'format': '%(asctime)s, %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
     },
     'handlers': {
         'file': {
-            'level': 'WARNING',
+            'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': os.path.join(f'{BASE_DIR}/logs', 'bad_access.log'),  # BASE_DIR에 bad_access.log 파일 경로
-            'formatter': 'verbose',  # 포맷터 적용
+            'formatter': 'verbose',
         },
     },
     'loggers': {
-        'django': {
+        'django.request': {
             'handlers': ['file'],
-            'level': 'WARNING',
-            'propagate': True,
+            'level': 'ERROR',
+            'propagate': False,
         },
     },
 }
