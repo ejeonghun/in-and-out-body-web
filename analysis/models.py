@@ -124,7 +124,25 @@ class UserInfo(ExportModelOperationsMixin('user_info'), AbstractUser):
             return self.user_display_name
         else:
             return f'{self.phone_number}'
+        
 
+
+class FamilyUserInfo(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(UserInfo, on_delete=models.CASCADE, related_name='parent_user')    # 부모 사용자 ID
+    family_member_name = models.CharField(max_length=100)                                       # 가족 구성원 이름                                   
+    relationship = models.CharField(max_length=50)                                              # 관계
+    gender = models.CharField(max_length=1, null=True, blank=True)                              
+    profile_image = models.BooleanField(default=False)                                          # 프로필 이미지 여부
+    created_dt = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user'])
+        ]
+
+
+    
 
 class UserHist(models.Model):
     user = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
@@ -292,6 +310,7 @@ class BodyResult(ExportModelOperationsMixin('body_result'), models.Model):
     image_side_url = models.CharField(max_length=500, null=True)  # 수정
     mobile_yn = models.CharField(max_length=1, default='n')  # 체형 결과에서 키오스크와 모바일 구분하기 위함
     created_dt = models.DateTimeField(auto_now_add=True)
+    family_user = models.ForeignKey(FamilyUserInfo, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"BodyResult for {self.user.username} at {self.created_dt}"

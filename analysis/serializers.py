@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
-from analysis.models import UserInfo, UserHist, SessionInfo, SchoolInfo, GaitResult, BodyResult, CodeInfo, Keypoint
+from analysis.models import UserInfo, UserHist, SessionInfo, SchoolInfo, GaitResult, BodyResult, CodeInfo, Keypoint, FamilyUserInfo
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
+from datetime import datetime as dt
+from analysis.helpers import generate_presigned_url
 
 class CodeInfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +50,8 @@ class GaitResultSerializer(serializers.ModelSerializer):
 
 
 class BodyResultSerializer(serializers.ModelSerializer):
-    
+    family_user_id = serializers.IntegerField(required=False)  # 가족 ID 관련
+
     class Meta:
         model = BodyResult
         fields = '__all__'
@@ -70,3 +73,24 @@ class KeypointSerializer(serializers.ModelSerializer):
         model = Keypoint
         fields = ['body_result', 'pose_type', 'x', 'y', 'z', 'visibility', 'presence']
 
+
+class FamilyUserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FamilyUserInfo
+        fields = '__all__'
+        read_only_fields = ['id', 'created_dt']
+
+
+class FamilyUserResponseSerializer(serializers.ModelSerializer):
+    profile_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FamilyUserInfo
+        fields = ['id', 'family_member_name', 'gender', 'relationship', 'profile_image_url']
+
+    def get_profile_image_url(self, obj):
+        if obj.profile_image:
+            print(type(obj.created_dt))
+            created_dt = obj.created_dt.strftime('%Y%m%dT%H%M%S%f')
+            return generate_presigned_url(file_keys=['profile/profile', created_dt])
+        return None  # 이미지가 없을 경우 None 반환

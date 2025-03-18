@@ -1,30 +1,140 @@
 import os
-
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from concurrent.futures import ThreadPoolExecutor
 from django.contrib.auth.hashers import make_password
-from rest_framework.response import Response
-from analysis.models import AuthInfo, UserInfo, BodyResult, SchoolInfo
-from analysis.serializers import BodyResultSerializer, KeypointSerializer
+from django.db import transaction
+
 import requests
-from analysis.custom.metrics import calculate_active_users
-from rest_framework import permissions, status
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from analysis.helpers import parse_userinfo_mobile, upload_image_to_s3, verify_image
-from concurrent.futures import ThreadPoolExecutor  # 병렬 처리
-from django.db import transaction  # DB 트랜잭션
+from django.core.paginator import Paginator  # 페이지네이션
+
+from drf_yasg.utils import swagger_auto_schema
+
+from analysis.custom.metrics import calculate_active_users
+from analysis.helpers import (
+     upload_image_to_s3, verify_image, parse_userinfo_mobile, generate_presigned_url
+)
+from analysis.models import (
+    BodyResult, SchoolInfo, UserInfo, AuthInfo, FamilyUserInfo
+)
+from analysis.serializers import (
+    BodyResultSerializer, KeypointSerializer, FamilyUserInfoSerializer, FamilyUserResponseSerializer
+)
+
+from datetime import datetime as dt
+
+
+
+
 
 # / *********************************************************************** /
 
 # / ***********************  (체형분석앱) 로직   ****************************** /
 
-import datetime as dt
-from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_
+from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_, create_family_user_, select_family_user_, get_body_result_aos_, delete_family_user_
 
 import pytz
 
 kst = pytz.timezone('Asia/Seoul')
+
+
+
+# family_user_id 입력이 없으면 전체 아니면 0 이면 해당 ID만 나머지는 user_id와 family_user_id 기준으로 필터링
+
+@swagger_auto_schema(**get_body_result_aos_)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_body_result_aos(request):
+    user_id = request.user.id
+    page_size = request.GET.get("page_size", 10)  # 한 페이지에 보여줄 개수 - 가변적으로 설정 가능
+    page = request.GET.get("page", 1)  # 만약 GET 요청에 아무런 정보가 없으면 default 1페이지로 설정
+    mobile = request.GET.get("mobile", "n")  # mobile_yn 필터링
+    family_user_id = request.GET.get("family_user_id", None)  # family_yn 필터링
+
+    # 기본 쿼리셋 정의
+    query_filters = {'user_id': user_id}
+
+    # mobile 파라미터가 있는 경우에만 필터 추가
+    if mobile is not None:
+        query_filters['mobile_yn'] = mobile
+    if family_user_id is not None:
+        if family_user_id == '0':
+            # family_user_id가 0일 경우 모든 결과 조회
+            pass
+        else:
+            query_filters['family_user_id'] = family_user_id
+    else:
+        # family_user_id가 입력되지 않았을 경우 NULL인 것 제외
+        query_filters['family_user_id__isnull'] = True
+
+    body_results = BodyResult.objects.filter(**query_filters).order_by('-created_dt')
+
+    body_id = request.query_params.get('id', None)
+    if body_id is not None:
+        current_result = BodyResult.objects.filter(user_id=user_id, id=body_id).first()
+        if not current_result:
+            return Response({"message": "body_result_not_found"})
+
+        body_results = BodyResult.objects.filter(
+            user_id=user_id,
+            created_dt__lte=current_result.created_dt
+        ).order_by('-created_dt')[:7]
+    else:
+        if not body_results.exists():
+            return Response({"message": "body_result_not_found"}, status=status.HTTP_200_OK)
+
+    paginator = Paginator(body_results, page_size)  # 페이지네이터 생성
+
+    try:
+        currnet_page = paginator.page(page)  # 해당 페이지의 객체를 n개씩 가져옴
+    except:
+        return Response({"message": "page number out of range"}, status=status.HTTP_400_BAD_REQUEST)
+
+    minimal_body_results = currnet_page.object_list  # 현재 페이지의 객체의 정보를 대입
+
+    # 수정된 body_results를 리스트로 저장
+    """ body_result -> 페이지네이션 처리 후 페이지 사이즈만큼의 쿼리셋 -> 
+        minimal_body_results -> S3 이미지 객체를 S3 미리 서명된 URL로 변환 ->  
+        updated_body_results """
+    updated_body_results = []
+
+    # body_result 객체를 받아서 이미지 URL을 생성하고, 상태를 확인
+    def process_body_result(body_result):
+        # Presigned URL 생성 및 상태 확인.
+        created_dt = body_result.created_dt.strftime('%Y%m%dT%H%M%S%f')
+        body_result.image_front_url = generate_presigned_url(file_keys=['front', created_dt])
+        body_result.image_side_url = generate_presigned_url(file_keys=['side', created_dt])
+
+        # URL 검증
+        if requests.get(body_result.image_front_url).status_code in [400, 404]:
+            body_result.image_front_url = None
+        if requests.get(body_result.image_side_url).status_code in [400, 404]:
+            body_result.image_side_url = None
+
+        return body_result
+
+    # 병렬 처리로 minimal_body_results 순회
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        updated_body_results = list(executor.map(process_body_result, minimal_body_results))
+    # 모든 객체를 한 번에 업데이트
+    BodyResult.objects.bulk_update(updated_body_results, ['image_front_url', 'image_side_url'])
+
+    # Serialize the BodyResult objects
+    serializer = BodyResultSerializer(minimal_body_results, many=True)
+
+    # 페이지네이션 INFO 및 정보 가공
+    response_data = {
+        'data': serializer.data,  # 현재 페이지의 아이템 정보
+        'total_pages': paginator.num_pages,  # 전체 페이지 수
+        'current_page': int(page),  # 현재 페이지
+        'total_items': paginator.count,  # 전체 아이템 개수
+        'items': minimal_body_results.count(),  # 현재 페이지의 아이템 개수
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
 
 
 @swagger_auto_schema(**login_mobile_register_)
@@ -112,20 +222,33 @@ def create_body_result(request) -> Response:
         # 데이터 추출
         front_data = request.data.get('front_data', {})
         side_data = request.data.get('side_data', {})
+        family_user_id = request.data.get('family_user_id', None)
 
-        # results 데이터 병합
-        body_data = {
-            **front_data.get('results', {}),
-            **side_data.get('results', {}),
-            'mobile_yn': 'y',
-            'user': user_id
-        }
 
         # 사용자 정보 확인
         try:
             user_info = UserInfo.objects.get(id=user_id)
         except UserInfo.DoesNotExist:  # 유저가 존재하지 않는 경우
             return Response({'data': {'message': 'user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            if family_user_id is not None:
+                FamilyUserInfo.objects.get(id=family_user_id, user_id=user_id)
+        except FamilyUserInfo.DoesNotExist:
+            return Response({'data': {'message': 'family_user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
+        
+
+
+
+        # results 데이터 병합
+        body_data = {
+            **front_data.get('results', {}),
+            **side_data.get('results', {}),
+            'mobile_yn': 'y',
+            'user': user_id,
+            'family_user': family_user_id if family_user_id is not None else None
+        }
+
 
         # null_school 처리
         null_school, created = SchoolInfo.objects.get_or_create(
@@ -149,6 +272,7 @@ def create_body_result(request) -> Response:
         serializer = BodyResultSerializer(data=body_data)
         if not serializer.is_valid():
             return Response({'data': {'message': serializer.errors}}, status=status.HTTP_400_BAD_REQUEST)
+
 
         with transaction.atomic():
             body_result = serializer.save()  # BodyResult 저장
@@ -234,3 +358,145 @@ def create_body_result(request) -> Response:
         return Response({'data': {'message': str(ve)}}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# / *********************************************************************** /
+# / ********************  (체형분석앱) - 가족 관련 로직   *********************** /
+# / *********************************************************************** /
+@swagger_auto_schema(**create_family_user_)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_family_user(request) -> Response:
+    user_id = request.user.id
+    if not user_id:                   # 사용자 ID가 없는 경우
+        return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.user.user_type != 'G': # 일반 유저만 가족 유저 생성 가능
+        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not request.data.get('family_member_name') or not request.data.get('gender') or not request.data.get('relationship'):
+        return Response({'data': {'message': 'required_fields_missing'}}, status=status.HTTP_400_BAD_REQUEST)
+
+    req_user_families = FamilyUserInfo.objects.filter(user_id=user_id)
+
+    if len(req_user_families) >= 3: # 가족 유저는 최대 3명까지 생성 가능
+        return Response({'data': {'message': 'family_user_limit_exceeded'}}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    try:
+        # 가족 사용자 데이터 준비
+        family_data = {
+            'user': user_id,
+            'family_member_name': request.data.get('family_member_name'),
+            'gender': request.data.get('gender'),
+            'relationship': request.data.get('relationship'),
+            'profile_image': request.data.get('profile_image') is not None  # 이미지가 있는지 확인 (True/False)
+        }
+
+
+        
+
+        #시리얼라이저 생성 및 유효성 검사
+        # FamilyUserInfoSerializer가 필요합니다 - 아래는 예시 코드입니다
+        serializer = FamilyUserInfoSerializer(data=family_data)
+        if not serializer.is_valid():
+            return Response({'data': {'message': serializer.errors}}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        # 트랜잭션으로 DB 작업 처리
+        with transaction.atomic():
+            # 가족 사용자 저장
+            family_user = serializer.save()
+
+            # 프로필 이미지 처리
+            profile_image_url = None  # 기본값 설정
+            if request.data.get('profile_image'):
+                try:
+                    profile_image = verify_image(request.data.get('profile_image'))
+                    
+                    created_dt = dt.strptime(serializer.data['created_dt'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y%m%dT%H%M%S%f')
+                    
+                    # S3에 이미지 업로드
+                    upload_image_to_s3(profile_image, ['profile', created_dt])
+
+                    profile_image_url = generate_presigned_url(file_keys=['profile/profile', created_dt])
+                except ValueError as ve:
+                    return Response({'data': {'message': f"Invalid image format: {str(ve)}"}}, 
+                                   status=status.HTTP_400_BAD_REQUEST)
+
+        
+        # 성공 응답 반환
+        return Response(
+            {'data': {'message': 'family_user_created', 'family_data' :{'id': family_user.id, 'profile_image_url': profile_image_url}}},
+            status=status.HTTP_201_CREATED
+        )
+    
+    except Exception as e:
+        return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
+@swagger_auto_schema(**select_family_user_)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_family_user(request):
+    user_id = request.user.id
+    if not user_id:
+        return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 조회 가능
+        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    family_user_id = request.GET.get('family_user_id', None)
+
+    query_filters = {'user_id': user_id}
+    if family_user_id is not None:
+        query_filters['id'] = family_user_id
+
+    try:
+        family_users = FamilyUserInfo.objects.filter(**query_filters).order_by('-created_dt')
+        family_user_responses = FamilyUserResponseSerializer(family_users, many=True).data
+
+        return Response(
+            {'data': {'message': 'success', 'family_users': family_user_responses, 'items': len(family_user_responses)}},
+            status=status.HTTP_200_OK
+        )
+
+    except UserInfo.DoesNotExist:
+        return Response({'data': {'message': 'user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
+
+    except Exception as e:
+        return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@swagger_auto_schema(**delete_family_user_)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_family_user(request):
+    user_id = request.user.id
+    if not user_id:
+        return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 삭제 가능
+        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+    
+    family_user_id = request.query_params.get('family_user_id', None)
+
+    if family_user_id is None:
+        return Response({'data': {'message': 'family_user_id_required'}}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        family_user = FamilyUserInfo.objects.get(id=family_user_id, user_id=user_id)
+        family_user.delete()
+
+        return Response({'data': {'message': 'family_user_deleted'}}, status=status.HTTP_200_OK)
+    
+    except FamilyUserInfo.DoesNotExist:
+        return Response({'data': {'message': 'family_user_not_found'}}, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+

@@ -98,7 +98,7 @@ def upload_image_to_s3(image_data, file_keys):
         s3.upload_fileobj(
             Fileobj=buffer,
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=file_name,
+            Key='profile/'+ file_name if file_keys[0] not in ['front', 'side'] else file_name,
             ExtraArgs={'ContentType': 'image/png'},  # ContentType 설정
             Config=transfer_config
         )

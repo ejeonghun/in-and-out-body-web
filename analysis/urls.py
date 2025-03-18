@@ -101,9 +101,16 @@ urlpatterns = [
     
 
     ## AOS(체형분석앱) 전용 API
-    path('api/mobile/login-mobile-register/',  views_aos.login_mobile_register, name='mobile-auth-request_auth_register'), # 휴대폰 인증 요청 (회원가입 / 로그인)
-    path('api/mobile/body/create_body_result/', views_aos.create_body_result, name='mobile-body-create_body_result'), # 체형 결과 생성
-    path('api/mobile/body/sync_body_result/',   views_aos.mobile_body_sync,   name='mobile-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
+    path('api/v2/mobile/login-mobile-register/',  views_aos.login_mobile_register, name='mobile-aos-auth-request_auth_register'), # 휴대폰 인증 요청 (회원가입 / 로그인)
+    path('api/v2/mobile/body/create_body_result/', views_aos.create_body_result, name='mobile-aos-body-create_body_result'), # 체형 결과 생성
+    path('api/v2/mobile/body/sync_body_result/',   views_aos.mobile_body_sync,   name='mobile-aos-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
+    path('api/v2/mobile/body/get_body_result/',     views_aos.get_body_result_aos, name="mobile-aos-body-get_body_result"), # 체형 결과 가져오기
+
+    # AOS(체형분석앱) 가족 사용자 API
+    path('api/v2/mobile/family/create_family_user/', views_aos.create_family_user, name='mobile-aos-family-create_family_user'), # 가족 사용자 생성
+    path('api/v2/mobile/family/get_family_user/',    views_aos.get_family_user,    name='mobile-aos-family-get_family_user'),    # 가족 사용자 정보 가져오기
+    path('api/v2/mobile/family/delete_family_user/', views_aos.delete_family_user, name='mobile-aos-family-delete_family_user'), # 가족 사용자 삭제
+
 
     # 디버그 환경이 아닐 때도 Swagger에 접근이 가능하나 단, 허용된 IP만 접근 가능
     re_path(r'^docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name="schema-json"),
