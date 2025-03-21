@@ -1412,3 +1412,108 @@ def policy(request):
     return render(request, 'policy.html')
 
 
+######################################################################
+################## 게이트(보행) 관련 뷰 페이지 로직 ##########################
+
+@login_required
+def get_user_gait_data(request, user_id):
+    request_user = request.user
+    user = UserInfo.objects.get(id=user_id)
+    gait_results = GaitResult.objects.filter(user_id=user_id).order_by('-created_dt')
+
+    results_data = []
+    for result in gait_results:
+        results_data.append({
+            'created_dt': result.created_dt.strftime('%Y-%m-%d'),
+            'velocity': result.velocity,
+            'cadence': result.cadence,
+            'stride_len_l': result.stride_len_l,
+            'stride_len_r': result.stride_len_r,
+            'cycle_time_l': result.cycle_time_l,
+            'cycle_time_r': result.cycle_time_r,
+            'swing_perc_l': result.swing_perc_l,
+            'swing_perc_r': result.swing_perc_r,
+            'stance_perc_l': result.stance_perc_l,
+            'stance_perc_r': result.stance_perc_r
+        })
+
+    return JsonResponse({
+        'user_name': user.student_name,
+        'results': results_data
+    })
+
+
+@login_required
+def gait_report(request):
+    user = request.user  # 현재 로그인한 유저
+    error_message = None
+
+    user_results = []  # 사용자 결과
+
+    selected_group = request.session.get('selected_group', None)  # 세션에서 그룹 정보 가져오기
+    groups = []
+
+    if request.method == 'POST':
+        selected_group = request.POST.get('group')
+
+        if not selected_group:
+            return redirect('gait_report')
+        else:
+            request.session['selected_group'] = selected_group
+            return redirect('gait_report')
+
+    if user.user_type == 'O':
+        groups = UserInfo.objects.filter(
+            organization__organization_name=user.organization.organization_name).values_list('department',
+                                                                                             named=True).distinct().order_by(
+            'department')
+        groups = [g.department for g in groups if ((g.department is not None))]  # 해당 기관의 그룹 목록
+
+        if selected_group:
+            users = UserInfo.objects.filter(organization__organization_name=user.organization.organization_name,
+                                            department=selected_group).order_by('student_name')
+
+            for user in users:
+                gate_result_queryset = GaitResult.objects.filter(user_id=user.id)
+                analysis_valid = len(gate_result_queryset) > 0
+
+                user_results.append({
+                    'user': UserInfoSerializer(user).data,
+                    'analysis_valid': analysis_valid,
+                    'gait_results': GaitResultSerializer(gate_result_queryset, many=True).data,  # 수정된 부분
+                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime('%Y-%m-%d %H:%M:%S') if
+                    gate_result_queryset[0] else None
+                })
+
+        # 분석 진행률 계산
+    total_users = len(user_results)
+    valid_count = sum(1 for result in user_results if result['analysis_valid'])
+
+    if total_users > 0:
+        progress_percentage = (valid_count / total_users) * 100
+    else:
+        progress_percentage = 0
+
+    if user.user_type == '' or len(user_results) == 0:  # 초기 렌더링
+        return render(request, 'gait_report.html', {
+            'groups': groups,
+            'user_results': [],
+            'selected_group': None,
+            'error_message': error_message,
+            'is_registered': len(groups) > 0,
+            'progress_percentage': 0,
+            'total_users': 0,  # 총 사용자 수
+            'valid_count': valid_count
+        })
+
+    return render(request, 'gait_report.html', {
+        'groups': groups,
+        'user_results': user_results,
+        'user_results_json': json.dumps(user_results, ensure_ascii=False, cls=DjangoJSONEncoder),
+        'selected_group': selected_group,
+        'error_message': error_message,
+        'is_registered': len(groups) > 0,
+        'total_users': total_users,  # 총 사용자 수
+        'valid_count': valid_count,
+        'progress_percentage': progress_percentage
+    })
