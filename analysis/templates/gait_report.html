@@ -1,0 +1,762 @@
+{% extends 'base.html' %}
+
+{% block title %}Gait Analysis Report{% endblock %}
+
+{% block content %}
+
+<style>
+    /* 모달 기본 스타일 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+    }
+    
+    /* 모달 컨텐츠 스타일 */
+    .modal-content {
+      background-color: #fefefe;
+      margin: 2% auto;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 1200px;
+      height: 90vh;
+      overflow-y: auto;
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    
+    /* 모달 애니메이션 */
+    @keyframes modalFadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    
+    /* 닫기 버튼 */
+    .close {
+      color: #888;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      transition: color 0.2s;
+    }
+    
+    .close:hover {
+      color: #333;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    
+    /* 사용자 정보 영역 */
+    .user-info {
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    #modalUserName {
+      font-size: 24px;
+      color: #333;
+      margin-top: 0;
+    }
+    
+    /* 날짜 선택 필터 */
+    .date-filter {
+      margin-bottom: 20px;
+    }
+    
+    .date-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .date-button {
+      padding: 8px 15px;
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .date-button:hover {
+      background-color: #e9e9e9;
+    }
+    
+    .date-button.selected {
+      background-color: #4a90e2;
+      color: white;
+      border-color: #4a90e2;
+    }
+    
+    /* 차트 그리드 레이아웃 */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    
+    /* 차트 래퍼 */
+    .chart-wrapper {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      height: 300px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .chart-wrapper:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chart-wrapper h5 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 16px;
+      color: #555;
+      text-align: center;
+    }
+    
+    /* 반응형 디자인 */
+    @media (max-width: 1024px) {
+      .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .modal-content {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+      }
+      
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+      
+</style>
+<h2>보행 분석 결과를 확인해주세요</h2>
+<div class="form-div">
+    <form id="dataForm" method="post">
+        {% csrf_token %}
+        <div style="display: inline-block;">
+            <label for="group">그룹 선택</label>
+            <select name="group" id="group">
+                <option value="">-- 그룹 선택 --</option>
+                {% for group in groups %}
+                    <option value="{{ group }}" {% if group == selected_group %}selected{% endif %}>{{ group }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="button">조회</button>
+    </form>
+</div>
+
+<!-- hr -->
+<hr style="border-width:1px 0 0 0; border-color:#fff;"/>
+
+<!-- Spinner Container: Initially Hidden -->
+<div id="spinnerContainer" class="spinner-container" style="display: none;">
+    <div class="spinner"></div>
+    <p>결과를 불러오는 중입니다...</p>
+</div>
+
+<!-- 에러 메시지 표시 -->
+{% if error_message %}
+    <p style="color:red;">{{ error_message }}</p>
+{% endif %}
+
+{% if request.user.user_type == 'O' %}
+    {% if is_registered == False or groups|length == 0 %}
+        <p style="color:red;">등록된 사용자 정보가 없습니다. 사용자 정보 등록을 먼저 진행해주세요 😅</p>
+    {% endif %}
+{% else %}
+    <p style="color:red;">등록된 사용자 정보가 없습니다. 사용자 정보 등록을 먼저 진행해주세요 😅</p>
+{% endif %}
+
+{% if user_results %}
+<div style="display: flex; align-items: center; gap: 10px; margin-top:10px;" id="report-header">
+    <h3 class="group_title" style="margin: 0;">{{ selected_group }}의 보행 분석 현황</h3>
+</div>
+
+<div class="table-container">
+    <!-- 분석 현황 카드 추가 -->
+    <div class="analysis-status-cards">
+        <div class="status-card">
+            <div class="card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="card-content">
+                <h4>전체 인원</h4>
+                <p class="card-value">{{ total_users }}명</p>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <div class="card-icon">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="card-content">
+                <h4>검사 완료</h4>
+                <p class="card-value">{{ valid_count }}명</p>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <div class="card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="card-content">
+                <h4>검사율</h4>
+                <p class="card-value">{{ progress_percentage|floatformat:1 }}%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사용자 목록 테이블 -->
+    <h4>사용자 목록</h4>
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th>부서명</th>
+                <th>이름</th>
+                <th>검사 횟수</th>
+                <th>최근 검사일</th>
+                <th>상세 보기</th>
+            </tr>
+        </thead>
+        <tbody id="userResultsTableBody">
+            {% for result in user_results %}
+            <tr data-id="{{ result.user.id }}" data-valid="{{ result.analysis_valid }}">
+                <td>{{ result.user.department }}</td>
+                <td>{{ result.user.student_name }}</td>
+                <td>
+                    {% if result.analysis_valid %}
+                        {{ result.gait_results|length }}회
+                    {% else %}
+                        0회
+                    {% endif %}
+                </td>
+                <td>
+                    {% if result.gait_results|length > 0 %}
+                        {{ result.first_gait_dt }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if result.analysis_valid %}
+                        <button class="view-details-btn" data-userid="{{ result.user.id }}">상세 보기</button>
+                    {% else %}
+                        <span class="no-data">데이터 없음</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if user_results|length > 10 %}
+    <div class="pagination-container">
+        <button class="pagination-button" id="prevPage">이전</button>
+        <button class="pagination-button" id="nextPage">다음</button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 사용자 상세 정보를 위한 모달 추가 -->
+<div id="userDetailModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3 id="modalUserName"></h3>
+      
+      <!-- 날짜 선택 필터 -->
+      <div class="date-filter">
+        <h4>검사 날짜 선택</h4>
+        <div id="modalDateButtons" class="date-buttons">
+          <!-- 날짜 버튼들이 JavaScript로 여기에 추가됩니다 -->
+        </div>
+      </div>
+      
+      <!-- 파라미터 차트 -->
+      <div class="parameter-charts">
+        <h4>보행 파라미터 분석</h4>
+        
+        <!-- 차트 컨테이너 - 가로로 3개씩 배치 -->
+        <div class="charts-grid">
+          <div class="chart-wrapper">
+            <h5>보행 속도 (cm/sec)</h5>
+            <canvas id="modalVelocityChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>분속수 (steps/min)</h5>
+            <canvas id="modalCadenceChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>종합 점수</h5>
+            <canvas id="modalScoreChart"></canvas>
+          </div>
+          
+          <!-- 왼쪽/오른쪽 보폭 길이 -->
+          <div class="chart-wrapper">
+            <h5>보폭 길이 - 좌 (cm)</h5>
+            <canvas id="modalStrideLenLChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>보폭 길이 - 우 (cm)</h5>
+            <canvas id="modalStrideLenRChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>보행 주기 (sec)</h5>
+            <canvas id="modalCycleChart"></canvas>
+          </div>
+          
+          <!-- 스윙/스탠스 비율 -->
+          <div class="chart-wrapper">
+            <h5>스윙 시간 비율 - 좌 (%)</h5>
+            <canvas id="modalSwingLChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>스윙 시간 비율 - 우 (%)</h5>
+            <canvas id="modalSwingRChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>접지 시간 비율 - 좌 (%)</h5>
+            <canvas id="modalStanceLChart"></canvas>
+          </div>
+          
+          <!-- 추가 파라미터 -->
+          <div class="chart-wrapper">
+            <h5>접지 시간 비율 - 우 (%)</h5>
+            <canvas id="modalStanceRChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>양발 접지 시간 비율 - 좌 (%)</h5>
+            <canvas id="modalDSuppLChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h5>양발 접지 시간 비율 - 우 (%)</h5>
+            <canvas id="modalDSuppRChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let form = document.getElementById("dataForm");
+        const spinnerContainer = document.getElementById("spinnerContainer");
+        let userResultsTableBody = document.getElementById('userResultsTableBody');
+        const modal = document.getElementById('userDetailModal');
+        const closeBtn = document.querySelector('.close');
+
+        // 페이지네이션 관련 변수
+        let rows = [];
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let totalPages = 0;
+        let allRows = [];
+        
+        // 차트 관련 변수
+        let charts = {};
+        let currentUserId = null;
+        let currentUserData = null;
+        let selectedDate = null;
+        let gaitNormalRanges = null; // API에서 가져온 정상 범위 데이터
+        
+        // 모달 닫기 버튼 이벤트
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = "none";
+        });
+        
+        // 모달 외부 클릭 시 닫기
+        window.addEventListener('click', function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        });
+        
+        // 테이블과 페이지네이션 초기화 함수
+        function initializeTableAndPagination() {
+            const userResultsTableBody = document.getElementById('userResultsTableBody');
+            if (!userResultsTableBody) return;
+            
+            allRows = Array.from(userResultsTableBody.querySelectorAll('tr'));
+            if (allRows.length === 0) return;
+            
+            rows = [...allRows];
+            totalPages = Math.ceil(rows.length / rowsPerPage);
+            currentPage = 1;
+            displayTable(currentPage);
+        }
+
+        function displayTable(page) {
+            if (!rows || rows.length === 0) return;
+            
+            const startIndex = (page - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, rows.length);
+            
+            rows.forEach((row, index) => {
+                row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+            });
+            
+            if (rows.length > 10) {
+                updatePaginationButtons();
+            }
+        }
+
+        function updatePaginationButtons() {
+            const prevButton = document.getElementById("prevPage");
+            const nextButton = document.getElementById("nextPage");
+            
+            if (!prevButton || !nextButton) return;
+            
+            prevButton.style.display = currentPage > 1 ? '' : 'none';
+            nextButton.style.display = currentPage < totalPages ? '' : 'none';
+        }
+
+          // 페이지네이션 버튼 이벤트 리스너
+    const prevButton = document.getElementById("prevPage");
+    const nextButton = document.getElementById("nextPage");
+    
+    if (prevButton && nextButton) {
+        prevButton.addEventListener("click", function() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayTable(currentPage);
+            }
+        });
+        
+        nextButton.addEventListener("click", function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayTable(currentPage);
+            }
+        });
+    }
+        
+        // 정상 범위 데이터 가져오기
+        function fetchGaitNormalRanges() {
+            fetch('/api/analysis/get_info/?name=gait')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 200) {
+                        gaitNormalRanges = data.data;
+                        console.log('정상 범위 데이터 로드 완료:', gaitNormalRanges);
+                    }
+                })
+                .catch(error => {
+                    console.error('정상 범위 데이터 로드 실패:', error);
+                });
+        }
+        
+        // 페이지 로드 시 정상 범위 데이터 가져오기
+        fetchGaitNormalRanges();
+        
+        // 상세 보기 버튼 이벤트 리스너 추가
+        function addDetailButtonListeners() {
+            const detailButtons = document.querySelectorAll('.view-details-btn');
+            
+            detailButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-userid');
+                    openUserDetailModal(userId);
+                });
+            });
+        }
+        
+        // 사용자 상세 정보 모달 열기
+        function openUserDetailModal(userId) {
+            spinnerContainer.style.display = 'flex';
+            
+            // user_results에서 해당 사용자의 데이터 찾기
+            const userResult = window.userResultsData.find(result => result.user.id == userId);
+            if (!userResult || !userResult.gait_results || userResult.gait_results.length === 0) {
+                alert('보행 분석 결과가 없습니다.');
+                spinnerContainer.style.display = 'none';
+                return;
+            }
+            
+            const userName = userResult.user.student_name;
+            document.getElementById('modalUserName').textContent = userName + '님의 보행 분석 결과';
+            
+            currentUserData = {
+                user_name: userName,
+                results: userResult.gait_results
+            };
+            
+            // 날짜 버튼 생성
+            createModalDateButtons(currentUserData.results);
+            
+            // 가장 최근 날짜 선택
+            if (currentUserData.results.length > 0) {
+                selectModalDate(currentUserData.results[0].created_dt);
+            }
+            
+            // 모달 표시
+            modal.style.display = "block";
+            spinnerContainer.style.display = 'none';
+        }
+
+        // 모달 내 날짜 버튼 생성
+        function createModalDateButtons(results) {
+            const dateButtonsContainer = document.getElementById('modalDateButtons');
+            dateButtonsContainer.innerHTML = '';
+            
+            results.forEach(result => {
+                const date = new Date(result.created_dt);
+                const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                
+                const button = document.createElement('button');
+                button.textContent = formattedDate;
+                button.classList.add('date-button');
+                button.addEventListener('click', () => selectModalDate(result.created_dt));
+                dateButtonsContainer.appendChild(button);
+            });
+        }
+        
+        // 모달 내 날짜 선택
+        function selectModalDate(date) {
+            selectedDate = date;
+            updateModalCharts();
+            highlightModalSelectedDate();
+        }
+        
+        // 선택된 날짜 강조 표시
+        function highlightModalSelectedDate() {
+            const dateButtons = document.querySelectorAll('#modalDateButtons .date-button');
+            dateButtons.forEach(button => {
+                const buttonDate = button.textContent;
+                const selectedDateObj = new Date(selectedDate);
+                const formattedSelectedDate = `${selectedDateObj.getFullYear()}-${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${String(selectedDateObj.getDate()).padStart(2, '0')}`;
+                
+                if (buttonDate === formattedSelectedDate) {
+                    button.classList.add('selected');
+                } else {
+                    button.classList.remove('selected');
+                }
+            });
+        }
+        
+   function updateModalCharts() {
+    const selectedResult = currentUserData.results.find(result => 
+        new Date(result.created_dt).toISOString() === new Date(selectedDate).toISOString()
+    );
+    
+    if (!selectedResult) return;
+    
+    // 각 파라미터별 차트 업데이트
+    updateModalChart('modalVelocityChart', '보행 속도', selectedResult.velocity, 'velocity');
+    updateModalChart('modalCadenceChart', '분속수', selectedResult.cadence, 'cadence');
+    updateModalChart('modalScoreChart', '종합 점수', selectedResult.score, 'score');
+    
+    updateModalChart('modalStrideLenLChart', '보폭 길이(좌)', selectedResult.stride_len_l, 'stride_len_l');
+    updateModalChart('modalStrideLenRChart', '보폭 길이(우)', selectedResult.stride_len_r, 'stride_len_r');
+    
+    // 보행 주기는 왼쪽/오른쪽 평균으로 표시
+    const avgCycleTime = (selectedResult.cycle_time_l + selectedResult.cycle_time_r) / 2;
+    updateModalChart('modalCycleChart', '보행 주기', avgCycleTime, 'cycle_time');
+    
+    updateModalChart('modalSwingLChart', '스윙 비율(좌)', selectedResult.swing_perc_l, 'swing_perc_l');
+    updateModalChart('modalSwingRChart', '스윙 비율(우)', selectedResult.swing_perc_r, 'swing_perc_r');
+    
+    updateModalChart('modalStanceLChart', '스탠스 비율(좌)', selectedResult.stance_perc_l, 'stance_perc_l');
+    updateModalChart('modalStanceRChart', '스탠스 비율(우)', selectedResult.stance_perc_r, 'stance_perc_r');
+    
+    updateModalChart('modalDSuppLChart', '이중 지지 비율(좌)', selectedResult.d_supp_perc_l, 'd_supp_perc_l');
+    updateModalChart('modalDSuppRChart', '이중 지지 비율(우)', selectedResult.d_supp_perc_r, 'd_supp_perc_r');
+}
+        
+// 단일 모달 차트 업데이트 (라인 차트로 변경)
+function updateModalChart(chartId, label, value, codeId) {
+    if (charts[chartId]) {
+        charts[chartId].destroy(); // 이전 차트 파괴
+    }
+    
+    const ctx = document.getElementById(chartId).getContext('2d');
+    const normalRange = getNormalRangeFromAPI(codeId); // 정상 범위 데이터 가져오기
+    
+    // 해당 사용자의 모든 날짜별 데이터 가져오기
+    const allResults = currentUserData.results;
+    
+    // 날짜와 값 배열 생성
+    const dates = allResults.map(result => {
+        const date = new Date(result.created_dt);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    });
+    
+    // 해당 파라미터의 값 추출 (codeId에 따라 다른 필드 사용)
+    let values;
+    switch(codeId) {
+        case 'velocity':
+            values = allResults.map(result => result.velocity);
+            break;
+        case 'cadence':
+            values = allResults.map(result => result.cadence);
+            break;
+        case 'score':
+            values = allResults.map(result => result.score);
+            break;
+        case 'stride_len_l':
+            values = allResults.map(result => result.stride_len_l);
+            break;
+        case 'stride_len_r':
+            values = allResults.map(result => result.stride_len_r);
+            break;
+        case 'cycle_time':
+            values = allResults.map(result => (result.cycle_time_l + result.cycle_time_r) / 2);
+            break;
+        case 'swing_perc_l':
+            values = allResults.map(result => result.swing_perc_l);
+            break;
+        case 'swing_perc_r':
+            values = allResults.map(result => result.swing_perc_r);
+            break;
+        case 'stance_perc_l':
+            values = allResults.map(result => result.stance_perc_l);
+            break;
+        case 'stance_perc_r':
+            values = allResults.map(result => result.stance_perc_r);
+            break;
+        case 'd_supp_perc_l':
+            values = allResults.map(result => result.d_supp_perc_l);
+            break;
+        case 'd_supp_perc_r':
+            values = allResults.map(result => result.d_supp_perc_r);
+            break;
+        default:
+            values = allResults.map(result => 0);
+    }
+    
+    // 데이터 포인트 색상 설정 (정상 범위 내외에 따라)
+    const pointBackgroundColors = values.map(val => {
+        if (normalRange) {
+            if (val >= normalRange.normal_range_min && val <= normalRange.normal_range_max) {
+                return 'rgba(75, 192, 192, 1)'; // 정상 - 초록색
+            } else if (val >= normalRange.caution_range_min && val <= normalRange.caution_range_max) {
+                return 'rgba(255, 193, 7, 1)'; // 주의 - 노란색
+            } else {
+                return 'rgba(220, 53, 69, 1)'; // 위험 - 빨간색
+            }
+        }
+        return 'rgba(75, 192, 192, 1)';
+    });
+    
+    charts[chartId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: label,
+                data: values,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                pointBackgroundColor: pointBackgroundColors,
+                pointBorderColor: pointBackgroundColors,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    suggestedMin: normalRange ? normalRange.value_range_min * 0.9 : Math.min(...values) * 0.9,
+                    suggestedMax: normalRange ? normalRange.value_range_max * 1.1 : Math.max(...values) * 1.1
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            let status = '정상';
+                            
+                            if (normalRange) {
+                                if (value < normalRange.normal_range_min || value > normalRange.normal_range_max) {
+                                    if (value >= normalRange.caution_range_min && value <= normalRange.caution_range_max) {
+                                        status = '주의';
+                                    } else {
+                                        status = '위험';
+                                    }
+                                }
+                            }
+                            
+                            return `${label}: ${value} (${status})`;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: normalRange ? {
+                        normalRangeBox: {
+                            type: 'box',
+                            yMin: normalRange.normal_range_min,
+                            yMax: normalRange.normal_range_max,
+                            backgroundColor: 'rgba(0, 255, 0, 0.05)',
+                            borderColor: 'rgba(0, 255, 0, 0.3)',
+                            borderWidth: 1
+                        },
+                        cautionRangeBox: {
+                            type: 'box',
+                            yMin: normalRange.caution_range_min,
+                            yMax: normalRange.caution_range_max,
+                            backgroundColor: 'rgba(255, 0, 0, 0.05)',
+                            borderColor: 'rgba(255, 0, 0, 0.3)',
+                            borderWidth: 1
+                        }
+                    } : {}
+                }
+            }
+        }
+    });
+}
+
+        
+        // API에서 가져온 정상 범위 데이터 사용
+        function getNormalRangeFromAPI(codeId) {
+            if (!gaitNormalRanges || !gaitNormalRanges[codeId]) {
+                return null;
+            }
+            return gaitNormalRanges[codeId];
+        }
+        
+        // 초기 테이블 설정 및 이벤트 리스너 추가
+        initializeTableAndPagination();
+        addDetailButtonListeners();
+        
+        // 서버에서 받은 user_results 데이터를 전역 변수로 저장
+        window.userResultsData = {{ user_results_json|safe }};
+
+        console.log(userResultsData);
+    });
+    
+
+</script>
+{% endblock %}

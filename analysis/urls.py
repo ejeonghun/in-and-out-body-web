@@ -44,6 +44,10 @@ urlpatterns = [
     path('report/protected/', views.report_detail_protected, name='report_detail_protected'),
     path('report/<int:id>/', views.report_detail, name='report_detail'),
     path('report_download/', views.report_download, name='report_download'),
+
+    path('gait-report/', views.gait_report, name='gait_report'),
+    path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
+
     path('no-result/', views.no_result, name='no_result'),
     path('policy/', views.policy, name='policy'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
