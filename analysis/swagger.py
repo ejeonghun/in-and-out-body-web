@@ -857,6 +857,8 @@ get_body_result_ = dict(
                                 "mobile_yn": openapi.Schema(type=openapi.TYPE_STRING, description="y: mobile, n: kiosk",
                                                             default="n"),
                                 "created_dt": openapi.Schema(type=openapi.TYPE_STRING, format="date-time"),
+                                "height": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "weight": openapi.Schema(type=openapi.TYPE_NUMBER),
                                 "user": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "school": openapi.Schema(type=openapi.TYPE_INTEGER),
                             }
@@ -1134,6 +1136,9 @@ mobile_create_body_result_ = dict(
             'image_front': openapi.Schema(type=openapi.TYPE_STRING),
             'image_side': openapi.Schema(type=openapi.TYPE_STRING),
             'family_user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 ID', nullable=True),
+            "created_dt": openapi.Schema(type=openapi.TYPE_STRING, format="date-time"),
+            "height": openapi.Schema(type=openapi.TYPE_NUMBER),
+            "weight": openapi.Schema(type=openapi.TYPE_NUMBER),
         },
         required=['front_data', 'side_data', 'image_front', 'image_side']
     ),
@@ -1462,6 +1467,8 @@ get_body_result_aos_ = dict(
                                 "mobile_yn": openapi.Schema(type=openapi.TYPE_STRING, description="y: mobile, n: kiosk",
                                                             default="n"),
                                 "created_dt": openapi.Schema(type=openapi.TYPE_STRING, format="date-time"),
+                                "height": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "weight": openapi.Schema(type=openapi.TYPE_NUMBER),
                                 "user": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "school": openapi.Schema(type=openapi.TYPE_INTEGER),
                             }

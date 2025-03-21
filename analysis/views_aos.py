@@ -317,8 +317,8 @@ def create_body_result(request) -> Response:
         side_data = request.data.get('side_data', {})
         family_user_id = request.data.get('family_user_id', None)
         req_created_dt = request.data.get('created_dt', None) # 클라이언트 생성(요청) 시간  | 앱 - 서버 간 동기화 작업을 위해서는 동일한 Timestamp를 사용할 필요성이 있음. - Jerry
-        height = request.data.get('height', 160.0)
-        weight = request.data.get('weight', 70.0)
+        height = request.data.get('height', None)
+        weight = request.data.get('weight', None)
 
         # 사용자 정보 확인
         try:
@@ -350,8 +350,8 @@ def create_body_result(request) -> Response:
             'mobile_yn': 'y',
             'family_user': family_user_id if family_user_id is not None else None,
             'created_dt': created_dt,
-            'height': height,
-            'weight': weight
+            'height': height if height else None,
+            'weight': weight if weight else None
         }
         
         # null_school 처리
