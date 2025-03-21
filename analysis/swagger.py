@@ -877,94 +877,6 @@ get_body_result_ = dict(
 
 
 
-############################################################################################################
-# 사용위치 : views_mobile.py 
-# 적용범위 : Flutter, AOS
-############################################################################################################
-get_body_result_id_ = dict(
-    method='get',
-    operation_summary="체형 결과 단건 조회",
-    operation_description="""Get body result by ID
-    - mobile only
-    - header: Bearer token required
-    - returns front and side data with keypoints
-    """,
-    responses={
-        200: openapi.Response(
-            description='Success',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'front_data': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'results': openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    'shoulder_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'hip_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'face_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'scoliosis_shoulder_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'scoliosis_hip_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'leg_length_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'left_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'right_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                }
-                            ),
-                            'keypoints': openapi.Schema(
-                                type=openapi.TYPE_ARRAY,
-                                items=openapi.Schema(
-                                    type=openapi.TYPE_OBJECT,
-                                    properties={
-                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    }
-                                )
-                            )
-                        }
-                    ),
-                    'side_data': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'results': openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    'forward_head_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'left_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'right_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                }
-                            ),
-                            'keypoints': openapi.Schema(
-                                type=openapi.TYPE_ARRAY,
-                                items=openapi.Schema(
-                                    type=openapi.TYPE_OBJECT,
-                                    properties={
-                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    }
-                                )
-                            )
-                        }
-                    ),
-                    'image_front': openapi.Schema(type=openapi.TYPE_STRING),
-                    'image_side': openapi.Schema(type=openapi.TYPE_STRING),
-                }
-            )
-        ),
-        400: 'Bad Request; body_id_required',
-        401: 'Unauthorized',
-        404: 'Not Found; body_result_not_found',
-        500: 'Internal Server Error',
-    },
-    tags=['mobile']
-)
-
 
 
 ############################################################################################################
@@ -1302,7 +1214,7 @@ create_family_user_ = {
             ),
             'gender': openapi.Schema(
                 type=openapi.TYPE_STRING,
-                description='성별 (예: male, female)',
+                description='성별 (예: M, F)',
             ),
             'relationship': openapi.Schema(
                 type=openapi.TYPE_STRING,
@@ -1310,7 +1222,7 @@ create_family_user_ = {
             ),
             'profile_image': openapi.Schema(
                 type=openapi.TYPE_STRING,
-                description='가족 구성원의 프로필 이미지 URL',
+                description='가족 구성원의 프로필 이미지 (Base64)',
             ),
         },
         required=['family_member_name', 'gender', 'relationship'],  # 필수 필드
@@ -1568,6 +1480,95 @@ get_body_result_aos_ = dict(
     tags=['체형분석앱']
 )
 
+
+
+############################################################################################################
+# 사용위치 : views_mobile.py 
+# 적용범위 : Flutter, AOS
+############################################################################################################
+get_body_result_aos_id_ = dict(
+    method='get',
+    operation_summary="체형 결과 단건 조회",
+    operation_description="""Get body result by ID
+    - mobile only
+    - header: Bearer token required
+    - returns front and side data with keypoints
+    """,
+    responses={
+        200: openapi.Response(
+            description='Success',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'front_data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'results': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'shoulder_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'hip_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'face_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'scoliosis_shoulder_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'scoliosis_hip_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'leg_length_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'left_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'right_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                }
+                            ),
+                            'keypoints': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    'side_data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'results': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'forward_head_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'left_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'right_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                }
+                            ),
+                            'keypoints': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    'image_front': openapi.Schema(type=openapi.TYPE_STRING),
+                    'image_side': openapi.Schema(type=openapi.TYPE_STRING),
+                }
+            )
+        ),
+        400: 'Bad Request; body_id_required',
+        401: 'Unauthorized',
+        404: 'Not Found; body_result_not_found',
+        500: 'Internal Server Error',
+    },
+    tags=['체형분석앱']
+)
 
 ############################################################################################################
 # 사용위치 : views_aos.py

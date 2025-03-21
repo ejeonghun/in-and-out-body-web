@@ -55,7 +55,7 @@ class BodyResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = BodyResult
         fields = '__all__'
-        read_only_fields = ['id', 'created_dt']
+        read_only_fields = ['id']
 
 
 class GaitResponseSerializer(serializers.Serializer):

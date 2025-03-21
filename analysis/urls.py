@@ -91,8 +91,6 @@ urlpatterns = [
     path('api/mobile/user/delete_user/',        views_mobile.delete_user,        name='mobile-user-delete_user'),        # 사용자
     path('api/mobile/code/get_code/',           views_mobile.get_code,           name='mobile-code-get_code'),           # 코드 정보 가져오기
     path('api/mobile/gait/get_gait_result/',    views_mobile.get_gait_result,    name='mobile-gait-get_gait_result'),    # 보행 결과 가져오기
-    path('api/mobile/body/get_body_result/<int:id>/',
-                                                views_mobile.get_body_result_id, name='mobile-body-get_body_result'),    # 체형 결과 가져오기
     path('api/mobile/body/get_body_result/',    views_mobile.get_body_result,    name='mobile-body-get_body_result'),    # 체형 결과 가져오기
     path('api/mobile/gait/delete_gait_result/', views_mobile.delete_gait_result, name='mobile-body-delete_gait_result'), # 보행 결과 삭제
     path('api/mobile/body/delete_body_result/', views_mobile.delete_body_result, name='mobile-body-delete_body_result'), # 체형 결과 삭제
@@ -105,6 +103,8 @@ urlpatterns = [
     path('api/v2/mobile/body/create_body_result/', views_aos.create_body_result, name='mobile-aos-body-create_body_result'), # 체형 결과 생성
     path('api/v2/mobile/body/sync_body_result/',   views_aos.mobile_body_sync,   name='mobile-aos-body-mobile_body_sync'),   # 체형 결과 동기화(bodyresults의 ID값만 반환함)
     path('api/v2/mobile/body/get_body_result/',     views_aos.get_body_result_aos, name="mobile-aos-body-get_body_result"), # 체형 결과 가져오기
+    path('api/v2/mobile/body/get_body_result/<int:id>/',
+                                                views_aos.get_body_result_aos_id, name='mobile-aos-body-get_body_result'),    # 체형 결과 가져오기
 
     # AOS(체형분석앱) 가족 사용자 API
     path('api/v2/mobile/family/create_family_user/', views_aos.create_family_user, name='mobile-aos-family-create_family_user'), # 가족 사용자 생성

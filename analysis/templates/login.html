@@ -13,7 +13,9 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-2RNGQ9YFFS"></script>
     <script>
         if (window.location.hostname !== 'body.aicu.life') {
-            window.location.href = 'https://body.aicu.life';
+            if (window.location.hostname !== 'localhost' or window.location.hostname !== 'test-body.aicu.life') {
+                window.location.href = 'https://body.aicu.life';
+            }
         }
 
 

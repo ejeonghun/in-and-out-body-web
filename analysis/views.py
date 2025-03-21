@@ -1408,5 +1408,3 @@ def generate_report(request, id, report_id=None):
 
 def policy(request):
     return render(request, 'policy.html')
-
-

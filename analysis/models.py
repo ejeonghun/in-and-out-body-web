@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
 from django_prometheus.models import ExportModelOperationsMixin
 from analysis.custom import metrics
+from django.utils import timezone
 
 
 class CodeInfo(models.Model):
@@ -309,7 +310,10 @@ class BodyResult(ExportModelOperationsMixin('body_result'), models.Model):
     image_front_url = models.CharField(max_length=500, null=True)  # 수정
     image_side_url = models.CharField(max_length=500, null=True)  # 수정
     mobile_yn = models.CharField(max_length=1, default='n')  # 체형 결과에서 키오스크와 모바일 구분하기 위함
-    created_dt = models.DateTimeField(auto_now_add=True)
+    height = models.FloatField(null=True, blank=True)
+    weight = models.FloatField(null=True, blank=True)
+    # created_dt = models.DateTimeField(auto_now_add=True)
+    created_dt = models.DateTimeField(default=timezone.now)
     family_user = models.ForeignKey(FamilyUserInfo, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
