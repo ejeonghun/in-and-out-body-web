@@ -1483,8 +1483,7 @@ def gait_report(request):
                     'user': UserInfoSerializer(user).data,
                     'analysis_valid': analysis_valid,
                     'gait_results': GaitResultSerializer(gate_result_queryset, many=True).data,  # 수정된 부분
-                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime('%Y-%m-%d %H:%M:%S') if
-                    gate_result_queryset[0] else None
+                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime('%Y-%m-%d %H:%M:%S') if gate_result_queryset else None
                 })
 
         # 분석 진행률 계산
