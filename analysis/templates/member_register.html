@@ -21,11 +21,23 @@
         <strong>성공!</strong> 사용자를 성공적으로 등록하였습니다.
     </div>
     <div class="alert alert-error" style="display: none;"></div>
-    
+
     <!-- 사용법 섹션 -->
      <div class="info_container">
         <h2><i class="fas fa-info-circle"></i> 사용법</h2>
         <p id="info_text">아래의 템플릿을 다운로드하여 엑셀 파일을 작성한 후 업로드해주세요.</p>
+                <!-- 개인정보 수집 동의 섹션 추가 -->
+                <div class="consent-section" style="display: none">
+                    <label>
+                        <input type="checkbox" id="consentCheckbox"> 개인정보 수집 동의(필수)
+                    </label>
+                    <button id="consentDetailBtn" class="add-btn">자세히보기</button>
+                </div>
+                <script>
+                        document.querySelector('#consentDetailBtn').addEventListener('click', function() {
+                                    window.open('{% url "policy" %}', '_blank');
+                        });
+                </script>
         {% if user_type == 'S' %}
         <div class="excel-preview">
             <table class="excel-table">
@@ -68,7 +80,6 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
                     <td>영업부</td>
                     <td>홍길동</td>
                     <td>010-0000-0000</td>
@@ -82,8 +93,9 @@
         </table>
     </div>
 </div>
+</div>
     {% endif %}
-     </div>
+
 
      <!-- 첫 번째 모달 (입력 폼) -->
     <div id="inputModal" class="modal" style="display: none;">
@@ -888,6 +900,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('uploadedFileName').textContent = file.name;
             document.querySelector('.excel-preview').style.display = 'none';
             document.getElementById('info_text').innerHTML = '등록 현황 확인 후 "<strong>최종 저장</strong>" 버튼을 클릭해주세요.';
+            document.querySelector('.consent-section').style.display = 'block';
             hideError();
         })
         .catch(error => {
@@ -994,6 +1007,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('confirmButton').addEventListener('click', () => {
         if (!uploadedData) {
             showError('업로드된 파일이 없습니다.');
+            return;
+        }
+
+        if (!document.getElementById('consentCheckbox').checked) {
+            showError('개인정보 수집 및 이용에 동의해주세요.');
             return;
         }
 
