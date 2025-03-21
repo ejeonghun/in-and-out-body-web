@@ -20,7 +20,7 @@ from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kios
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
     KioskInfo
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
-from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
+from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, UserInfoSerializer
 
 from django.db.models import Min, Max, Exists, OuterRef, Count
 from django.db.models.functions import ExtractYear
@@ -33,6 +33,8 @@ from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
 from django.db.models import Q
+from django.core.serializers.json import DjangoJSONEncoder
+
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
