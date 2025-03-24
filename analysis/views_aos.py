@@ -242,7 +242,7 @@ def login_mobile_register(request):  # 제리님 쪽 로직 --> 로그인 / 회�
         auth_info = AuthInfo.objects.get(uid=mobile_uid)  # AuthInfo 테이블에서 mobile_uid로 검색
     except AuthInfo.DoesNotExist:
         # AuthInfo를 찾을 수 없는 경우 처리 (인증번호 안옴)
-        return Response({'message': 'user_not_found'}, status=status.HTTP_200_OK)
+        return Response({'message': 'not_receive'}, status=status.HTTP_200_OK)
 
     # 회원가입 or 로그인 로직
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
