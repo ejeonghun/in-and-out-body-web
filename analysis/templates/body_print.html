@@ -318,17 +318,72 @@
                 color: #222222;
             }
         }
+
+        /* 인쇄 스타일 추가 */
+        @media print {
+            body {
+                background: white; /* 인쇄 시 배경색 흰색 */
+                color: black; /* 인쇄 시 글자색 검정 */
+                margin: 0; /* 기본 여백 제거 */
+                padding: 0; /* 기본 패딩 제거 */
+                font-size: 12pt; /* 인쇄 시 글자 크기 조정 */
+            }
+            #print-button {
+                display: none; /* 인쇄 시 버튼 숨김 */
+            }
+            .scroll-to-top {
+                display: none; /* 인쇄 시 스크롤 버튼 숨김 */
+            }
+            .max-w-4xl {
+                width: 100%; /* 최대 너비를 100%로 설정 */
+                padding: 0; /* 패딩 제거 */
+                margin: 0; /* 마진 제거 */
+            }
+            /* 추가적인 인쇄 스타일 조정 */
+            .report-card {
+                page-break-inside: avoid; /* 카드 내부에서 페이지 나누기 방지 */
+                margin-bottom: 20px; /* 카드 간격 조정 */
+            }
+
+            @media print {
+                .graph-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 20px;
+                }
+                
+                .graph-item {
+                    break-inside: avoid;
+                }
+                
+                .chart-canvas {
+                    width: 100% !important;
+                    height: auto !important;
+                    max-height: 200px;
+                }
+
+                .section-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                }
+                
+                .section-item {
+                    break-inside: avoid;
+                }
+
+                .image-container img {
+                    max-width: 45%;
+                    height: auto;
+                }
+            }
+            
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-6" id="report-body">
-    <button id="print-report" class="bg-blue-500 text-white p-2 rounded">인쇄하기</button> <!-- 인쇄 버튼 -->
-    <script>
-        document.getElementById('print-report').addEventListener('click', function() {
-            // gait_print.html 페이지로 이동
-            window.open("/body-print/{{ user.id }}/", '_blank');
-        });
-    </script>
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <button id="print-button" class="bg-blue-500 text-white p-2 rounded">인쇄하기</button>
+    <div>
         <div class="items-center justify-center flex user-type">
             {% if user.user_type == 'S' %}
                     <h1 class="antialiased hover:subpixel-antialiased">{{ user.school.school_name }} {{ user.student_grade }} 학년 {{ user.student_class }} 반 {{ user.student_number }} 번 {{ user.student_name }} 님</h1>
@@ -484,33 +539,26 @@
             
 
             <!-- Line Chart -->
-            <div class="mb-6" id="trendChart-{{ item.alias }}">
-                <div class="sub-title">변화 추이 - {{ item.title }}</div>
-                <canvas id="chart_{{ item.alias }}" class="w-full h-64" id="chart_canvas"></canvas>
+            <div class="graph-grid">
+                {% for item in report_items %}
+                    <div class="graph-item">
+                        <div class="sub-title">변화 추이 - {{ item.title }}</div>
+                        <canvas id="chart_{{ item.alias }}" class="chart-canvas"></canvas>
+                    </div>
+                {% endfor %}
             </div>
+            
 
             <!-- Section Contents (detailed explanation) -->
-            <div class="mb-6">
-                <div class="mb-6 p-4 border rounded-lg bg-white">
-                    <h2 class="text-xl font-semibold mb-2">{{ item.title }}</h2>
-                    {% for key, content in item.sections.items %}
-                        {% if key == '권장계획' %}
-                            <div id="{{ key }}" class="mb-6 p-4 border rounded-lg bg-white">
-                                <h2 class="text-xl font-semibold mb-2">{{ key }}</h2>
-                                {% for content_ in content %}
-                                    <li class="text-sm text-gray-600">{{ content_|safe }}</li>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div id="{{ key }}" class="mb-6 p-4 border rounded-lg bg-white">
-                                <h2 class="text-xl font-semibold mb-2">{{ key }}</h2>
-                                <p class="text-sm text-gray-600">{{ content|safe }}</p>
-                            </div>
-                        {% endif %}
-
-                    {% endfor %}
-                </div>
+            <div class="section-grid">
+                {% for key, content in item.sections.items %}
+                    <div class="section-item">
+                        <h3>{{ key }}</h3>
+                        <p>{{ content|safe }}</p>
+                    </div>
+                {% endfor %}
             </div>
+            
 
             <div class="caution-text">⚠️ 위 내용은 일반적으로 알려진 의학상식에 대한 설명이며 스캔 결과가 의학적 판단 및 진단과는 무관합니다.
                 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.</div>
@@ -873,7 +921,10 @@
             toggleScrollButton();
         });
         
-        
+        // 인쇄 버튼 클릭 시 인쇄 기능
+        document.getElementById('print-button').addEventListener('click', function() {
+            window.print();
+        });
     </script>    
 </body>
 </html>

@@ -45,8 +45,12 @@ urlpatterns = [
     path('report/<int:id>/', views.report_detail, name='report_detail'),
     path('report_download/', views.report_download, name='report_download'),
 
+    # 관리자 페이지 보행 관련 대시보드
     path('gait-report/', views.gait_report, name='gait_report'),
     path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
+
+    path('body-print/<int:id>/', views.body_print, name='body_print'),
+
 
     path('no-result/', views.no_result, name='no_result'),
     path('policy/', views.policy, name='policy'),
@@ -78,6 +82,7 @@ urlpatterns = [
     path('api/analysis/body/create_result/', views_kiosk.create_body_result, name='create_body_result'),
     path('api/analysis/body/get_result/', views_kiosk.get_body_result, name='get_body_result'),
     path('api/analysis/get_info/', views_kiosk.get_info, name='get_info'),
+    path('api/analysis/count/', views_kiosk.kiosk_use_count, name='kiosk_use_count'),
 
     # 기관 정보 조회 api
     path('api/search-organization/', views.search_organization, name='search_organization'),

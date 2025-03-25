@@ -33,7 +33,7 @@ from datetime import datetime as dt
 
 # / ***********************  (체형분석앱) 로직   ****************************** /
 
-from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_, create_family_user_, select_family_user_, get_body_result_aos_, delete_family_user_, get_body_result_aos_id_
+from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_, create_family_user_, select_family_user_, get_body_result_aos_, delete_family_user_, get_body_result_aos_id_, update_family_user_
 
 import pytz
 
@@ -599,7 +599,7 @@ def delete_family_user(request):
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
-
+@swagger_auto_schema(**update_family_user_)
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def update_family_user(request):

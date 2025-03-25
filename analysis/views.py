@@ -1517,3 +1517,238 @@ def gait_report(request):
     })
     
     
+@login_required
+def body_print(request, id):
+    max_count = 20
+    body_info_queryset = CodeInfo.objects.filter(group_id='01').order_by('seq_no')
+
+    # 해당 유저의 모든 검사 결과를 쿼리
+    body_result_queryset = BodyResult.objects.filter(
+        user_id=id, 
+        image_front_url__isnull=False,
+        image_side_url__isnull=False,
+    )
+    body_result_queryset = body_result_queryset.order_by('created_dt')[max(0, len(body_result_queryset)-int(max_count)):]
+
+
+    if len(body_result_queryset) == 0:
+        return render(request, 'no_result.html', status=404)
+    body_result_latest = body_result_queryset[len(body_result_queryset)-1]
+
+
+    report_items = []
+    for body_info in body_info_queryset:
+        trend_data = []
+        is_paired = False
+
+        for body_result in body_result_queryset:
+            body_code_id_ = body_info.code_id
+            alias = body_info.code_id
+            if 'leg_alignment' in body_code_id_ or 'back_knee' in body_code_id_ or 'scoliosis' in body_code_id_:
+                is_paired = True
+                if 'scoliosis' in body_code_id_:
+                    code_parts = body_code_id_.split('_')
+                    pair_names = ['shoulder', 'hip']
+                    paired_body_code_id_list = ['_'.join([code_parts[0], pair, code_parts[2]]) for pair in pair_names]
+
+                else:
+                    pair_names = ['left', 'right']
+                    paired_body_code_id_list = [f'{pair}_' + '_'.join(body_code_id_.split('_')[1:]) for pair in
+                                                pair_names]
+
+                if 'leg_alignment' in body_code_id_:
+                    alias = 'o_x_legs'
+                if 'back_knee' in body_code_id_:
+                    alias = 'knee_angle'
+                if 'scoliosis' in body_code_id_:
+                    alias = 'spinal_imbalance'
+
+                trend_samples = [getattr(body_result, paired_body_code_id_list[0]),
+                                 getattr(body_result, paired_body_code_id_list[1]),
+                                 body_result.created_dt.strftime('%Y-%m-%d %H:%M:%S')]
+            else:
+                trend_samples = [getattr(body_result, body_code_id_),
+                                 body_result.created_dt.strftime('%Y-%m-%d %H:%M:%S')]
+            trend_data.append(trend_samples)
+
+        if is_paired:
+            result_val1, result_val2, *_ = trend_data[-1]
+            result1 = None
+            if result_val1 is not None:
+                result1 = round(result_val1, 2)
+            result2 = None
+            if result_val2 is not None:
+                result2 = round(result_val2, 2)
+
+            description_list = []
+            unit_name = body_info.unit_name
+            normal_range = [body_info.normal_min_value, body_info.normal_max_value]
+            for i, val in enumerate([result1, result2]):
+                if alias == 'o_x_legs':
+                    title = body_info.code_name.replace('(좌)', '').replace('(우)', '')
+                    metric = '각도 [°]'
+                    pair_name = '왼쪽' if i == 0 else '오른쪽'
+                    if val:
+                        if normal_range[0] < val < normal_range[1]:
+                            description = '양호'
+                        else:
+                            description = 'O 다리 의심' if val < 180 else 'X 다리 의심'
+                    else:
+                        description = "측정값 없음"
+                if alias == 'knee_angle':
+                    title = body_info.code_name.replace('(좌)', '').replace('(우)', '')
+                    metric = '각도 [°]'
+                    pair_name = '왼쪽' if i == 0 else '오른쪽'
+                    if val:
+                        if normal_range[0] < val < normal_range[1]:
+                            description = '양호'
+                        else:
+                            description = '반장슬 의심'
+                    else:
+                        description = "측정값 없음"
+                if alias == 'spinal_imbalance':
+                    title = '척추 균형'
+                    metric = '척추 기준 좌우 비율 차이 [%]'
+                    pair_name = '척추-어깨' if i == 0 else '척추-골반'
+                    if val:
+                        if normal_range[0] < val < normal_range[1]:
+                            description = '양호'
+                        else:
+                            description = '왼쪽 편향' if val < 0 else '오른쪽 편향'
+                    else:
+                        description = "측정값 없음"
+
+                description_list.append(f'{pair_name} : ' + description)
+
+            if not result1:
+                result1 = "?"
+            else:
+                status_desc = ""
+                if alias == 'spinal_imbalance':
+                    if result1 < 0:
+                        status_desc += "왼쪽으로" + " "
+                    else:
+                        status_desc += "오른쪽으로" + " "
+                result1 = f'{status_desc}{abs(result1)}{unit_name}'
+
+            if not result2:
+                result2 = "?"
+            else:
+                status_desc = ""
+                if alias == 'spinal_imbalance':
+                    if result2 < 0:
+                        status_desc += "왼쪽으로" + " "
+                    else:
+                        status_desc += "오른쪽으로" + " "
+                result2 = f'{status_desc}{abs(result2)}{unit_name}'
+
+            if alias == 'spinal_imbalance':
+                result = f'· 척추-어깨: {result1}의 편향, · 척추-골반: {result2}의 편향'
+            else:
+                result = f'{result1} / {result2}'
+            if all([i['title'] != title for i in report_items]):
+                report_items.append({
+                    'title': title,
+                    'alias': alias,
+                    'result': result,
+                    'description': description_list,
+                    'description_list': True,
+                    'metric': metric,
+                    'summary': [re.sub(r'\(.*?\)', '', x) for x in description_list],
+                    'normal_range': [body_info.normal_min_value, body_info.normal_max_value],
+                    'value_range': [body_info.min_value, body_info.max_value],
+                    'trend': trend_data,
+                    'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
+                                 ['outline', 'risk', 'improve', 'recommended']}
+                })
+        else:
+            result_val = getattr(body_result_latest, body_info.code_id)
+            result = None
+            if result_val is not None:
+                result = round(result_val, 2)
+            unit_name = body_info.unit_name
+            normal_range = [body_info.normal_min_value, body_info.normal_max_value]
+            if 'angle' in alias:
+                if result:
+                    description = '왼쪽으로' if result < 0 else '오른쪽으로'
+                else:
+                    description = "측정값 없음"
+                metric = '각도 [°]'
+
+            if alias == 'forward_head_angle':
+                if result:
+                    description = '양호' if normal_range[0] < result < normal_range[1] else '거북목 진행형'
+                else:
+                    description = "측정값 없음"
+
+            if alias == 'leg_length_ratio':
+                if result:
+                    description = '왼쪽이 더 짧음' if result < 0 else '오른쪽이 더 짧음'
+                else:
+                    description = "측정값 없음"
+                metric = '다리 길이 차이 [%]'
+
+            if not result:
+                result = "?"
+            else:
+                status_desc = ""
+                if normal_range[0] < result < normal_range[1]:
+                    status_desc += " " + "(정상)"
+                else:
+                    status_desc += " " + "(유의)"
+
+                result = f'{abs(result)}{unit_name}{status_desc}'  # show absolute value
+            report_items.append({
+                'title': body_info.code_name,
+                'alias': alias,
+                'result': result,
+                'description': description,
+                'description_list': False,
+                'metric': metric,
+                'summary': re.sub(r'\(.*?\)', '', description),
+                'normal_range': normal_range,
+                'value_range': [body_info.min_value, body_info.max_value],
+                'trend': trend_data,
+                'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
+                             ['outline', 'risk', 'improve', 'recommended']}
+            })
+
+    user = get_object_or_404(UserInfo, id=id)
+
+    if not report_items:
+        return render(request, '404.html', status=404)
+
+
+    # Prepare trend data for each report item
+    trend_data_dict = {}
+    for item in report_items:
+        alias = item['alias']
+        trend_data = item['trend']
+
+        if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']:
+            trend_data_dict[alias] = {
+                'val1': [value[0] for value in trend_data],  # 왼쪽 또는 상부
+                'val2': [value[1] for value in trend_data],  # 오른쪽 또는 하부
+                'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
+                'part': ['어깨', '골반'] if alias == 'spinal_imbalance' else ['왼쪽', '오른쪽']
+            }
+        else:
+            trend_data_dict[alias] = {
+                'values': [value[0] for value in trend_data],
+                'dates': [value[1] for value in trend_data]
+            }
+
+    created_dt = body_result_queryset[0].created_dt.strftime('%Y%m%dT%H%M%S%f')
+
+    front_img_url = generate_presigned_url(file_keys=['front', created_dt])
+    side_img_url = generate_presigned_url(file_keys=['side', created_dt])
+
+    context = {
+        'user': user,
+        'report_items': report_items,
+        'trend_data_dict': trend_data_dict,
+        'image_front_url': front_img_url,
+        'image_side_url': side_img_url
+    }
+
+    return render(request, 'body_print.html', context)

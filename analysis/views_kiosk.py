@@ -17,7 +17,7 @@ from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
     calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, KioskCount
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
 
@@ -33,7 +33,7 @@ from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
 from django.db.models import Q
 
-from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_
+from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_
 
 
 # 응답코드 관련
@@ -513,3 +513,39 @@ def check_session(request):
     if session_check_expired(session_info, check=True): # 체크만 수행하고 갱신하지 않음
         return Response({'data': {'message': 'session_expired', 'status': 403}})
     return Response({'data': {'message': 'session_valid', 'status': 200}})
+
+
+@swagger_auto_schema(**kiosk_use_count_)
+@api_view(['POST'])
+def kiosk_use_count(request):
+    session_key = request.data.get("session_key")
+    if not session_key:
+        return Response({'data': {'message': 'session_key_required', 'status': 400}})
+    
+    count_type = request.data.get("type")
+    
+    try:
+        kiosk_info = SessionInfo.objects.get(session_key=session_key) # 현재 키오스크 세션 정보 조회
+
+        # 오브젝트가 여러개 라면 첫번째 오브젝트를 사용 + SessionInfo에서 kiosk_id를 조회
+        request_kiosk_id = kiosk_info.kiosk_id
+
+        # type1, type2 = 회원 보행 / 체형
+        # type3, type4 = 비회원 보행 / 체형
+        # Requset의 type별로 KioskCount의 req{n}의 컬럼을 1씩 증감
+        kiosk_count, created = KioskCount.objects.get_or_create(kiosk_id=request_kiosk_id)
+        
+        # 기존 값에 1을 더함
+        current_value = getattr(kiosk_count, f'type{count_type}', 0) 
+        setattr(kiosk_count, f'type{count_type}', current_value + 1)
+        kiosk_count.save()
+
+        return Response({'data': {'message': 'success', 'status': 200}})
+
+
+    except SessionInfo.DoesNotExist:
+        return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
+    
+    except KioskCount.DoesNotExist:
+        return Response({'data': {'message': 'kiosk_id_not_found', 'status': 404}})
+    
