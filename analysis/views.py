@@ -40,7 +40,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
 
-KIOSK_LATEST_VERSION = get_kiosk_latest_version()
+# KIOSK_LATEST_VERSION = get_kiosk_latest_version()
 
 
 def home(request):
