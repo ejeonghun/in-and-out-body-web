@@ -25,7 +25,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q
 
 from analysis.swagger import login_mobile_, login_mobile_id_pw_, login_mobile_uuid_, delete_user_, get_user_, get_code_, \
-    get_gait_result_, login_mobile_qr_, get_body_result_, get_body_result_id_, delete_gait_result_, delete_body_result_, \
+    get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_, delete_body_result_, \
     mobile_body_sync_
 
 kst = pytz.timezone('Asia/Seoul')
@@ -414,7 +414,6 @@ def get_body_result(request):
     return Response(response_data, status=status.HTTP_200_OK)
 
 
-@swagger_auto_schema(**get_body_result_id_)
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def get_body_result_id(request, id):

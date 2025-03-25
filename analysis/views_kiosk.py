@@ -17,8 +17,7 @@ from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
     calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
-    KioskInfo, KioskCount
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, KioskCount
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
 
@@ -34,13 +33,13 @@ from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
 from django.db.models import Q
 
-from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, \
-    kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, \
-    kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_
+from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_, kiosk_signup_
+
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
+
 
 
 # KIOSK_LATEST_VERSION = get_kiosk_latest_version()
@@ -536,3 +535,42 @@ def kiosk_use_count(request):
 
     except KioskCount.DoesNotExist:
         return Response({'data': {'message': 'kiosk_id_not_found', 'status': 404}})
+
+
+@swagger_auto_schema(**kiosk_signup_)
+@api_view(['POST'])
+def kiosk_signup(request):
+    phone_number = request.data.get('phone_number')
+    password = request.data.get('password')
+
+    # 전화번호 형식 검사 (010으로 시작하는 11자리)
+    if not phone_number or not re.match(r'^010\d{8}$', phone_number):
+        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 400})
+
+    try:
+        UserInfo.objects.get(phone_number=phone_number)
+        return JsonResponse({'message': 'phone_number_already_exists', 'status': 400})
+    except UserInfo.DoesNotExist:
+        pass
+
+    if not phone_number or not password:
+        return JsonResponse({'message': 'phone_number_and_password_required', 'status': 400})
+
+    authorized_user_info, user_created = UserInfo.objects.get_or_create(
+        phone_number=phone_number,
+        defaults=dict(
+            username=phone_number,
+            password=make_password(password)
+        ))
+
+    if authorized_user_info.school is not None:
+        authorized_user_info.user_type = 'S'
+    elif authorized_user_info.organization is not None:
+        authorized_user_info.user_type = 'O'
+    else:
+        authorized_user_info.user_type = 'G'
+
+    authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
+
+    return JsonResponse({'message': 'success', 'status': 200})
+
