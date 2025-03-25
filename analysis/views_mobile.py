@@ -30,8 +30,6 @@ from analysis.swagger import login_mobile_, login_mobile_id_pw_, login_mobile_uu
 
 kst = pytz.timezone('Asia/Seoul')
 
-
-@swagger_auto_schema(**login_mobile_)
 @swagger_auto_schema(**login_mobile_)
 @api_view(['POST'])
 def login_mobile(request):  # 데이브님 쪽 로직 --> 로그인만 가능 (회원가입 불가)

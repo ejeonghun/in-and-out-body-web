@@ -373,7 +373,7 @@ kiosk_check_session_ = dict(
 login_mobile_ = {
     'method': 'post',
     'operation_summary': "모바일 로그인(토큰 발급) - mobile_uid",
-    'operation_description': "mobile_uid를 사용하여 모바일 기기 인증(로그인 만) - Dave님 쪽 Logic ",
+    'operation_description': "mobile_uid를 사용하여 모바일 기기 인증(로그인/회원가입) - Dave님 쪽 Logic ",
     'request_body': openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
