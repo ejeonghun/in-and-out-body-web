@@ -546,8 +546,7 @@ def get_family_user(request):
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
     
     if request.user.user_type != 'G':  # 일반 유저만 가족 유저 조회 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
 
     family_user_id = request.GET.get('family_user_id', None)
 
@@ -580,7 +579,7 @@ def delete_family_user(request):
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
     
     if request.user.user_type != 'G':  # 일반 유저만 가족 유저 삭제 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
     
     family_user_id = request.query_params.get('family_user_id', None)
 
@@ -600,3 +599,80 @@ def delete_family_user(request):
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def update_family_user(request):
+    user_id = request.user.id
+    if not user_id:
+        return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 수정 가능
+        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+
+    family_user_id = request.data.get('family_user_id', None)
+    if family_user_id is None:
+        return Response({'data': {'message': 'family_user_id_required'}}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        family_user = FamilyUserInfo.objects.get(id=family_user_id, user_id=user_id)
+        
+        family_member_name = request.data.get('family_member_name')
+        gender = request.data.get('gender')
+        relationship = request.data.get('relationship')
+        profile_image = request.data.get('profile_image')
+
+        
+        # 제공된 값만 업데이트
+        if family_member_name:
+            family_user.family_member_name = family_member_name
+        if gender:
+            family_user.gender = gender
+        if relationship:
+            family_user.relationship = relationship
+        
+        # 프로필 이미지가 제공된 경우에만 처리
+        if profile_image:
+            try:
+                verified_image = verify_image(profile_image)
+                created_dt = family_user.created_dt.strftime('%Y%m%dT%H%M%S%f')
+                
+                # S3에 이미지 업로드
+                upload_image_to_s3(verified_image, ['profile', created_dt])
+                family_user.profile_image = True
+                
+            except ValueError as ve:
+                return Response(
+                    {'data': {'message': f"Invalid image format: {str(ve)}"}}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        family_user.save()
+        
+        # 프로필 이미지 URL 생성 (이미지가 있는 경우에만)
+        # profile_image_url = None
+        # if family_user.profile_image:
+        #    created_dt = family_user.created_dt.strftime('%Y%m%dT%H%M%S%f')
+        #    profile_image_url = generate_presigned_url(file_keys=['profile', created_dt])
+        # 업로드 후 S3에 전파되기까지의 시간이 필요함 현재 업로드 후 바로 URL 생성 시 S3에서 404 에러 발생 
+        
+        return Response({
+            'data': {
+                'message': 'family_user_updated',
+                'family_data': {
+                    'id': family_user.id
+                }
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except FamilyUserInfo.DoesNotExist:
+        return Response(
+            {'data': {'message': 'family_user_not_found'}}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    except Exception as e:
+        return Response(
+            {'data': {'message': str(e)}}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

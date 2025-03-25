@@ -114,6 +114,7 @@ urlpatterns = [
     path('api/v2/mobile/family/create_family_user/', views_aos.create_family_user, name='mobile-aos-family-create_family_user'), # 가족 사용자 생성
     path('api/v2/mobile/family/get_family_user/',    views_aos.get_family_user,    name='mobile-aos-family-get_family_user'),    # 가족 사용자 정보 가져오기
     path('api/v2/mobile/family/delete_family_user/', views_aos.delete_family_user, name='mobile-aos-family-delete_family_user'), # 가족 사용자 삭제
+    path('api/v2/mobile/family/update_family_user/', views_aos.update_family_user, name='mobile-aos-family-update_family_user'), # 가족 사용자 정보 수정
 
 
     # 디버그 환경이 아닐 때도 Swagger에 접근이 가능하나 단, 허용된 IP만 접근 가능

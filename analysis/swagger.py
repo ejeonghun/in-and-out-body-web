@@ -1283,7 +1283,7 @@ create_family_user_ = {
             )
         ),
         404: openapi.Response(
-            description='사용자 ID 없음; 토큰이 유효하지 않음',
+            description='가족 ID 없음;',
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
@@ -1607,6 +1607,123 @@ delete_family_user_ = {
         401: 'Unauthorized',
         404: 'Not Found; family_user_not_found',
         500: 'Internal Server Error',
+    },
+    'tags': ['체형분석앱 - 가족 관리']
+}
+
+############################################################################################################
+# 사용위치 : views_aos.py
+# 적용범위 : AOS
+############################################################################################################
+
+# analysis/swagger.py
+update_family_user_ = {
+    'method': 'post',
+    'operation_summary': "가족 사용자 수정",
+    'operation_description': "사용자의 가족 사용자 정보를 수정합니다.",
+    'request_body': openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'family_user_id': openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description='가족 사용자 ID',
+            ),
+            'family_member_name': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 구성원의 이름',
+            ),
+            'gender': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='성별 (예: M, F)',
+            ),
+            'relationship': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 관계 (예: 부모, 형제, 자매 등)',
+            ),
+            'profile_image': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 구성원의 프로필 이미지 (Base64)',
+            ),
+        },
+        required=['family_user_id'],  # 필수 필드
+    ),
+    'responses': {
+        200: openapi.Response(
+            description='가족 사용자 수정 성공',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='family_user_updated'),
+                            'family_data': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 ID'),
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+        400: openapi.Response(
+            description='잘못된 요청; 필수 필드가 누락되었거나 유효하지 않음',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='required_fields_missing'),
+                        }
+                    )
+                }
+            )
+        ),
+        403: openapi.Response(
+            description='권한 없음; 일반 유저만 가족 사용자 수정 가능',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='user_not_permission'),
+                        }
+                    )
+                }
+            )
+        ),
+        404: openapi.Response(
+            description='가족 사용자 ID 없음;',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='family_user_not_found'),
+                        }
+                    )
+                }
+            )
+        ),
+        500: openapi.Response(
+            description='서버 오류; 예기치 않은 오류 발생',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='Internal Server Error'),
+                        }
+                    )
+                }
+            )
+        ),
     },
     'tags': ['체형분석앱 - 가족 관리']
 }
