@@ -76,6 +76,7 @@ urlpatterns = [
     path('api/get-userinfo-session/', views_kiosk.get_userinfo_session, name='get_userinfo_session'),
     path('api/end-session/', views_kiosk.end_session, name='end_session'),
     path('api/checksession/', views_kiosk.check_session, name='check_session'),
+    path('api/signup-kiosk/', views_kiosk.kiosk_signup, name='kiosk_signup'),
 
     path('api/analysis/gait/create_result/', views_kiosk.create_gait_result, name='create_gait_result'),
     path('api/analysis/gait/get_result/', views_kiosk.get_gait_result, name='get_gait_result'),

@@ -382,6 +382,55 @@ kiosk_use_count_ = {
 }
 
 
+
+kiosk_signup_ = {
+    'method': 'post',
+    'operation_summary': '키오스크 회원가입',
+    'operation_description': '키오스크에서 회원가입을 진행합니다. 전화번호는 010으로 시작하는 11자리여야 합니다.',
+    'request_body': openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['phone_number', 'password'],
+        properties={
+            'phone_number': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='사용자 전화번호 (010으로 시작하는 11자리)',
+                pattern='^010[0-9]{8}$'
+            ),
+            'password': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='사용자 비밀번호'
+            )
+        }
+    ),
+    'responses': {
+        200: openapi.Response(
+            description='회원가입 성공',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='성공 메시지'),
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드')
+                }
+            )
+        ),
+        400: openapi.Response(
+            description='잘못된 요청',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        description='오류 메시지 (phone_number_already_exists, phone_number_and_password_required, 또는 invalid_phone_number_format)'
+                    ),
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드')
+                }
+            )
+        )
+    },
+    'tags': ['kiosk']
+}
+
+
 ############################################################################################################
 ############################################################################################################
 ##################################               모바일 공용               ####################################
@@ -399,7 +448,7 @@ kiosk_use_count_ = {
 login_mobile_ = {
     'method': 'post',
     'operation_summary': "모바일 로그인(토큰 발급) - mobile_uid",
-    'operation_description': "mobile_uid를 사용하여 모바일 기기 인증(로그인/회원가입) - Dave님 쪽 Logic ",
+    'operation_description': "mobile_uid를 사용하여 모바일 기기 인증(로그인 만) - Dave님 쪽 Logic ",
     'request_body': openapi.Schema(
         type=openapi.TYPE_OBJECT,
         properties={
@@ -883,6 +932,8 @@ get_body_result_ = dict(
                                 "mobile_yn": openapi.Schema(type=openapi.TYPE_STRING, description="y: mobile, n: kiosk",
                                                             default="n"),
                                 "created_dt": openapi.Schema(type=openapi.TYPE_STRING, format="date-time"),
+                                "height": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "weight": openapi.Schema(type=openapi.TYPE_NUMBER),
                                 "user": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "school": openapi.Schema(type=openapi.TYPE_INTEGER),
                             }
@@ -902,94 +953,6 @@ get_body_result_ = dict(
 )
 
 
-
-############################################################################################################
-# 사용위치 : views_mobile.py
-# 적용범위 : Flutter, AOS
-############################################################################################################
-get_body_result_id_ = dict(
-    method='get',
-    operation_summary="체형 결과 단건 조회",
-    operation_description="""Get body result by ID
-    - mobile only
-    - header: Bearer token required
-    - returns front and side data with keypoints
-    """,
-    responses={
-        200: openapi.Response(
-            description='Success',
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'front_data': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'results': openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    'shoulder_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'hip_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'face_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'scoliosis_shoulder_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'scoliosis_hip_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'leg_length_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'left_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'right_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                }
-                            ),
-                            'keypoints': openapi.Schema(
-                                type=openapi.TYPE_ARRAY,
-                                items=openapi.Schema(
-                                    type=openapi.TYPE_OBJECT,
-                                    properties={
-                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    }
-                                )
-                            )
-                        }
-                    ),
-                    'side_data': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'results': openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    'forward_head_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'left_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    'right_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                }
-                            ),
-                            'keypoints': openapi.Schema(
-                                type=openapi.TYPE_ARRAY,
-                                items=openapi.Schema(
-                                    type=openapi.TYPE_OBJECT,
-                                    properties={
-                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
-                                    }
-                                )
-                            )
-                        }
-                    ),
-                    'image_front': openapi.Schema(type=openapi.TYPE_STRING),
-                    'image_side': openapi.Schema(type=openapi.TYPE_STRING),
-                }
-            )
-        ),
-        400: 'Bad Request; body_id_required',
-        401: 'Unauthorized',
-        404: 'Not Found; body_result_not_found',
-        500: 'Internal Server Error',
-    },
-    tags=['mobile']
-)
 
 
 
@@ -1175,8 +1138,9 @@ login_mobile_register_ = {
 ############################################################################################################
 mobile_create_body_result_ = dict(
     method='post',
-    operation_summary="체형 결과 생성",
-    operation_description="""Create a new body result record
+    operation_summary="모바일 체형 결과 생성(체형분석앱)",
+    operation_description=""" 해당 API는 각 포즈별 체형 분석 값과 keypoints들과 이미지, 가족 ID(선택)을 받아서 저장시킴.
+    Create a new body result record
     - mobile only
     - AI server result --> image base64 add --> API request --> DB save
     - header: Bearer token required
@@ -1246,6 +1210,10 @@ mobile_create_body_result_ = dict(
             ),
             'image_front': openapi.Schema(type=openapi.TYPE_STRING),
             'image_side': openapi.Schema(type=openapi.TYPE_STRING),
+            'family_user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 ID', nullable=True),
+            "created_dt": openapi.Schema(type=openapi.TYPE_STRING, format="date-time"),
+            "height": openapi.Schema(type=openapi.TYPE_NUMBER),
+            "weight": openapi.Schema(type=openapi.TYPE_NUMBER),
         },
         required=['front_data', 'side_data', 'image_front', 'image_side']
     ),
@@ -1308,3 +1276,529 @@ mobile_body_sync_ = dict(
     },
     tags=['체형분석앱']
 )
+
+############################################################################################################
+# 사용위치 : views_aos.py
+# 적용범위 : AOS
+############################################################################################################
+create_family_user_ = {
+    'method': 'post',
+    'operation_summary': "가족 사용자 생성",
+    'operation_description': "사용자의 가족 사용자 정보를 생성합니다.",
+    'request_body': openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'family_member_name': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 구성원의 이름',
+            ),
+            'gender': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='성별 (예: M, F)',
+            ),
+            'relationship': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 관계 (예: 부모, 형제, 자매 등)',
+            ),
+            'profile_image': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 구성원의 프로필 이미지 (Base64)',
+            ),
+        },
+        required=['family_member_name', 'gender', 'relationship'],  # 필수 필드
+    ),
+    'responses': {
+        201: openapi.Response(
+            description='가족 사용자 생성 성공',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='family_user_created'),
+                            'family_data': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 ID'),
+                                    'profile_image_url': openapi.Schema(type=openapi.TYPE_STRING, description='프로필 이미지 URL'),
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+        400: openapi.Response(
+            description='잘못된 요청; 필수 필드가 누락되었거나 유효하지 않음',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='required_fields_missing'),
+                        }
+                    )
+                }
+            )
+        ),
+        403: openapi.Response(
+            description='권한 없음; 일반 유저만 가족 사용자 생성 가능',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='user_not_permission'),
+                        }
+                    )
+                }
+            )
+        ),
+        404: openapi.Response(
+            description='가족 ID 없음;',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='token_required'),
+                        }
+                    )
+                }
+            )
+        ),
+        500: openapi.Response(
+            description='서버 오류; 예기치 않은 오류 발생',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='Internal Server Error'),
+                        }
+                    )
+                }
+            )
+        ),
+    },
+    'tags': ['체형분석앱 - 가족 관리']
+}
+
+############################################################################################################
+# 사용위치 : views_aos.py
+# 적용범위 : AOS
+############################################################################################################
+select_family_user_ = {
+    'method': 'get',
+    'operation_summary': "가족 사용자 조회",
+    'operation_description': "사용자의 가족 사용자 정보를 조회합니다.\n 가족 사용자 ID를 제공하면 해당 사용자의 정보를 조회합니다.",
+    'manual_parameters':[
+        openapi.Parameter('family_user_id', openapi.IN_QUERY, description="family_user_id", type=openapi.TYPE_INTEGER, required=False),
+    ],
+    'responses': {
+        200: openapi.Response(
+            description='가족 사용자 조회 성공',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                            'family_users': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 ID'),
+                                        'family_member_name': openapi.Schema(type=openapi.TYPE_STRING, description='가족 구성원의 이름'),
+                                        'gender': openapi.Schema(type=openapi.TYPE_STRING, description='성별 (예: M, F)'),
+                                        'relationship': openapi.Schema(type=openapi.TYPE_STRING, description='가족 관계 (예: 아빠, 엄마 등)'),
+                                        'profile_image_url': openapi.Schema(type=openapi.TYPE_STRING, description='프로필 이미지 URL', nullable=True),
+                                    }
+                                )
+                            ),
+                            'items': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 수'),
+                        }
+                    )
+                }
+            )
+        ),
+        400: openapi.Response(
+            description='잘못된 요청; 사용자 ID가 제공되지 않음',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='token_required'),
+                        }
+                    )
+                }
+            )
+        ),
+        401: openapi.Response(
+            description='Unauthorized; 사용자 권한 없음',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='user_not_permission'),
+                        }
+                    )
+                }
+            )
+        ),
+        404: openapi.Response(
+            description='Not Found; 사용자 정보 없음',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='user_not_found'),
+                        }
+                    )
+                }
+            )
+        ),
+        500: openapi.Response(
+            description='서버 오류; 예기치 않은 오류 발생',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='Internal Server Error'),
+                        }
+                    )
+                }
+            )
+        ),
+    },
+    'tags': ['체형분석앱 - 가족 관리']
+}
+
+
+############################################################################################################
+# 사용위치 : views_aos.py
+# 적용범위 : AOS
+############################################################################################################
+get_body_result_aos_ = dict(
+    method='get',
+    operation_summary="체형 결과 리스트 조회 - 체형분석앱 전용",
+    operation_description="""select body result list
+    - page: page number. default 1
+    - page_size: page size. default 10
+    - mobile: y: mobile, n: kiosk. default 'n'
+    - family_user_id: family user ID
+    """,
+    manual_parameters=[
+        openapi.Parameter('page', openapi.IN_QUERY, description="page number.", type=openapi.TYPE_INTEGER, default=1),
+        openapi.Parameter('page_size', openapi.IN_QUERY, description="page size(items)", type=openapi.TYPE_INTEGER,
+                          default=10),
+        openapi.Parameter('mobile', openapi.IN_QUERY, description="'y': mobile, 'n': kiosk, default: 'n'",
+                          type=openapi.TYPE_STRING),
+        openapi.Parameter('family_user_id', openapi.IN_QUERY, description="family_user_id", type=openapi.TYPE_INTEGER),
+    ],
+    responses={
+        200: openapi.Response(
+            description="Success",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "data": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "student_grade": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "student_class": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "student_number": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "face_level_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "shoulder_level_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "hip_level_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "leg_length_ratio": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "left_leg_alignment_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "right_leg_alignment_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "left_back_knee_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "right_back_knee_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "forward_head_angle": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "scoliosis_shoulder_ratio": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "scoliosis_hip_ratio": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "image_front_url": openapi.Schema(type=openapi.TYPE_STRING),
+                                "image_side_url": openapi.Schema(type=openapi.TYPE_STRING),
+                                "mobile_yn": openapi.Schema(type=openapi.TYPE_STRING, description="y: mobile, n: kiosk",
+                                                            default="n"),
+                                "created_dt": openapi.Schema(type=openapi.TYPE_STRING, format="date-time"),
+                                "height": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "weight": openapi.Schema(type=openapi.TYPE_NUMBER),
+                                "user": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "school": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            }
+                        )
+                    ),
+                    "total_pages": openapi.Schema(type=openapi.TYPE_INTEGER, description="Total number of pages."),
+                    "current_page": openapi.Schema(type=openapi.TYPE_INTEGER, description="Current page number."),
+                    "total_items": openapi.Schema(type=openapi.TYPE_INTEGER, description="Total number of items."),
+                    "items": openapi.Schema(type=openapi.TYPE_INTEGER,
+                                            description="Number of items in the current page."),
+                },
+            )
+        ),
+        400: 'Bad Request; page number out of range',
+    },
+    tags=['체형분석앱']
+)
+
+
+
+############################################################################################################
+# 사용위치 : views_mobile.py
+# 적용범위 : Flutter, AOS
+############################################################################################################
+get_body_result_aos_id_ = dict(
+    method='get',
+    operation_summary="체형 결과 단건 조회",
+    operation_description="""Get body result by ID
+    - mobile only
+    - header: Bearer token required
+    - returns front and side data with keypoints
+    """,
+    responses={
+        200: openapi.Response(
+            description='Success',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'front_data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'results': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'shoulder_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'hip_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'face_level_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'scoliosis_shoulder_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'scoliosis_hip_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'leg_length_ratio': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'left_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'right_leg_alignment_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                }
+                            ),
+                            'keypoints': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    'side_data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'results': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'forward_head_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'left_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    'right_back_knee_angle': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                }
+                            ),
+                            'keypoints': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        'x': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'y': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'z': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'visibility': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                        'presence': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    'image_front': openapi.Schema(type=openapi.TYPE_STRING),
+                    'image_side': openapi.Schema(type=openapi.TYPE_STRING),
+                }
+            )
+        ),
+        400: 'Bad Request; body_id_required',
+        401: 'Unauthorized',
+        404: 'Not Found; body_result_not_found',
+        500: 'Internal Server Error',
+    },
+    tags=['체형분석앱']
+)
+
+############################################################################################################
+# 사용위치 : views_aos.py
+# 적용범위 : AOS
+############################################################################################################
+delete_family_user_ = {
+    'method': 'post',
+    'operation_summary': "가족 사용자 삭제",
+    'operation_description': "가족 사용자 정보를 삭제합니다. 사용자는 일반 유저여야 하며, 삭제할 가족 사용자 ID를 제공해야 합니다.",
+    'manual_parameters':[
+        openapi.Parameter('family_user_id', openapi.IN_QUERY, description="family_user_id", type=openapi.TYPE_INTEGER),
+    ],
+    'responses': {
+        200: openapi.Response(
+            description='Success',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING),
+                        }
+                    )
+                }
+            )
+        ),
+        400: 'Bad Request; family_user_id is not provided in the request body',
+        401: 'Unauthorized',
+        404: 'Not Found; family_user_not_found',
+        500: 'Internal Server Error',
+    },
+    'tags': ['체형분석앱 - 가족 관리']
+}
+
+############################################################################################################
+# 사용위치 : views_aos.py
+# 적용범위 : AOS
+############################################################################################################
+
+# analysis/swagger.py
+update_family_user_ = {
+    'method': 'post',
+    'operation_summary': "가족 사용자 수정",
+    'operation_description': "사용자의 가족 사용자 정보를 수정합니다.",
+    'request_body': openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'family_user_id': openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description='가족 사용자 ID',
+            ),
+            'family_member_name': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 구성원의 이름',
+            ),
+            'gender': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='성별 (예: M, F)',
+            ),
+            'relationship': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 관계 (예: 부모, 형제, 자매 등)',
+            ),
+            'profile_image': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='가족 구성원의 프로필 이미지 (Base64)',
+            ),
+        },
+        required=['family_user_id'],  # 필수 필드
+    ),
+    'responses': {
+        200: openapi.Response(
+            description='가족 사용자 수정 성공',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='family_user_updated'),
+                            'family_data': openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='가족 사용자 ID'),
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        ),
+        400: openapi.Response(
+            description='잘못된 요청; 필수 필드가 누락되었거나 유효하지 않음',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='required_fields_missing'),
+                        }
+                    )
+                }
+            )
+        ),
+        403: openapi.Response(
+            description='권한 없음; 일반 유저만 가족 사용자 수정 가능',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='user_not_permission'),
+                        }
+                    )
+                }
+            )
+        ),
+        404: openapi.Response(
+            description='가족 사용자 ID 없음;',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='family_user_not_found'),
+                        }
+                    )
+                }
+            )
+        ),
+        500: openapi.Response(
+            description='서버 오류; 예기치 않은 오류 발생',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'message': openapi.Schema(type=openapi.TYPE_STRING, example='Internal Server Error'),
+                        }
+                    )
+                }
+            )
+        ),
+    },
+    'tags': ['체형분석앱 - 가족 관리']
+}
