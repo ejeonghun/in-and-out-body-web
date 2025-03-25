@@ -337,3 +337,19 @@ class Keypoint(models.Model):
                 name='valid_pose_type'
             )
         ]
+
+
+### 키오스크 사용 카운팅 테이블
+### req1 = 회원 보행
+### req2 = 회원 바디
+### req3 = 비회원 보행
+### req4 = 비회원 바디
+### created_dt = 생성일(카운팅 일)
+class KioskCount(models.Model):
+    id = models.AutoField(primary_key=True)
+    kiosk_id = models.ForeignKey(KioskInfo, on_delete=models.CASCADE)
+    type1 = models.IntegerField(default=0)
+    type2 = models.IntegerField(default=0)
+    type3 = models.IntegerField(default=0)
+    type4 = models.IntegerField(default=0)
+    created_dt = models.DateTimeField(auto_now_add=True)

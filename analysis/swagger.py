@@ -356,6 +356,32 @@ kiosk_check_session_ = dict(
 )
 
 
+kiosk_use_count_ = {
+    'method': 'post',
+    'operation_description': '키오스크 사용 횟수를 기록합니다.',
+    'request_body': openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['session_key', 'type'],
+        properties={
+            'session_key': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='세션 키'
+            ),
+            'type': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='카운트 유형 (1: 회원 보행, 2: 회원 체형, 3: 비회원 보행, 4: 비회원 체형)'
+            )
+        }
+    ),
+    'responses': {
+        200: 'Success',
+        400: 'Bad Request; session_key is not provided in the request body',
+        404: 'Not Found; session_key is not found'
+    },
+    'tags': ['kiosk']
+}
+
+
 ############################################################################################################
 ############################################################################################################
 ##################################               모바일 공용               ####################################
