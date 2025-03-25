@@ -41,14 +41,23 @@ def login_mobile(request): # 데이브님 쪽 로직 --> 로그인만 가능 (�
         # AuthInfo를 찾을 수 없는 경우 처리 (인증번호 안옴)
         return Response({'data': {'message': 'Not received', 'status': status.HTTP_404_NOT_FOUND}}, status=status.HTTP_200_OK)
     
+    # 로그인 로직
     # 인증번호 발신자 전화번호로 DB 쿼리
-    check_user_info = UserInfo.objects.filter(phone_number=auth_info.phone_number)
+    # check_user_info = UserInfo.objects.filter(phone_number=auth_info.phone_number)
 
-    if check_user_info.exists():                            # 회원이 존재한다면
-        authorized_user_info = check_user_info.first() # 쿼리셋 당김 
-    else:                                                   # 회원이 존재하지 않는다면
-        auth_info.delete()                # 인증테이블에서 인증번호 정보 삭제                                   
-        return Response({'data': {'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}}, status=status.HTTP_200_OK)
+    # if check_user_info.exists():                            # 회원이 존재한다면
+    #     authorized_user_info = check_user_info.first() # 쿼리셋 당김 
+    # else:                                                   # 회원이 존재하지 않는다면
+    #     auth_info.delete()                # 인증테이블에서 인증번호 정보 삭제                                   
+    #     return Response({'data': {'message': 'unregistered user', 'status': status.HTTP_403_FORBIDDEN}}, status=status.HTTP_200_OK)
+
+    # 회원가입 or 로그인 로직
+    authorized_user_info, user_created = UserInfo.objects.get_or_create(
+        phone_number=auth_info.phone_number,
+        defaults=dict(
+            username=auth_info.phone_number,
+            password=make_password(os.environ['DEFAULT_PASSWORD']),
+        ))
         
 
     if authorized_user_info.school is not None:
