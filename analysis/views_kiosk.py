@@ -540,21 +540,28 @@ def kiosk_use_count(request):
 @swagger_auto_schema(**kiosk_signup_)
 @api_view(['POST'])
 def kiosk_signup(request):
+    session_key = request.data.get('session_key')
     phone_number = request.data.get('phone_number')
     password = request.data.get('password')
 
+    try:
+        session_info = SessionInfo.objects.get(session_key=session_key)
+    except SessionInfo.DoesNotExist:
+        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 1}})
+
+
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
-        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 400})
+        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
 
     try:
         UserInfo.objects.get(phone_number=phone_number)
-        return JsonResponse({'message': 'phone_number_already_exists', 'status': 400})
+        return JsonResponse({'message': 'phone_number_already_exists', 'status': 3})
     except UserInfo.DoesNotExist:
         pass
 
     if not phone_number or not password:
-        return JsonResponse({'message': 'phone_number_and_password_required', 'status': 400})
+        return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
 
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
         phone_number=phone_number,
@@ -572,5 +579,5 @@ def kiosk_signup(request):
 
     authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
 
-    return JsonResponse({'message': 'success', 'status': 200})
+    return JsonResponse({'message': 'success', 'status': 0})
 
