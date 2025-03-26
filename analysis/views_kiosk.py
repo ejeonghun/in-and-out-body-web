@@ -460,11 +460,13 @@ def get_userinfo_session(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
         user_info = UserInfo.objects.get(id=session_info.user_id)
+        if (user_info.user_type != 'S'):
+            user_info.student_name = '회원'
     except UserInfo.DoesNotExist:
         return Response({"data": {"message": "user_not_found", "status": 401}})
 
