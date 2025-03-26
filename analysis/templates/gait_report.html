@@ -148,6 +148,29 @@
       }
     }
     
+    .view-print-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #007bff;
+    text-decoration: none;
+    border-radius: 5px;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.view-print-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.view-print-btn:active {
+    background-color: #004494;
+    transform: scale(0.98);
+}
+    
       
 </style>
 <h2>보행 분석 결과를 확인해주세요</h2>
@@ -238,6 +261,7 @@
                 <th>검사 횟수</th>
                 <th>최근 검사일</th>
                 <th>상세 보기</th>
+                <th>출력</th>
             </tr>
         </thead>
         <tbody id="userResultsTableBody">
@@ -262,6 +286,13 @@
                 <td>
                     {% if result.analysis_valid %}
                         <button class="view-details-btn" data-userid="{{ result.user.id }}">상세 보기</button>
+                    {% else %}
+                        <span class="no-data">데이터 없음</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if result.analysis_valid %}
+                        <a class="view-print-btn button" style="color: white;" href="{% url 'gait_print' result.user.id %}">PDF 출력</a>
                     {% else %}
                         <span class="no-data">데이터 없음</span>
                     {% endif %}
