@@ -1,0 +1,917 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>체형 분석 보고서 - 인쇄용</title>
+    <style>
+        /* 기본 스타일 */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0px;
+            background-color: #f5f5f5;
+            color: #333;
+            width: 100%;
+            max-width: 210mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            margin: 0 auto;
+            background-color: white;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 190mm;
+            box-sizing: border-box;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        /* 상단 헤더 스타일 */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .report-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .user-info {
+            text-align: center;
+            margin-bottom: 15px;
+            background-color: #f0f7fc;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .user-info h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        /* 이미지 컨테이너 */
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .image-block {
+            width: 48%;
+        }
+        
+        .image-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .image-wrapper {
+            position: relative;
+        }
+        
+        .image-wrapper img {
+            width: 100%;
+            border-radius: 8px;
+            max-height: 13.5cm;
+            object-fit: contain;
+        }
+        
+        
+        /* 그리드 레이아웃 */
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .report-grid-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* 보고서 카드 스타일 */
+        .report-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .left-content {
+            flex: 1;
+        }
+        
+        .title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .description-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .description-value {
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: brightness(0);
+        }
+        
+        /* 차트 캔버스 스타일 수정 */
+        .chart-canvas {
+            width: 100% !important;
+            height: 120px !important;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .sub-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        /* 섹션 스타일 */
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            color: #2c3e50;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .section-item {
+            break-inside: avoid;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .section-item h3 {
+            font-size: 14px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .section-item p, .section-item li {
+            font-size: 12px;
+            line-height: 1.5;
+            margin: 0;
+        }
+        
+        .section-item ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin: 8px 0;
+        }
+        
+        /* 인쇄 버튼 */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .print-button:hover {
+            background-color: #2980b9;
+        }
+        
+        /* 그래프 그리드 스타일 수정 */
+        .graph-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .graph-item {
+            background-color: white;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* 인쇄 관련 스타일 추가 */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0.8cm;
+            }
+            
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background-color: white;
+                max-width: none;
+            }
+            
+            .container {
+                width: 100%;
+                max-width: none;
+                padding: 0.4cm;
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .graph-grid {
+                page-break-before: auto;
+                break-before: auto;
+                page-break-inside: auto;
+                break-inside: auto;
+            }
+            
+            .main-title:nth-of-type(3) {
+                page-break-before: auto;
+                break-before: auto;
+            }
+            
+            .report-grid-item, .graph-item {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .report-header {
+                display: block;
+            }
+            
+            .main-title {
+                margin: 8px 0 5px 0;
+            }
+            
+            .title {
+                font-size: 11pt !important;
+            }
+            
+            .description-value, .description-label {
+                font-size: 9pt !important;
+            }
+            
+            .result-value {
+                font-size: 9pt !important;
+            }
+            
+            .sub-title {
+                font-size: 11pt !important;
+            }
+            
+            h1 {
+                font-size: 14pt !important;
+            }
+            
+            .section-item h3 {
+                font-size: 10pt !important;
+            }
+            
+            .section-item p, .section-item li {
+                font-size: 9pt !important;
+            }
+            
+            .image-container {
+                padding: 6px;
+                margin-bottom: 8px;
+                max-width: 100%;
+                page-break-inside: avoid;
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .image-wrapper img {
+                max-height: 10cm;
+            }
+            
+            #print-button {
+                display: none;
+            }
+            
+            .main-title {
+                border-left: 5px solid #3498db;
+                background-color: #f0f7fc !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        /* 목차 스타일 추가 */
+        .main-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 15px 0 8px 0;
+            padding: 6px 10px;
+            border-left: 5px solid #3498db;
+            background-color: #f0f7fc;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .main-title::before {
+            content: "■";
+            color: #3498db;
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .spinal_imbalance_text_result {
+            font-size: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-button-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button id="print-report" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200 flex items-center" onclick="body_print()">
+            <i class="bi bi-printer mr-2"></i> 인쇄하기
+        </button>
+    </div>
+    
+    <div class="container">
+        <!-- 헤더 영역 -->
+        <div class="report-header">
+            <div class="report-title">체형 분석 보고서</div>
+            <div class="report-date">{{ current_date|date:"Y년 m월 d일" }}</div>
+        </div>
+        
+        <!-- 사용자 정보 -->
+        <div class="user-info">
+            {% if user.user_type == 'S' %}
+                <h1>{{ user.school.school_name }} {{ user.student_grade }}학년 {{ user.student_class }}반 {{ user.student_number }}번 {{ user.student_name }} 님의 체형 분석 결과</h1>
+            {% elif user.user_type == 'O' %}
+                <h1>{{ user.organization.organization_name }} {{ user.department }} {{ user.student_name }} 님의 체형 분석 결과</h1>
+            {% else %}
+                <h1>{{ user.student_name }} 님의 체형 분석 결과</h1>
+            {% endif %}
+        </div>
+        
+        <!-- 이미지 섹션 -->
+        <div class="image-container">
+            <div class="image-block">
+                <p class="image-title">정면 이미지</p>
+                <div class="image-wrapper">
+                    <img src="{{ image_front_url }}" alt="Front Image" id="front-image">
+                </div>
+            </div>
+            <div class="image-block">
+                <p class="image-title">측면 이미지</p>
+                <div class="image-wrapper">
+                    <img src="{{ image_side_url }}" alt="Side Image" id="side-image">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 리포트 카드 그리드 -->
+        <div class="main-title">체형 스캔 상세 결과</div>
+        <div class="report-grid">
+            {% for item in report_items %}
+                <div class="report-grid-item">
+                    <div class="report-card">
+                        <div class="left-content">
+                            <div class="title {{ item.alias }}_text">{{ item.title }}</div>
+                            <div class="description-label {{ item.alias }}_text">측정 결과 | {{ item.metric }}</div>
+                            {% if item.description_list %}
+                                {% for description_item in item.description %}
+                                    <div class="description-value {{ item.alias }}_text">⭐️ {{ description_item }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="description-value {{ item.alias }}_text">{{ item.description }}</div>
+                            {% endif %}
+                            {% comment %} {% if item.alias != 'spinal_imbalance' %} {% endcomment %}
+                            <div class="result-value {{ item.alias }}_text_result" style="font-size: {% if item.alias ==  'spinal_imbalance'%}6px {% else %}{% if item.result|split:','|length > 1 %}13px{% else %}16px{% endif %}{% endif %};">
+                                {% for result_item in item.result|split:',' %}
+                                    {{ result_item|trim }}{% if not forloop.last %}<br>{% endif %}
+                                {% endfor %}
+                            </div>
+                            {% comment %} {% endif %} {% endcomment %}
+                        </div>
+                        <img src="{% static 'icons/' %}{{ item.alias }}.svg" alt="{{ item.title }} icon" class="card-icon" style="width: 40px; height: 40px;">
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- 주의 문구 -->
+        {% comment %} <div class="caution-text">⚠️ 위 내용은 일반적으로 알려진 의학상식에 대한 설명이며 스캔 결과가 의학적 판단 및 진단과는 무관합니다. 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.</div> {% endcomment %}
+
+        <!-- 그래프 그리드 -->
+        <div class="main-title">변화 추이</div>
+        <div class="graph-grid">
+            {% for item in report_items %}
+                <div class="graph-item">
+                    <div class="sub-title">{{ item.title }}</div>
+                    <canvas id="chart_{{ item.alias }}" class="chart-canvas"></canvas>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 상세 정보 섹션 -->
+        {% comment %} <div class="main-title">상세 정보</div>
+        {% for item in report_items %}
+            <div class="sub-title">{{ item.title }} 상세 정보</div>
+            <div class="section-grid">
+                {% for key, content in item.sections.items %}
+                    <div class="section-item">
+                        <h3>{{ key }}</h3>
+                        {% if key == '권장계획' %}
+                            <ul>
+                            {% for content_ in content %}
+                                <li>{{ content_|safe }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>{{ content|safe }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% if not forloop.last %}
+                <div class="divider"></div>
+            {% endif %}
+        {% endfor %} {% endcomment %}
+        
+        <div class="caution-text">⚠️ 위 내용은 일반적으로 알려진 의학상식에 대한 설명이며 스캔 결과가 의학적 판단 및 진단과는 무관합니다. 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 페이지 렌더링이 모두 완료되면
+        const sideImage = document.getElementById('side-image');
+        const frontImage = document.getElementById('front-image');
+        const printButton = document.getElementById('print-report');
+        
+        {% comment %} sideImage.addEventListener('load', function() {
+            // 이미지가 로드되면 인쇄
+            // window.print();
+            
+        });
+        
+        frontImage.addEventListener('load', function() {
+            // 이미지가 로드되면 인쇄
+            // window.print();
+            
+        }); {% endcomment %}
+
+        if (sideImage.complete && frontImage.complete) {
+            // 이미지가 로드되면 인쇄
+            // 0.1초 후
+
+            printButton.style.display = 'none';
+
+            console.log('이미지 로드 완료');
+            window.print();
+        }
+
+        function body_print() {
+            printButton.style.display = 'none';
+            window.print();
+        }
+
+
+        </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const datesSize = '{{sorted_dates|length}}';
+            const dateScores = {};
+            const trendDataDict = {{ trend_data_dict|safe }};
+            
+            console.log(trendDataDict);
+            
+            // 점수 계산
+            {% for item in report_items %}
+            var itemAlias = '{{ item.alias }}';
+            var normalRange = {{ item.normal_range|safe }};
+            var trendData = trendDataDict[itemAlias];
+            
+            console.log(normalRange);
+            console.log(trendData);
+
+            trendData.dates.forEach((date, index) => {
+                if (!dateScores[date]) {
+                    dateScores[date] = {normal: 0, total: 11};
+                }
+                
+                if (itemAlias === 'spinal_imbalance' || itemAlias === 'o_x_legs' || itemAlias === 'knee_angle') {
+                    const val1 = trendData.val1[index];
+                    const val2 = trendData.val2[index];
+                    if (val1 >= normalRange[0] && val1 <= normalRange[1]) {
+                        dateScores[date].normal++;
+                    }
+                    if (val2 >= normalRange[0] && val2 <= normalRange[1]) {
+                        dateScores[date].normal++;
+                    }
+                } else {
+                    const value = trendData.values[index];
+                    if (value >= normalRange[0] && value <= normalRange[1]) {
+                        dateScores[date].normal++;
+                    }
+                }
+            });
+            {% endfor %}
+
+            if (parseInt(datesSize) > 1) {
+                // 날짜별 점수 표시 업데이트
+                function updateDateScoreDisplay() {
+                    Object.entries(dateScores).forEach(([date, score]) => {
+                        const emoji = document.getElementById(`emoji-${date}`);
+                        const scoreElement = document.getElementById(`score-${date}`);
+                        if (!emoji || !scoreElement) return;
+                        
+                        const ratio = score.normal / score.total;
+                        
+                        // 이모지 설정
+                        if (ratio >= 0.8) {
+                            emoji.textContent = '😊';
+                            scoreElement.className = 'score score-high';
+                        } else if (ratio >= 0.5) {
+                            emoji.textContent = '🙂';
+                            scoreElement.className = 'score score-medium';
+                        } else {
+                            emoji.textContent = '😟';
+                            scoreElement.className = 'score score-low';
+                        }
+                        
+                        // 점수 표시
+                        scoreElement.textContent = `점수 : ${score.normal}/${score.total}`;
+                    });
+
+                    const items_size = document.getElementById('items_size');
+                    if (items_size) {
+                        items_size.textContent = `총 ${datesSize}개의 검사 결과`;
+                    }
+                }
+
+                // 선택된 날짜까지의 스크롤 함수
+                function scrollToSelectedDate() {
+                    const container = document.querySelector('.date-score-container');
+                    const selectedDate = document.querySelector('.date-item.selected');
+                    
+                    if (container && selectedDate) {
+                        const containerRect = container.getBoundingClientRect();
+                        const selectedRect = selectedDate.getBoundingClientRect();
+                        
+                        container.scrollLeft = selectedRect.left - containerRect.left + container.scrollLeft - (containerRect.width / 2) + (selectedRect.width / 2);
+                    }
+                }
+                
+                updateDateScoreDisplay();
+                scrollToSelectedDate();
+            }
+            
+            // 각 차트 초기화
+            {% for item in report_items %}
+            const ctx_{{ item.alias }} = document.getElementById('chart_{{ item.alias }}').getContext('2d');
+            const normalRange_{{ item.alias }} = {{ item.normal_range|safe }};
+            const valueRange_{{ item.alias }} = {{ item.value_range|safe }};
+            
+            {% if item.alias == 'spinal_imbalance' or item.alias == 'o_x_legs' or item.alias == 'knee_angle' %}
+                // 날짜 포맷 조정
+                const formattedDates_{{ item.alias }} = trendDataDict['{{ item.alias }}'].dates.map(date => date.slice(0, 10));
+                
+                new Chart(ctx_{{ item.alias }}, {
+                    type: 'line',
+                    data: {
+                        labels: formattedDates_{{ item.alias }},
+                        datasets: [
+                            // 실제 데이터
+                            {
+                                label: trendDataDict['{{ item.alias }}'].part[0],
+                                data: trendDataDict['{{ item.alias }}'].val1,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                fill: false
+                            },
+                            {
+                                label: trendDataDict['{{ item.alias }}'].part[1],
+                                data: trendDataDict['{{ item.alias }}'].val2,
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                min: valueRange_{{ item.alias }}[0],
+                                max: valueRange_{{ item.alias }}[1],
+                                // 배경에 정상 범위 영역 색칠
+                                grid: {
+                                    drawOnChartArea: true,
+                                    color: function(context) {
+                                        // Y축 값 얻기
+                                        const value = context.tick.value;
+                                        // 정상 범위 내 그리드 줄은 투명하게
+                                        if (value >= normalRange_{{ item.alias }}[0] && value <= normalRange_{{ item.alias }}[1]) {
+                                            return 'rgba(0, 0, 0, 0.05)'; // 매우 연한 회색
+                                        }
+                                        return 'rgba(0, 0, 0, 0.1)'; // 연한 회색
+                                    }
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 8
+                                    }
+                                },
+                                // 정상 범위 배경색 추가
+                                afterDraw: function(chart) {
+                                    const ctx = chart.ctx;
+                                    const yAxis = chart.scales.y;
+                                    const xAxis = chart.scales.x;
+                                    
+                                    // 정상 범위 시작점과 끝점
+                                    const yStart = yAxis.getPixelForValue(normalRange_{{ item.alias }}[0]);
+                                    const yEnd = yAxis.getPixelForValue(normalRange_{{ item.alias }}[1]);
+                                    
+                                    // 배경색 칠하기
+                                    ctx.fillStyle = 'rgba(75, 192, 192, 0.2)'; // 연한 초록색
+                                    ctx.fillRect(xAxis.left, yEnd, xAxis.width, yStart - yEnd);
+                                    
+                                    // 정상 범위 경계선 그리기
+                                    ctx.beginPath();
+                                    ctx.lineWidth = 1;
+                                    ctx.strokeStyle = 'rgba(75, 192, 192, 0.5)';
+                                    ctx.setLineDash([5, 5]);
+                                    
+                                    // 하한선
+                                    ctx.moveTo(xAxis.left, yStart);
+                                    ctx.lineTo(xAxis.right, yStart);
+                                    
+                                    // 상한선
+                                    ctx.moveTo(xAxis.left, yEnd);
+                                    ctx.lineTo(xAxis.right, yEnd);
+                                    
+                                    ctx.stroke();
+                                    ctx.setLineDash([]);
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 8
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    boxWidth: 8,
+                                    font: {
+                                        size: 8
+                                    }
+                                },
+                                position: 'top',
+                                align: 'center'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.raw;
+                                        const dsLabel = context.dataset.label;
+                                        
+                                        let label = dsLabel + ': ' + value;
+                                        
+                                        // 정상 범위 안에 있는지 표시
+                                        if (value >= normalRange_{{ item.alias }}[0] && value <= normalRange_{{ item.alias }}[1]) {
+                                            label += ' (정상 범위)';
+                                        }
+                                        
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'normalRangeBackground',
+                        beforeDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const yAxis = chart.scales.y;
+                            const xAxis = chart.scales.x;
+                            
+                            // 정상 범위 시작점과 끝점
+                            const yStart = yAxis.getPixelForValue(normalRange_{{ item.alias }}[0]);
+                            const yEnd = yAxis.getPixelForValue(normalRange_{{ item.alias }}[1]);
+                            
+                            // 배경색 칠하기
+                            ctx.fillStyle = 'rgba(75, 192, 192, 0.2)'; // 연한 초록색
+                            ctx.fillRect(xAxis.left, yEnd, xAxis.width, yStart - yEnd);
+                            
+                            // 정상 범위 경계선 그리기
+                            ctx.beginPath();
+                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = 'rgba(75, 192, 192, 0.5)';
+                            ctx.setLineDash([5, 5]);
+                            
+                            // 하한선
+                            ctx.moveTo(xAxis.left, yStart);
+                            ctx.lineTo(xAxis.right, yStart);
+                            
+                            // 상한선
+                            ctx.moveTo(xAxis.left, yEnd);
+                            ctx.lineTo(xAxis.right, yEnd);
+                            
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                    }]
+                });
+            {% else %}
+                // 단일 값 차트에 대해서도 동일하게 적용
+                // 날짜 포맷 조정
+                const formattedDates_{{ item.alias }} = trendDataDict['{{ item.alias }}'].dates.map(date => date.slice(0, 10));
+                
+                new Chart(ctx_{{ item.alias }}, {
+                    type: 'line',
+                    data: {
+                        labels: formattedDates_{{ item.alias }},
+                        datasets: [
+                            // 실제 데이터
+                            {
+                                label: '{{ item.title }}',
+                                data: trendDataDict['{{ item.alias }}'].values,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                min: valueRange_{{ item.alias }}[0],
+                                max: valueRange_{{ item.alias }}[1],
+                                ticks: {
+                                    font: {
+                                        size: 8
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 8
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    boxWidth: 8,
+                                    font: {
+                                        size: 8
+                                    }
+                                },
+                                position: 'top',
+                                align: 'center'
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'normalRangeBackground',
+                        beforeDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const yAxis = chart.scales.y;
+                            const xAxis = chart.scales.x;
+                            
+                            // 정상 범위 시작점과 끝점
+                            const yStart = yAxis.getPixelForValue(normalRange_{{ item.alias }}[0]);
+                            const yEnd = yAxis.getPixelForValue(normalRange_{{ item.alias }}[1]);
+                            
+                            // 배경색 칠하기
+                            ctx.fillStyle = 'rgba(75, 192, 192, 0.2)'; // 연한 초록색
+                            ctx.fillRect(xAxis.left, yEnd, xAxis.width, yStart - yEnd);
+                            
+                            // 정상 범위 경계선 그리기
+                            ctx.beginPath();
+                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = 'rgba(75, 192, 192, 0.5)';
+                            ctx.setLineDash([5, 5]);
+                            
+                            // 하한선
+                            ctx.moveTo(xAxis.left, yStart);
+                            ctx.lineTo(xAxis.right, yStart);
+                            
+                            // 상한선
+                            ctx.moveTo(xAxis.left, yEnd);
+                            ctx.lineTo(xAxis.right, yEnd);
+                            
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                    }]
+                });
+            {% endif %}
+            {% endfor %}
+            
+            // 인쇄 직전에 차트 크기 업데이트 및 최적화
+            window.addEventListener('beforeprint', function() {
+                // 인쇄 최적화를 위한 강제 delay
+                setTimeout(() => {
+                    {% for item in report_items %}
+                    const chart_{{ item.alias }} = Chart.getChart(document.getElementById('chart_{{ item.alias }}'));
+                    if (chart_{{ item.alias }}) {
+                        chart_{{ item.alias }}.resize();
+                        chart_{{ item.alias }}.update();
+                    }
+                    {% endfor %}
+                }, 200);
+            });
+        });
+    </script>    
+</body>
+</html>

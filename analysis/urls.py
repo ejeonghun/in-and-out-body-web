@@ -28,8 +28,8 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     public=True,
-    # permission_classes=(permissions.AllowAny,),
-    permission_classes=(IsAllowedIP,),  # 허용된 IP주소만 접근 가능
+    permission_classes=(permissions.AllowAny,),
+    # permission_classes=(IsAllowedIP,),  # 허용된 IP주소만 접근 가능
 )
 
 urlpatterns = [
@@ -47,9 +47,12 @@ urlpatterns = [
     path('report/<int:id>/', views.report_detail, name='report_detail'),
     path('report_download/', views.report_download, name='report_download'),
 
+    # 관리자 페이지 보행 관련 대시보드
     path('gait-report/', views.gait_report, name='gait_report'),
     path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
+    path('gait-print/<int:id>/', views.gait_print, name='gait_print'),
 
+    path('body-print/<int:id>/', views.body_print, name='body_print'),
 
     path('no-result/', views.no_result, name='no_result'),
     path('policy/', views.policy, name='policy'),
@@ -84,6 +87,7 @@ urlpatterns = [
     path('api/analysis/body/get_result/', views_kiosk.get_body_result, name='get_body_result'),
     path('api/analysis/get_info/', views_kiosk.get_info, name='get_info'),
     path('api/analysis/count/', views_kiosk.kiosk_use_count, name='kiosk_use_count'),
+
     # 기관 정보 조회 api
     path('api/search-organization/', views.search_organization, name='search_organization'),
     path('api/register-organization/', views.register_organization, name='register_organization'),
@@ -102,8 +106,6 @@ urlpatterns = [
     path('api/mobile/code/get_code/', views_mobile.get_code, name='mobile-code-get_code'),  # 코드 정보 가져오기
     path('api/mobile/gait/get_gait_result/', views_mobile.get_gait_result, name='mobile-gait-get_gait_result'),
     # 보행 결과 가져오기
-    path('api/mobile/body/get_body_result/<int:id>/',
-         views_mobile.get_body_result_id, name='mobile-body-get_body_result'),  # 체형 결과 가져오기
     path('api/mobile/body/get_body_result/', views_mobile.get_body_result, name='mobile-body-get_body_result'),
     # 체형 결과 가져오기
     path('api/mobile/gait/delete_gait_result/', views_mobile.delete_gait_result, name='mobile-body-delete_gait_result'),
@@ -115,12 +117,26 @@ urlpatterns = [
     # ID 로그인 요청 (ID를 사용하여 로그인)
 
     ## AOS(체형분석앱) 전용 API
-    path('api/mobile/login-mobile-register/', views_aos.login_mobile_register,
-         name='mobile-auth-request_auth_register'),  # 휴대폰 인증 요청 (회원가입 / 로그인)
-    path('api/mobile/body/create_body_result/', views_aos.create_body_result, name='mobile-body-create_body_result'),
-    # 체형 결과 생성
-    path('api/mobile/body/sync_body_result/', views_aos.mobile_body_sync, name='mobile-body-mobile_body_sync'),
+    path('api/v2/mobile/login-mobile-register/', views_aos.login_mobile_register,
+         name='mobile-aos-auth-request_auth_register'),  # 휴대폰 인증 요청 (회원가입 / 로그인)
+    path('api/v2/mobile/body/create_body_result/', views_aos.create_body_result,
+         name='mobile-aos-body-create_body_result'),  # 체형 결과 생성
+    path('api/v2/mobile/body/sync_body_result/', views_aos.mobile_body_sync, name='mobile-aos-body-mobile_body_sync'),
     # 체형 결과 동기화(bodyresults의 ID값만 반환함)
+    path('api/v2/mobile/body/get_body_result/', views_aos.get_body_result_aos, name="mobile-aos-body-get_body_result"),
+    # 체형 결과 가져오기
+    path('api/v2/mobile/body/get_body_result/<int:id>/',
+         views_aos.get_body_result_aos_id, name='mobile-aos-body-get_body_result'),  # 체형 결과 가져오기
+
+    # AOS(체형분석앱) 가족 사용자 API
+    path('api/v2/mobile/family/create_family_user/', views_aos.create_family_user,
+         name='mobile-aos-family-create_family_user'),  # 가족 사용자 생성
+    path('api/v2/mobile/family/get_family_user/', views_aos.get_family_user, name='mobile-aos-family-get_family_user'),
+    # 가족 사용자 정보 가져오기
+    path('api/v2/mobile/family/delete_family_user/', views_aos.delete_family_user,
+         name='mobile-aos-family-delete_family_user'),  # 가족 사용자 삭제
+    path('api/v2/mobile/family/update_family_user/', views_aos.update_family_user,
+         name='mobile-aos-family-update_family_user'),  # 가족 사용자 정보 수정
 
     # 디버그 환경이 아닐 때도 Swagger에 접근이 가능하나 단, 허용된 IP만 접근 가능
     re_path(r'^docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name="schema-json"),

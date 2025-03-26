@@ -16,8 +16,9 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, KioskCount
+    calculate_normal_ratio, create_excel_report, session_check_expired
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
+    KioskInfo, KioskCount
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
 
@@ -33,13 +34,13 @@ from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
 from django.db.models import Q
 
-from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_, kiosk_signup_
-
+from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, \
+    kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, \
+    kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_, kiosk_signup_
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
-
 
 
 # KIOSK_LATEST_VERSION = get_kiosk_latest_version()
@@ -460,7 +461,7 @@ def get_userinfo_session(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
@@ -549,7 +550,6 @@ def kiosk_signup(request):
     except SessionInfo.DoesNotExist:
         return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 1}})
 
-
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
         return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
@@ -563,11 +563,25 @@ def kiosk_signup(request):
     if not phone_number or not password:
         return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
 
+    # 세션 키로 해당 키오스크가 사용되고 있는 기관 정보 조회
+    kiosk_id = session_info.kiosk_id
+    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk_id).first()
+    if not kiosk_info:
+        return JsonResponse({'message': 'kiosk_not_found', 'status': 5})
+
+    kiosk_use_org = kiosk_info.Org
+    if not kiosk_use_org:
+        return JsonResponse({'message': 'organization_not_found', 'status': 6})
+
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
         phone_number=phone_number,
         defaults=dict(
             username=phone_number,
-            password=make_password(password)
+            password=make_password(password),
+            organization=kiosk_use_org,
+            department='방문자',
+            student_name=phone_number,
+            user_type='O'
         ))
 
     if authorized_user_info.school is not None:

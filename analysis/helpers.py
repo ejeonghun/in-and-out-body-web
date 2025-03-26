@@ -98,7 +98,7 @@ def upload_image_to_s3(image_data, file_keys):
         s3.upload_fileobj(
             Fileobj=buffer,
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=file_name,
+            Key='profile/' + file_name if file_keys[0] not in ['front', 'side'] else file_name,
             ExtraArgs={'ContentType': 'image/png'},  # ContentType 설정
             Config=transfer_config
         )
@@ -416,20 +416,18 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
 
 
 """ 키오스크 최신 버전 캐싱 함수 """
+# def get_kiosk_latest_version():
+#     version = cache.get('KIOSK_LATEST_VERSION')
 
+#     if version is None:
+#         # id=-1 데이터를 가져오거나 없으면 새로 생성
+#         kiosk, created = KioskInfo.objects.get_or_create(
+#             id=-1,
+#             defaults={'version': '1.0.0'}  # 기본 버전 설정
+#         )
+#         version = kiosk.version
 
-def get_kiosk_latest_version():
-    version = cache.get('KIOSK_LATEST_VERSION')
+#         # 캐시에 저장 (30분 동안 유지)
+#         cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)
 
-    if version is None:
-        # id=-1 데이터를 가져오거나 없으면 새로 생성
-        kiosk, created = KioskInfo.objects.get_or_create(
-            id=-1,
-            defaults={'version': '1.0.0'}  # 기본 버전 설정
-        )
-        version = kiosk.version
-
-        # 캐시에 저장 (30분 동안 유지)
-        cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)
-
-    return version
+#     return version

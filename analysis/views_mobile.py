@@ -25,10 +25,10 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q
 
 from analysis.swagger import login_mobile_, login_mobile_id_pw_, login_mobile_uuid_, delete_user_, get_user_, get_code_, \
-    get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_, delete_body_result_, \
-    mobile_body_sync_
+    get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_, delete_body_result_
 
 kst = pytz.timezone('Asia/Seoul')
+
 
 @swagger_auto_schema(**login_mobile_)
 @api_view(['POST'])
@@ -412,96 +412,6 @@ def get_body_result(request):
     }
 
     return Response(response_data, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def get_body_result_id(request, id):
-    user_id = request.user.id
-
-    if not id:  # body_id가 없는 경우
-        return Response({'data': {'message': 'body_id_required'}}, status=status.HTTP_400_BAD_REQUEST)
-
-    # keypoints 같이 조회
-    body_result = BodyResult.objects.prefetch_related('keypoints').filter(
-        user_id=user_id,
-        id=id
-    ).first()
-    if body_result is None:  # body_result가 없는 경우(존재하지 않거나, 회원 id와 매칭되는 body_result가 아닌경우)
-        return Response({'data': {'message': 'body_result_not_found'}}, status=status.HTTP_404_NOT_FOUND)
-
-    try:
-        # 이미지 URL 생성
-        created_dt = body_result.created_dt.strftime('%Y%m%dT%H%M%S%f')
-        image_front_url = generate_presigned_url(file_keys=['front', created_dt])
-        image_side_url = generate_presigned_url(file_keys=['side', created_dt])
-
-        # image_front_url, image_side_url 1시간 접근 가능 URL 업데이트
-        body_result.image_front_url = image_front_url
-        body_result.image_side_url = image_side_url
-        body_result.save()
-
-        # Front data 구성
-        front_data = {
-            'results': {
-                'shoulder_level_angle': body_result.shoulder_level_angle,
-                'hip_level_angle': body_result.hip_level_angle,
-                'face_level_angle': body_result.face_level_angle,
-                'scoliosis_shoulder_ratio': body_result.scoliosis_shoulder_ratio,
-                'scoliosis_hip_ratio': body_result.scoliosis_hip_ratio,
-                'leg_length_ratio': body_result.leg_length_ratio,
-                'left_leg_alignment_angle': body_result.left_leg_alignment_angle,
-                'right_leg_alignment_angle': body_result.right_leg_alignment_angle,
-            },
-            'keypoints': []
-        }
-
-        # Side data 구성
-        side_data = {
-            'results': {
-                'forward_head_angle': body_result.forward_head_angle,
-                'left_back_knee_angle': body_result.left_back_knee_angle,
-                'right_back_knee_angle': body_result.right_back_knee_angle,
-            },
-            'keypoints': []
-        }
-
-        # Keypoints 데이터 처리
-        for keypoint in body_result.keypoints.all():  # Keypoint 객체 순회(총 2개)
-            keypoint_data = [
-                {
-                    'x': x,
-                    'y': y,
-                    'z': z,
-                    'visibility': v,
-                    'presence': p
-                }
-                for x, y, z, v, p in zip(
-                    keypoint.x,
-                    keypoint.y,
-                    keypoint.z,
-                    keypoint.visibility,
-                    keypoint.presence
-                )
-            ]
-
-            if keypoint.pose_type == 'front':  # pose별 keypoint 데이터 분리
-                front_data['keypoints'] = keypoint_data
-            else:
-                side_data['keypoints'] = keypoint_data
-
-        # 최종 응답 데이터 구성
-        response_data = {
-            'front_data': front_data,
-            'side_data': side_data,
-            'image_front': image_front_url,
-            'image_side': image_side_url
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @swagger_auto_schema(**delete_gait_result_)
