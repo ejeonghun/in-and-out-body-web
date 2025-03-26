@@ -16,11 +16,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
+    calculate_normal_ratio, create_excel_report, session_check_expired
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
-    KioskInfo
+    KioskInfo, GaitResult
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
-from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, UserInfoSerializer
+from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, UserInfoSerializer, \
+    CodeInfoSerializer
 
 from django.db.models import Min, Max, Exists, OuterRef, Count
 from django.db.models.functions import ExtractYear
@@ -35,12 +36,9 @@ from urllib.parse import quote
 from django.db.models import Q
 from django.core.serializers.json import DjangoJSONEncoder
 
-
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
-
-# KIOSK_LATEST_VERSION = get_kiosk_latest_version()
 
 
 def home(request):
@@ -69,14 +67,14 @@ def main(request):  # 추후 캐싱 기법 적용
         # 학교
         if user.user_type == 'S':
             # 유저 소속
-            user_affil = user.school.school_name
+            user_affil = user.school.school_name  # 유저 소속(학교이름)
 
             # 총 회원 수
             members = UserInfo.objects.filter(
                 school__school_name=user.school.school_name
             ).count()
 
-            # 총 검사 수
+            # 체형 총 검사 수
             total_results = BodyResult.objects.filter(
                 user__school__school_name=user.school.school_name,
                 image_front_url__isnull=False,
@@ -134,26 +132,34 @@ def main(request):  # 추후 캐싱 기법 적용
 
         else:
             # 유저 소속 - 기관
-            user_affil = user.organization.organization_name
+            user_affil = user.organization.organization_name  # 유저 소속(기관이름)
 
             # 총 회원 수
             members = UserInfo.objects.filter(
                 organization__id=user.organization.id
             ).count()
 
-            # 총 검사 수
+            # 체형 총 검사 수
             total_results = BodyResult.objects.filter(
                 user__organization__id=user.organization.id,
                 image_front_url__isnull=False,
                 image_side_url__isnull=False
             ).count()
 
-            # 이번달 검사 수
+            # 이번달 체형 검사 수
             current_month_results = BodyResult.objects.filter(
                 user__organization__organization_name=user.organization.organization_name,
                 image_front_url__isnull=False,
                 image_side_url__isnull=False,
                 created_dt__month=dt.now().month
+            ).count()
+
+            # 보행 총 검사 수
+            org_users = UserInfo.objects.filter(organization__id=user.organization.id)
+
+            # for문을 순회하며 gait_result에 해당하는 user_id가 있는지 확인
+            total_gait_results = GaitResult.objects.filter(
+                user_id__in=org_users.values('id')
             ).count()
 
             # 미완료 검사 수
@@ -191,6 +197,7 @@ def main(request):  # 추후 캐싱 기법 적용
             'pending_tests': pending_tests,
             'group_structure': group_structure,
             'year': year,
+            **({'total_gait_results': total_gait_results} if user.user_type == 'O' else {})  # 수정된 부분
         })
 
     context['has_affiliation'] = has_affiliation
@@ -1445,6 +1452,16 @@ def get_user_gait_data(request, user_id):
     })
 
 
+# JSON 인코더 확장
+class RoundingJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, float):
+            return round(obj, 1)
+        elif hasattr(obj, '__dict__'):
+            return obj.__dict__
+        return super().default(obj)
+
+
 @login_required
 def gait_report(request):
     user = request.user  # 현재 로그인한 유저
@@ -1483,7 +1500,8 @@ def gait_report(request):
                     'user': UserInfoSerializer(user).data,
                     'analysis_valid': analysis_valid,
                     'gait_results': GaitResultSerializer(gate_result_queryset, many=True).data,  # 수정된 부분
-                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime('%Y-%m-%d %H:%M:%S') if gate_result_queryset else None
+                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime(
+                        '%Y-%m-%d %H:%M:%S') if gate_result_queryset else None
                 })
 
         # 분석 진행률 계산
@@ -1510,7 +1528,7 @@ def gait_report(request):
     return render(request, 'gait_report.html', {
         'groups': groups,
         'user_results': user_results,
-        'user_results_json': json.dumps(user_results, ensure_ascii=False, cls=DjangoJSONEncoder),
+        'user_results_json': json.dumps(user_results, cls=RoundingJSONEncoder, ensure_ascii=False),
         'selected_group': selected_group,
         'error_message': error_message,
         'is_registered': len(groups) > 0,
@@ -1518,3 +1536,413 @@ def gait_report(request):
         'valid_count': valid_count,
         'progress_percentage': progress_percentage
     })
+
+
+@login_required
+def body_print(request, id):
+    max_count = 20
+    body_info_queryset = CodeInfo.objects.filter(group_id='01').order_by('seq_no')
+
+    # 해당 유저의 모든 검사 결과를 쿼리
+    body_result_queryset = BodyResult.objects.filter(
+        user_id=id,
+        image_front_url__isnull=False,
+        image_side_url__isnull=False,
+    )
+    body_result_queryset = body_result_queryset.order_by('created_dt')[
+                           max(0, len(body_result_queryset) - int(max_count)):]
+
+    if len(body_result_queryset) == 0:
+        return render(request, 'no_result.html', status=404)
+    body_result_latest = body_result_queryset[len(body_result_queryset) - 1]
+
+    report_items = []
+    for body_info in body_info_queryset:
+        trend_data = []
+        is_paired = False
+
+        for body_result in body_result_queryset:
+            body_code_id_ = body_info.code_id
+            alias = body_info.code_id
+            if 'leg_alignment' in body_code_id_ or 'back_knee' in body_code_id_ or 'scoliosis' in body_code_id_:
+                is_paired = True
+                if 'scoliosis' in body_code_id_:
+                    code_parts = body_code_id_.split('_')
+                    pair_names = ['shoulder', 'hip']
+                    paired_body_code_id_list = ['_'.join([code_parts[0], pair, code_parts[2]]) for pair in pair_names]
+
+                else:
+                    pair_names = ['left', 'right']
+                    paired_body_code_id_list = [f'{pair}_' + '_'.join(body_code_id_.split('_')[1:]) for pair in
+                                                pair_names]
+
+                if 'leg_alignment' in body_code_id_:
+                    alias = 'o_x_legs'
+                if 'back_knee' in body_code_id_:
+                    alias = 'knee_angle'
+                if 'scoliosis' in body_code_id_:
+                    alias = 'spinal_imbalance'
+
+                trend_samples = [getattr(body_result, paired_body_code_id_list[0]),
+                                 getattr(body_result, paired_body_code_id_list[1]),
+                                 body_result.created_dt.strftime('%Y-%m-%d %H:%M:%S')]
+            else:
+                trend_samples = [getattr(body_result, body_code_id_),
+                                 body_result.created_dt.strftime('%Y-%m-%d %H:%M:%S')]
+            trend_data.append(trend_samples)
+
+        if is_paired:
+            result_val1, result_val2, *_ = trend_data[-1]
+            result1 = None
+            if result_val1 is not None:
+                result1 = round(result_val1, 2)
+            result2 = None
+            if result_val2 is not None:
+                result2 = round(result_val2, 2)
+
+            description_list = []
+            unit_name = body_info.unit_name
+            normal_range = [body_info.normal_min_value, body_info.normal_max_value]
+            for i, val in enumerate([result1, result2]):
+                if alias == 'o_x_legs':
+                    title = body_info.code_name.replace('(좌)', '').replace('(우)', '')
+                    metric = '각도 [°]'
+                    pair_name = '왼쪽' if i == 0 else '오른쪽'
+                    if val:
+                        if normal_range[0] < val < normal_range[1]:
+                            description = '양호'
+                        else:
+                            description = 'O 다리 의심' if val < 180 else 'X 다리 의심'
+                    else:
+                        description = "측정값 없음"
+                if alias == 'knee_angle':
+                    title = body_info.code_name.replace('(좌)', '').replace('(우)', '')
+                    metric = '각도 [°]'
+                    pair_name = '왼쪽' if i == 0 else '오른쪽'
+                    if val:
+                        if normal_range[0] < val < normal_range[1]:
+                            description = '양호'
+                        else:
+                            description = '반장슬 의심'
+                    else:
+                        description = "측정값 없음"
+                if alias == 'spinal_imbalance':
+                    title = '척추 균형'
+                    metric = '척추 기준 좌우 비율 차이 [%]'
+                    pair_name = '척추-어깨' if i == 0 else '척추-골반'
+                    if val:
+                        if normal_range[0] < val < normal_range[1]:
+                            description = '양호'
+                        else:
+                            description = '왼쪽 편향' if val < 0 else '오른쪽 편향'
+                    else:
+                        description = "측정값 없음"
+
+                description_list.append(f'{pair_name} : ' + description)
+
+            if not result1:
+                result1 = "?"
+            else:
+                status_desc = ""
+                if alias == 'spinal_imbalance':
+                    if result1 < 0:
+                        status_desc += "왼쪽으로" + " "
+                    else:
+                        status_desc += "오른쪽으로" + " "
+                result1 = f'{status_desc}{abs(result1)}{unit_name}'
+
+            if not result2:
+                result2 = "?"
+            else:
+                status_desc = ""
+                if alias == 'spinal_imbalance':
+                    if result2 < 0:
+                        status_desc += "왼쪽으로" + " "
+                    else:
+                        status_desc += "오른쪽으로" + " "
+                result2 = f'{status_desc}{abs(result2)}{unit_name}'
+
+            if alias == 'spinal_imbalance':
+                result = f'· 척추-어깨: {result1}의 편향, · 척추-골반: {result2}의 편향'
+            else:
+                result = f'{result1} / {result2}'
+            if all([i['title'] != title for i in report_items]):
+                report_items.append({
+                    'title': title,
+                    'alias': alias,
+                    'result': result,
+                    'description': description_list,
+                    'description_list': True,
+                    'metric': metric,
+                    'summary': [re.sub(r'\(.*?\)', '', x) for x in description_list],
+                    'normal_range': [body_info.normal_min_value, body_info.normal_max_value],
+                    'value_range': [body_info.min_value, body_info.max_value],
+                    'trend': trend_data,
+                    'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
+                                 ['outline', 'risk', 'improve', 'recommended']}
+                })
+        else:
+            result_val = getattr(body_result_latest, body_info.code_id)
+            result = None
+            if result_val is not None:
+                result = round(result_val, 2)
+            unit_name = body_info.unit_name
+            normal_range = [body_info.normal_min_value, body_info.normal_max_value]
+            if 'angle' in alias:
+                if result:
+                    description = '왼쪽으로' if result < 0 else '오른쪽으로'
+                else:
+                    description = "측정값 없음"
+                metric = '각도 [°]'
+
+            if alias == 'forward_head_angle':
+                if result:
+                    description = '양호' if normal_range[0] < result < normal_range[1] else '거북목 진행형'
+                else:
+                    description = "측정값 없음"
+
+            if alias == 'leg_length_ratio':
+                if result:
+                    description = '왼쪽이 더 짧음' if result < 0 else '오른쪽이 더 짧음'
+                else:
+                    description = "측정값 없음"
+                metric = '다리 길이 차이 [%]'
+
+            if not result:
+                result = "?"
+            else:
+                status_desc = ""
+                if normal_range[0] < result < normal_range[1]:
+                    status_desc += " " + "(정상)"
+                else:
+                    status_desc += " " + "(유의)"
+
+                result = f'{abs(result)}{unit_name}{status_desc}'  # show absolute value
+            report_items.append({
+                'title': body_info.code_name,
+                'alias': alias,
+                'result': result,
+                'description': description,
+                'description_list': False,
+                'metric': metric,
+                'summary': re.sub(r'\(.*?\)', '', description),
+                'normal_range': normal_range,
+                'value_range': [body_info.min_value, body_info.max_value],
+                'trend': trend_data,
+                'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
+                             ['outline', 'risk', 'improve', 'recommended']}
+            })
+
+    user = UserInfo.objects.filter(id=id).first()
+    if not user:
+        return render(request, '404.html', status=404)
+
+    if not report_items:
+        return render(request, '404.html', status=404)
+
+    # Prepare trend data for each report item
+    trend_data_dict = {}
+    for item in report_items:
+        alias = item['alias']
+        trend_data = item['trend']
+
+        if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']:
+            trend_data_dict[alias] = {
+                'val1': [value[0] for value in trend_data],  # 왼쪽 또는 상부
+                'val2': [value[1] for value in trend_data],  # 오른쪽 또는 하부
+                'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
+                'part': ['어깨', '골반'] if alias == 'spinal_imbalance' else ['왼쪽', '오른쪽']
+            }
+        else:
+            trend_data_dict[alias] = {
+                'values': [value[0] for value in trend_data],
+                'dates': [value[1] for value in trend_data]
+            }
+
+    created_dt = body_result_latest.created_dt.strftime('%Y%m%dT%H%M%S%f')
+
+    front_img_url = generate_presigned_url(file_keys=['front', created_dt])
+    side_img_url = generate_presigned_url(file_keys=['side', created_dt])
+
+    context = {
+        'user': user,
+        'report_items': report_items,
+        'trend_data_dict': trend_data_dict,
+        'image_front_url': front_img_url,
+        'image_side_url': side_img_url
+    }
+
+    return render(request, 'body_print.html', context)
+
+
+@login_required
+def gait_print(request, id):
+    user = UserInfo.objects.filter(id=id).first()
+    if not user:
+        return render(request, '404.html', status=404)
+
+    # 해당 사용자의 보행 검사 결과 조회 (최신 결과)
+    gait_result_queryset = GaitResult.objects.filter(user_id=id).order_by('-created_dt')
+
+    if len(gait_result_queryset) == 0:
+        return render(request, 'no_result.html', status=404)
+
+    # 최신 결과와 생성 일자 가져오기
+    gait_result_latest = gait_result_queryset[0]
+    created_dt = gait_result_latest.created_dt
+
+    # CodeInfo에서 보행 관련 코드 정보 가져오기 (그룹 ID '02'는 보행 관련 코드)
+    gait_code_info = CodeInfo.objects.filter(group_id='02').order_by('seq_no')
+
+    # 코드 정보를 code_id를 키로 하는 dictionary로 변환
+    code_info_dict = {code.code_id: code for code in gait_code_info}
+
+    # 정상 범위 데이터 가져오기
+    normal_ranges = {
+        'velocity': {
+            'normal_min': code_info_dict['velocity'].normal_min_value,
+            'normal_max': code_info_dict['velocity'].normal_max_value,
+            'min': code_info_dict['velocity'].min_value,
+            'max': code_info_dict['velocity'].max_value,
+            'direction': code_info_dict['velocity'].direction
+        },
+        'cadence': {
+            'normal_min': 90, 'normal_max': 120, 'min': 60, 'max': 150,
+            'direction': 'positive'
+        },
+        'stride_len': {
+            'normal_min': code_info_dict['stride_len_l'].normal_min_value,
+            'normal_max': code_info_dict['stride_len_l'].normal_max_value,
+            'min': code_info_dict['stride_len_l'].min_value,
+            'max': code_info_dict['stride_len_l'].max_value,
+            'direction': code_info_dict['stride_len_l'].direction
+        },
+        'cycle_time': {
+            'normal_min': 0.9, 'normal_max': 1.2, 'min': 0.7, 'max': 1.5,
+            'direction': 'negative'
+        },
+        'swing_perc': {
+            'normal_min': code_info_dict['swing_perc_l'].normal_min_value,
+            'normal_max': code_info_dict['swing_perc_l'].normal_max_value,
+            'min': code_info_dict['swing_perc_l'].min_value,
+            'max': code_info_dict['swing_perc_l'].max_value,
+            'direction': code_info_dict['swing_perc_l'].direction
+        },
+        'stance_perc': {
+            'normal_min': code_info_dict['stance_perc_l'].normal_min_value,
+            'normal_max': code_info_dict['stance_perc_l'].normal_max_value,
+            'min': code_info_dict['stance_perc_l'].min_value,
+            'max': code_info_dict['stance_perc_l'].max_value,
+            'direction': code_info_dict['stance_perc_l'].direction
+        },
+        'd_supp_perc': {
+            'normal_min': code_info_dict['d_supp_perc_l'].normal_min_value,
+            'normal_max': code_info_dict['d_supp_perc_l'].normal_max_value,
+            'min': code_info_dict['d_supp_perc_l'].min_value,
+            'max': code_info_dict['d_supp_perc_l'].max_value,
+            'direction': code_info_dict['d_supp_perc_l'].direction
+        },
+        'score': {
+            'normal_min': code_info_dict['score'].normal_min_value,
+            'normal_max': code_info_dict['score'].normal_max_value,
+            'min': code_info_dict['score'].min_value,
+            'max': code_info_dict['score'].max_value,
+            'direction': code_info_dict['score'].direction
+        }
+    }
+
+    # 기본 데이터 포맷 준비
+    gait_data = {
+        'velocity': gait_result_latest.velocity,
+        'cadence': gait_result_latest.cadence,
+        'stride_len_l': gait_result_latest.stride_len_l,
+        'stride_len_r': gait_result_latest.stride_len_r,
+        'cycle_time_l': gait_result_latest.cycle_time_l,
+        'cycle_time_r': gait_result_latest.cycle_time_r,
+        'swing_perc_l': gait_result_latest.swing_perc_l,
+        'swing_perc_r': gait_result_latest.swing_perc_r,
+        'stance_perc_l': gait_result_latest.stance_perc_l,
+        'stance_perc_r': gait_result_latest.stance_perc_r,
+        'd_supp_perc_l': gait_result_latest.d_supp_perc_l,
+        'd_supp_perc_r': gait_result_latest.d_supp_perc_r,
+        'score': gait_result_latest.score
+    }
+
+    # 변화 추이 데이터 준비 (최근 5개 결과)
+    gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:5]
+
+    if len(gait_trends) > 1:  # 추이 데이터가 2개 이상인 경우에만 차트 생성
+        trend_data = {
+            'dates': [],
+            'velocity': [],
+            'cadence': [],
+            'score': []
+        }
+
+        # 가장 오래된 결과부터 표시하기 위해 역순으로 정렬
+        for result in reversed(list(gait_trends)):
+            trend_data['dates'].append(result.created_dt.strftime('%Y-%m-%d'))
+            trend_data['velocity'].append(result.velocity)
+            trend_data['cadence'].append(result.cadence)
+            trend_data['score'].append(result.score)
+    else:
+        trend_data = None
+
+    # 정상 범위 텍스트 포맷팅
+    stride_len_normal = f"{normal_ranges['stride_len']['normal_min']}~{normal_ranges['stride_len']['normal_max']} cm"
+    cycle_time_normal = f"{normal_ranges['cycle_time']['normal_min']}~{normal_ranges['cycle_time']['normal_max']} sec"
+    swing_perc_normal = f"{normal_ranges['swing_perc']['normal_min']}~{normal_ranges['swing_perc']['normal_max']} %"
+    stance_perc_normal = f"{normal_ranges['stance_perc']['normal_min']}~{normal_ranges['stance_perc']['normal_max']} %"
+    d_supp_perc_normal = f"{normal_ranges['d_supp_perc']['normal_min']}~{normal_ranges['d_supp_perc']['normal_max']} %"
+    velocity_normal = f"{normal_ranges['velocity']['normal_min']}~{normal_ranges['velocity']['normal_max']} cm/sec"
+    score_normal = f"{normal_ranges['score']['normal_min']}~{normal_ranges['score']['normal_max']} 점"
+
+    # 코드 정보를 컨텍스트에 추가
+    code_info_context = {
+        code.code_id: {
+            'code_name': code.code_name,
+            'min_value': code.min_value,
+            'max_value': code.max_value,
+            'normal_min_value': code.normal_min_value,
+            'normal_max_value': code.normal_max_value,
+            'caution_min_value': code.caution_min_value,
+            'caution_max_value': code.caution_max_value,
+            'unit_name': code.unit_name,
+            'direction': code.direction
+        }
+        for code in gait_code_info
+    }
+
+    # 컨텍스트 데이터 준비
+    context = {
+        'user': user,
+        'created_dt': created_dt,
+        'current_date': dt.now(),
+        'velocity': gait_result_latest.velocity,
+        'cadence': gait_result_latest.cadence,
+        'stride_len_l': gait_result_latest.stride_len_l,
+        'stride_len_r': gait_result_latest.stride_len_r,
+        'cycle_time_l': gait_result_latest.cycle_time_l,
+        'cycle_time_r': gait_result_latest.cycle_time_r,
+        'swing_perc_l': gait_result_latest.swing_perc_l,
+        'swing_perc_r': gait_result_latest.swing_perc_r,
+        'stance_perc_l': gait_result_latest.stance_perc_l,
+        'stance_perc_r': gait_result_latest.stance_perc_r,
+        'd_supp_perc_l': gait_result_latest.d_supp_perc_l,
+        'd_supp_perc_r': gait_result_latest.d_supp_perc_r,
+        'score': gait_result_latest.score,
+        'stride_len_normal': stride_len_normal,
+        'cycle_time_normal': cycle_time_normal,
+        'swing_perc_normal': swing_perc_normal,
+        'stance_perc_normal': stance_perc_normal,
+        'd_supp_perc_normal': d_supp_perc_normal,
+        'velocity_normal': velocity_normal,
+        'score_normal': score_normal,
+        'gait_data': json.dumps(gait_data),
+        'gait_trend_data': json.dumps(trend_data) if trend_data else None,
+        'normal_ranges': json.dumps(normal_ranges),
+        'code_info': json.dumps(code_info_context, cls=DjangoJSONEncoder)
+    }
+
+    return render(request, 'gait_print.html', context)
+    return render(request, 'gait_print.html', context)

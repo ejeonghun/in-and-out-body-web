@@ -321,6 +321,27 @@
     </style>
 </head>
 <body class="bg-gray-100 p-6" id="report-body">
+    <!-- 새로운 인쇄 버튼 추가 -->
+    <div class="print-button-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button id="print-report" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200 flex items-center">
+            <i class="bi bi-printer mr-2"></i> 인쇄하기
+        </button>
+    </div>
+    
+    <script>
+        document.getElementById('print-report').addEventListener('click', function() {
+            // 인쇄 페이지를 새 창으로 열고 자동으로 인쇄 팝업 표시
+            var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
+            
+            // 인쇄 페이지가 로드된 후 자동으로 인쇄 대화상자를 표시합니다
+            // printWindow.onload = function() {
+            //    setTimeout(function() {
+            //        printWindow.print();
+            //    }, 1000); // 1초 지연으로 페이지가 완전히 로드될 시간을 줍니다
+            // };
+        });
+    </script>
+    
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
         <div class="items-center justify-center flex user-type">
             {% if user.user_type == 'S' %}
