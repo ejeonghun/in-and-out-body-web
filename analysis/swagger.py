@@ -386,11 +386,15 @@ kiosk_use_count_ = {
 kiosk_signup_ = {
     'method': 'post',
     'operation_summary': '키오스크 회원가입',
-    'operation_description': '키오스크에서 회원가입을 진행합니다. 전화번호는 010으로 시작하는 11자리여야 합니다.',
+    'operation_description': '키오스크에서 회원가입을 진행합니다.',
     'request_body': openapi.Schema(
         type=openapi.TYPE_OBJECT,
-        required=['phone_number', 'password'],
+        required=['session_key','phone_number', 'password'],
         properties={
+            'session_key': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='세션키'
+            ),
             'phone_number': openapi.Schema(
                 type=openapi.TYPE_STRING,
                 description='사용자 전화번호 (010으로 시작하는 11자리)',
@@ -422,7 +426,7 @@ kiosk_signup_ = {
                         type=openapi.TYPE_STRING,
                         description='오류 메시지 (phone_number_already_exists, phone_number_and_password_required, 또는 invalid_phone_number_format)'
                     ),
-                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드')
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드', example="0: 성공, 1: 세션키 없음, 2:전화번호 형식 확인, 3:이미 가입됨, 4:필수 파라미터 누락")
                 }
             )
         )
