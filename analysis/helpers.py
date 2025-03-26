@@ -140,7 +140,7 @@ def parse_userinfo_kiosk(userinfo_obj):
         'student_grade': userinfo_obj.student_grade if userinfo_obj.student_grade else -1,
         'student_class': userinfo_obj.student_class if userinfo_obj.student_class else -1,
         'student_number': userinfo_obj.student_number if userinfo_obj.student_number else -1,
-        'student_name': userinfo_obj.student_name if userinfo_obj.student_name else 'N/A',
+        'student_name': userinfo_obj.student_name if userinfo_obj.student_name else '회원',
         'phone_number': userinfo_obj.phone_number if userinfo_obj.phone_number else 'N/A',
         'user_display_name': userinfo_obj.user_display_name if userinfo_obj.user_display_name else 'N/A',
         'dob': userinfo_obj.dob if userinfo_obj.dob else 'N/A',

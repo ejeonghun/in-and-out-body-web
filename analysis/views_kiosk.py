@@ -465,8 +465,6 @@ def get_userinfo_session(request):
 
     try:
         user_info = UserInfo.objects.get(id=session_info.user_id)
-        if (user_info.user_type != 'S'):
-            user_info.student_name = '회원'
     except UserInfo.DoesNotExist:
         return Response({"data": {"message": "user_not_found", "status": 401}})
 
