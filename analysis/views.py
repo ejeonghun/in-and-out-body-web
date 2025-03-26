@@ -1871,7 +1871,7 @@ def gait_print(request, id):
     # 변화 추이 데이터 준비 (최근 5개 결과)
     gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:5]
 
-    if len(gait_trends) > 1:  # 추이 데이터가 2개 이상인 경우에만 차트 생성
+    if len(gait_trends) >= 1:  # 추이 데이터가 1개 이상인 경우에만 차트 생성
         trend_data = {
             'dates': [],
             'velocity': [],
@@ -1944,5 +1944,4 @@ def gait_print(request, id):
         'code_info': json.dumps(code_info_context, cls=DjangoJSONEncoder)
     }
 
-    return render(request, 'gait_print.html', context)
     return render(request, 'gait_print.html', context)
