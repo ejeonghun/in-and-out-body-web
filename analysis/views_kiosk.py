@@ -460,7 +460,7 @@ def get_userinfo_session(request):
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
 
-    if session_check_expired(session_info):  # 세션 만료 체크 및 갱신
+    if session_check_expired(session_info): # 세션 만료 체크 및 갱신
         return Response({'data': {'message': 'session_expired', 'status': 403}})
 
     try:
