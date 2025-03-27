@@ -172,7 +172,7 @@
         /* 차트 캔버스 스타일 수정 */
         .chart-canvas {
             width: 100% !important;
-            height: 120px !important;
+            height: 160px !important;
             background-color: #f9f9f9;
             border-radius: 4px;
         }
@@ -509,6 +509,14 @@
         {% endfor %} {% endcomment %}
         
         <div class="caution-text">⚠️ 위 내용은 일반적으로 알려진 의학상식에 대한 설명이며 스캔 결과가 의학적 판단 및 진단과는 무관합니다. 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="text-align:left">
+            https://aicu.life/
+        </div>
+        <div style="text-align:right">
+            <img src="{% static 'images/AICU_CI.png' %}" alt="logo" style="width: 100px; height: 100px; object-fit: contain;">
+        </div>
+    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
