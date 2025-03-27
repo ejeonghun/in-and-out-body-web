@@ -18,3 +18,18 @@ def split(value, delimiter=','):
 def trim(value):
     """Remove leading and trailing whitespace from a string."""
     return value.strip() if value else value
+
+
+@register.filter
+def multiply_and_floor(value, factor): # 종합 점수를 표시할 때 장고 템플릿에서 사용할 필터
+    try:
+        return int(float(value) * float(factor)) // 10  # 마지막 자리 제거
+    except (ValueError, TypeError):
+        return 0
+    
+@register.filter
+def round_one_decimal(value):   # 소수점 첫번째자리까지만 출력 할 필터
+    try:
+        return "{:.1f}".format(float(value))  # 소수점 첫 번째 자리까지 출력
+    except (ValueError, TypeError):
+        return "0.0"

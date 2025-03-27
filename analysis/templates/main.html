@@ -71,10 +71,26 @@
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>총 검사 결과</h3>
+                        <h3>체형 총 검사 결과</h3>
                         <p class="stat-number">{{ total_results }}건</p>
                     </div>
                 </div>
+
+                {% if user_type == 'O' %}
+                <div class="stat-card">
+                    <div class="tooltip">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="tooltip-text">지금까지 해당 기관의 완료된 회원 검사 결과의 총 건수입니다</span>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>보행 총 검사 결과</h3>
+                        <p class="stat-number">{{ total_gait_results }}건</p>
+                    </div>
+                </div>
+                {% endif %}
 
                 <div class="stat-card">
                     <div class="tooltip">

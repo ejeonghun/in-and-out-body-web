@@ -16,10 +16,10 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
+    calculate_normal_ratio, create_excel_report, session_check_expired
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, KioskCount
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
-from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer
+from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, SessionInfoSerializer, KioskInfoSerializer
 
 from django.db.models import Min, Max, Exists, OuterRef, Count
 from django.db.models.functions import ExtractYear
@@ -33,7 +33,7 @@ from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
 from django.db.models import Q
 
-from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_
+from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_, kiosk_signup_
 
 
 # 응답코드 관련
@@ -411,7 +411,7 @@ def login_kiosk(request):
     session_key = uuid.uuid4().hex
     SessionInfo.objects.update_or_create(
         session_key=session_key,
-        kiosk_id=kiosk_info,
+        kiosk_id=kiosk_info.kiosk_id,
     )
 
     return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
@@ -525,27 +525,95 @@ def kiosk_use_count(request):
     count_type = request.data.get("type")
     
     try:
-        kiosk_info = SessionInfo.objects.get(session_key=session_key) # 현재 키오스크 세션 정보 조회
+        session_info = SessionInfo.objects.get(session_key=session_key)  # 현재 키오스크 세션 정보 조회
 
-        # 오브젝트가 여러개 라면 첫번째 오브젝트를 사용 + SessionInfo에서 kiosk_id를 조회
-        request_kiosk_id = kiosk_info.kiosk_id
+        session_info_serialized = SessionInfoSerializer(session_info).data
+        print("Session Info:", session_info_serialized)  # 디버그 출력
+
+        request_kiosk_id = session_info.kiosk_id  # 수정: kiosk_id를 가져옴
+        ks = KioskInfo.objects.get(kiosk_id=request_kiosk_id)  # KioskInfo에서 kiosk_id를 조회
 
         # type1, type2 = 회원 보행 / 체형
         # type3, type4 = 비회원 보행 / 체형
         # Requset의 type별로 KioskCount의 req{n}의 컬럼을 1씩 증감
-        kiosk_count, created = KioskCount.objects.get_or_create(kiosk_id=request_kiosk_id)
-        
+        # KioskCount 객체 생성 시 KioskInfo 객체를 전달
+        kiosk_count, created = KioskCount.objects.get_or_create(kiosk=ks)  # kiosk 필드에 KioskInfo 객체 전달
+    
         # 기존 값에 1을 더함
-        current_value = getattr(kiosk_count, f'type{count_type}', 0) 
+        current_value = getattr(kiosk_count, f'type{count_type}', 0)
         setattr(kiosk_count, f'type{count_type}', current_value + 1)
         kiosk_count.save()
-
+    
         return Response({'data': {'message': 'success', 'status': 200}})
-
-
+    
     except SessionInfo.DoesNotExist:
         return Response({'data': {'message': 'session_key_not_found', 'status': 404}})
     
     except KioskCount.DoesNotExist:
         return Response({'data': {'message': 'kiosk_id_not_found', 'status': 404}})
+
     
+
+@swagger_auto_schema(**kiosk_signup_)
+@api_view(['POST'])
+def kiosk_signup(request):
+    session_key = request.data.get('session_key')
+    phone_number = request.data.get('phone_number')
+    password = request.data.get('password')
+
+    try:
+        session_info = SessionInfo.objects.get(session_key=session_key)
+    except SessionInfo.DoesNotExist:
+        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 1}})
+
+
+    # 전화번호 형식 검사 (010으로 시작하는 11자리)
+    if not phone_number or not re.match(r'^010\d{8}$', phone_number):
+        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
+
+    try:
+        UserInfo.objects.get(phone_number=phone_number)
+        return JsonResponse({'message': 'phone_number_already_exists', 'status': 3})
+    except UserInfo.DoesNotExist:
+        pass
+
+    if not phone_number or not password:
+        return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
+    
+
+    # 세션 키로 해당 키오스크가 사용되고 있는 기관 정보 조회
+    kiosk = session_info.kiosk_id
+
+    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk).first()
+    if not kiosk_info:
+        return JsonResponse({'message': 'kiosk_not_found', 'status': 5})
+    
+
+    kiosk_use_org = kiosk_info.Org
+
+    if kiosk_use_org:
+        org = OrganizationInfo.objects.filter(organization_name = kiosk_use_org).first()
+        # print(type(org)) # <class 'analysis.models.OrganizationInfo'>
+
+    authorized_user_info, user_created = UserInfo.objects.get_or_create(
+        phone_number=phone_number,
+        defaults=dict(
+            username=phone_number,
+            password=make_password(password),
+            department='방문자',
+            student_name=phone_number,
+            user_type='O',
+            organization=org if kiosk_use_org else None,  # Org가 존재하면 포함, 없으면 None
+        ))
+
+    if authorized_user_info.school is not None:
+        authorized_user_info.user_type = 'S'
+    elif authorized_user_info.organization is not None:
+        authorized_user_info.user_type = 'O'
+    else:
+        authorized_user_info.user_type = 'G'    
+
+    authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
+
+    return JsonResponse({'message': 'success', 'status': 0})
+

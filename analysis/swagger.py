@@ -382,6 +382,59 @@ kiosk_use_count_ = {
 }
 
 
+
+kiosk_signup_ = {
+    'method': 'post',
+    'operation_summary': '키오스크 회원가입',
+    'operation_description': '키오스크에서 회원가입을 진행합니다.',
+    'request_body': openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['session_key','phone_number', 'password'],
+        properties={
+            'session_key': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='세션키'
+            ),
+            'phone_number': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='사용자 전화번호 (010으로 시작하는 11자리)',
+                pattern='^010[0-9]{8}$'
+            ),
+            'password': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='사용자 비밀번호'
+            )
+        }
+    ),
+    'responses': {
+        200: openapi.Response(
+            description='회원가입 성공',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='성공 메시지'),
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드')
+                }
+            )
+        ),
+        400: openapi.Response(
+            description='잘못된 요청',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(
+                        type=openapi.TYPE_STRING, 
+                        description='오류 메시지 (phone_number_already_exists, phone_number_and_password_required, 또는 invalid_phone_number_format)'
+                    ),
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드', example="0: 성공, 1: 세션키 없음, 2:전화번호 형식 확인, 3:이미 가입됨, 4:필수 파라미터 누락")
+                }
+            )
+        )
+    },
+    'tags': ['kiosk']
+}
+
+
 ############################################################################################################
 ############################################################################################################
 ##################################               모바일 공용               ####################################

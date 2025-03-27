@@ -16,10 +16,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired, get_kiosk_latest_version
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, GaitResult
+    calculate_normal_ratio, create_excel_report, session_check_expired
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
+    KioskInfo, GaitResult
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
-from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, UserInfoSerializer
+from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, UserInfoSerializer, \
+    CodeInfoSerializer
 
 from django.db.models import Min, Max, Exists, OuterRef, Count
 from django.db.models.functions import ExtractYear
@@ -37,10 +39,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
     HTTP_500_INTERNAL_SERVER_ERROR
-
-
-
-KIOSK_LATEST_VERSION = get_kiosk_latest_version()
 
 
 def home(request):
@@ -69,14 +67,14 @@ def main(request):  # 추후 캐싱 기법 적용
         # 학교
         if user.user_type == 'S':
             # 유저 소속
-            user_affil = user.school.school_name
+            user_affil = user.school.school_name  # 유저 소속(학교이름)
 
             # 총 회원 수
             members = UserInfo.objects.filter(
                 school__school_name=user.school.school_name
             ).count()
 
-            # 총 검사 수
+            # 체형 총 검사 수
             total_results = BodyResult.objects.filter(
                 user__school__school_name=user.school.school_name,
                 image_front_url__isnull=False,
@@ -134,26 +132,34 @@ def main(request):  # 추후 캐싱 기법 적용
 
         else:
             # 유저 소속 - 기관
-            user_affil = user.organization.organization_name
+            user_affil = user.organization.organization_name  # 유저 소속(기관이름)
 
             # 총 회원 수
             members = UserInfo.objects.filter(
                 organization__id=user.organization.id
             ).count()
 
-            # 총 검사 수
+            # 체형 총 검사 수
             total_results = BodyResult.objects.filter(
                 user__organization__id=user.organization.id,
                 image_front_url__isnull=False,
                 image_side_url__isnull=False
             ).count()
 
-            # 이번달 검사 수
+            # 이번달 체형 검사 수
             current_month_results = BodyResult.objects.filter(
                 user__organization__organization_name=user.organization.organization_name,
                 image_front_url__isnull=False,
                 image_side_url__isnull=False,
                 created_dt__month=dt.now().month
+            ).count()
+
+            # 보행 총 검사 수
+            org_users = UserInfo.objects.filter(organization__id=user.organization.id)
+
+            # for문을 순회하며 gait_result에 해당하는 user_id가 있는지 확인
+            total_gait_results = GaitResult.objects.filter(
+                user_id__in=org_users.values('id')
             ).count()
 
             # 미완료 검사 수
@@ -191,10 +197,12 @@ def main(request):  # 추후 캐싱 기법 적용
             'pending_tests': pending_tests,
             'group_structure': group_structure,
             'year': year,
+            **({'total_gait_results': total_gait_results} if user.user_type == 'O' else {})  # 수정된 부분
         })
 
     context['has_affiliation'] = has_affiliation
     return render(request, 'main.html', context)
+
 
 @login_required
 def search_user(request):
@@ -203,7 +211,7 @@ def search_user(request):
     user_type = user.user_type
 
     query = request.GET.get('query', '')
-    
+
     user_dept = user.school.school_name if user_type == 'S' else user.organization.organization_name
 
     if not query:
@@ -212,14 +220,15 @@ def search_user(request):
     if user_type == 'S':  # 학교
         users = UserInfo.objects.filter(Q(student_name__icontains=query),
                                         Q(school__school_name__icontains=user_dept))  # 이름으로 검색
-    
-        results = [{'id': user.id, 'student_name': user.student_name, 'student_grade': user.student_grade, 'student_class': user.student_class} for user in users]
+
+        results = [{'id': user.id, 'student_name': user.student_name, 'student_grade': user.student_grade,
+                    'student_class': user.student_class} for user in users]
 
     elif user_type == 'O':
         users = UserInfo.objects.filter(Q(student_name__icontains=query),
                                         Q(organization__organization_name__icontains=user_dept))
         results = [{'id': user.id, 'student_name': user.student_name, 'department': user.department} for user in users]
-    
+
     return JsonResponse({'results': results, 'user_type': user_type})
 
 
@@ -261,10 +270,10 @@ def member_register(request):
                 # 데이터 전처리
                 users = []
                 phone_numbers = df['전화번호'].unique()  # 중복 제거된 전화번호 리스트
-                cleaned_phone_numbers = [extract_digits(phone_number) for phone_number in phone_numbers] # 숫자만 추출
+                cleaned_phone_numbers = [extract_digits(phone_number) for phone_number in phone_numbers]  # 숫자만 추출
                 existing_users = UserInfo.objects.filter(phone_number__in=cleaned_phone_numbers)  # DB에서 존재하는 전화번호 필터링
                 expected_columns.append('상태')  # 상태 컬럼 추가
-                other_org = None   # 다른 학교/기관 에 소속된 유저가 있는 경우 확인 용도
+                other_org = None  # 다른 학교/기관 에 소속된 유저가 있는 경우 확인 용도
 
                 df['상태'] = ''  # 상태 컬럼 초기화
 
@@ -288,13 +297,14 @@ def member_register(request):
                             # 존재하는 유저의 소속 정보 추가
                             if existing_user.school:  # 학교 소속이 있는 경우
                                 if existing_user.school.school_name != orgName:  # 다른 학교에 소속된 경우
-                                    user_data['상태'] = f"이전 학교 - {existing_user.school.school_name}"   # 이전 학교 정보 추가
+                                    user_data['상태'] = f"이전 학교 - {existing_user.school.school_name}"  # 이전 학교 정보 추가
                                     other_org = True  # 다른 학교에 소속된 경우
                                 else:
                                     user_data['상태'] = '기존 유저 갱신'
                             else:
-                                if existing_user.organization: # 기관 소속이 있는 경우
-                                    user_data['상태'] = f'이전 소속 - {existing_user.organization.organization_name}'  # 이전 기관 정보 추가
+                                if existing_user.organization:  # 기관 소속이 있는 경우
+                                    user_data[
+                                        '상태'] = f'이전 소속 - {existing_user.organization.organization_name}'  # 이전 기관 정보 추가
                         else:  # 신규 등록인 경우 빈 문자열 설정
                             user_data['상태'] = '신규 등록'  # 신규 등록 상태 추가
                             new_member += 1
@@ -305,7 +315,7 @@ def member_register(request):
 
                 # 저장 요청인 경우
                 if request.POST.get('save') == 'true':
-                    existing_member = 0; # 기존 회원 초기화
+                    existing_member = 0;  # 기존 회원 초기화
                     new_member = 0;
                     with transaction.atomic():  # 트랜잭션 시작
                         for user_data in users:
@@ -761,7 +771,8 @@ def report(request):
         # 학교별 년도 정보 가져오기 -> select 태그에 들어가는 값
         # school_id에 해당하는 BodyResult 데이터에서 created_dt의 최소/최대 연도를 가져오기
 
-        years = [year for year in year_group_map.keys() if year != 'None' and isinstance(year, str)] # year_group_map의 키에서 None을 제외하고 int만 포함
+        years = [year for year in year_group_map.keys() if
+                 year != 'None' and isinstance(year, str)]  # year_group_map의 키에서 None을 제외하고 int만 포함
 
         if selected_year and selected_group:
             if selected_year != str(dt.now().year) and selected_year not in year_group_map:
@@ -955,7 +966,7 @@ def report_download(request):
 
     # 사용자 목록 조회
     if user_type == 'S':  # 학교 사용자
-        match = re.search(r"(\d+)학년 (\w+)반", selected_group) 
+        match = re.search(r"(\d+)학년 (\w+)반", selected_group)
         if selected_year == str(dt.now().year) and match:  # 현재 년도 조회
             users = UserInfo.objects.filter(
                 school__school_name=user.school.school_name,
@@ -1410,8 +1421,6 @@ def policy(request):
     return render(request, 'policy.html')
 
 
-
-
 ######################################################################
 ################## 게이트(보행) 관련 뷰 페이지 로직 ##########################
 
@@ -1420,7 +1429,7 @@ def get_user_gait_data(request, user_id):
     request_user = request.user
     user = UserInfo.objects.get(id=user_id)
     gait_results = GaitResult.objects.filter(user_id=user_id).order_by('-created_dt')
-    
+
     results_data = []
     for result in gait_results:
         results_data.append({
@@ -1436,22 +1445,31 @@ def get_user_gait_data(request, user_id):
             'stance_perc_l': result.stance_perc_l,
             'stance_perc_r': result.stance_perc_r
         })
-    
+
     return JsonResponse({
         'user_name': user.student_name,
         'results': results_data
     })
 
 
+# JSON 인코더 확장
+class RoundingJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, float):
+            return round(obj, 1)
+        elif hasattr(obj, '__dict__'):
+            return obj.__dict__
+        return super().default(obj)
+
 
 @login_required
 def gait_report(request):
-    user = request.user # 현재 로그인한 유저
+    user = request.user  # 현재 로그인한 유저
     error_message = None
 
-    user_results = [] # 사용자 결과
+    user_results = []  # 사용자 결과
 
-    selected_group = request.session.get('selected_group', None) # 세션에서 그룹 정보 가져오기
+    selected_group = request.session.get('selected_group', None)  # 세션에서 그룹 정보 가져오기
     groups = []
 
     if request.method == 'POST':
@@ -1462,24 +1480,28 @@ def gait_report(request):
         else:
             request.session['selected_group'] = selected_group
             return redirect('gait_report')
-        
+
     if user.user_type == 'O':
         groups = UserInfo.objects.filter(
-            organization__organization_name=user.organization.organization_name).values_list('department', named=True).distinct().order_by('department')
-        groups = [g.department for g in groups if ((g.department is not None))] # 해당 기관의 그룹 목록
-    
+            organization__organization_name=user.organization.organization_name).values_list('department',
+                                                                                             named=True).distinct().order_by(
+            'department')
+        groups = [g.department for g in groups if ((g.department is not None))]  # 해당 기관의 그룹 목록
+
         if selected_group:
-            users = UserInfo.objects.filter(organization__organization_name=user.organization.organization_name, department=selected_group).order_by('student_name')
-            
+            users = UserInfo.objects.filter(organization__organization_name=user.organization.organization_name,
+                                            department=selected_group).order_by('student_name')
+
             for user in users:
                 gate_result_queryset = GaitResult.objects.filter(user_id=user.id)
                 analysis_valid = len(gate_result_queryset) > 0
 
                 user_results.append({
-                    'user': UserInfoSerializer(user).data ,
+                    'user': UserInfoSerializer(user).data,
                     'analysis_valid': analysis_valid,
                     'gait_results': GaitResultSerializer(gate_result_queryset, many=True).data,  # 수정된 부분
-                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime('%Y-%m-%d %H:%M:%S') if gate_result_queryset else None
+                    'first_gait_dt': gate_result_queryset[0].created_dt.strftime(
+                        '%Y-%m-%d %H:%M:%S') if gate_result_queryset else None
                 })
 
         # 분석 진행률 계산
@@ -1491,7 +1513,7 @@ def gait_report(request):
     else:
         progress_percentage = 0
 
-    if user.user_type == '' or len(user_results) == 0: # 초기 렌더링
+    if user.user_type == '' or len(user_results) == 0:  # 초기 렌더링
         return render(request, 'gait_report.html', {
             'groups': groups,
             'user_results': [],
@@ -1502,12 +1524,11 @@ def gait_report(request):
             'total_users': 0,  # 총 사용자 수
             'valid_count': valid_count
         })
-    
 
     return render(request, 'gait_report.html', {
         'groups': groups,
         'user_results': user_results,
-        'user_results_json': json.dumps(user_results, ensure_ascii=False, cls=DjangoJSONEncoder),
+        'user_results_json': json.dumps(user_results, cls=RoundingJSONEncoder, ensure_ascii=False),
         'selected_group': selected_group,
         'error_message': error_message,
         'is_registered': len(groups) > 0,
@@ -1515,8 +1536,8 @@ def gait_report(request):
         'valid_count': valid_count,
         'progress_percentage': progress_percentage
     })
-    
-    
+
+
 @login_required
 def body_print(request, id):
     max_count = 20
@@ -1524,17 +1545,16 @@ def body_print(request, id):
 
     # 해당 유저의 모든 검사 결과를 쿼리
     body_result_queryset = BodyResult.objects.filter(
-        user_id=id, 
+        user_id=id,
         image_front_url__isnull=False,
         image_side_url__isnull=False,
     )
-    body_result_queryset = body_result_queryset.order_by('created_dt')[max(0, len(body_result_queryset)-int(max_count)):]
-
+    body_result_queryset = body_result_queryset.order_by('created_dt')[
+                           max(0, len(body_result_queryset) - int(max_count)):]
 
     if len(body_result_queryset) == 0:
         return render(request, 'no_result.html', status=404)
-    body_result_latest = body_result_queryset[len(body_result_queryset)-1]
-
+    body_result_latest = body_result_queryset[len(body_result_queryset) - 1]
 
     report_items = []
     for body_info in body_info_queryset:
@@ -1713,11 +1733,12 @@ def body_print(request, id):
                              ['outline', 'risk', 'improve', 'recommended']}
             })
 
-    user = get_object_or_404(UserInfo, id=id)
+    user = UserInfo.objects.filter(id=id).first()
+    if not user:
+        return render(request, '404.html', status=404)
 
     if not report_items:
         return render(request, '404.html', status=404)
-
 
     # Prepare trend data for each report item
     trend_data_dict = {}
@@ -1738,7 +1759,7 @@ def body_print(request, id):
                 'dates': [value[1] for value in trend_data]
             }
 
-    created_dt = body_result_queryset[0].created_dt.strftime('%Y%m%dT%H%M%S%f')
+    created_dt = body_result_latest.created_dt.strftime('%Y%m%dT%H%M%S%f')
 
     front_img_url = generate_presigned_url(file_keys=['front', created_dt])
     side_img_url = generate_presigned_url(file_keys=['side', created_dt])
@@ -1752,3 +1773,175 @@ def body_print(request, id):
     }
 
     return render(request, 'body_print.html', context)
+
+
+@login_required
+def gait_print(request, id):
+    user = UserInfo.objects.filter(id=id).first()
+    if not user:
+        return render(request, '404.html', status=404)
+
+    # 해당 사용자의 보행 검사 결과 조회 (최신 결과)
+    gait_result_queryset = GaitResult.objects.filter(user_id=id).order_by('-created_dt')
+
+    if len(gait_result_queryset) == 0:
+        return render(request, 'no_result.html', status=404)
+
+    # 최신 결과와 생성 일자 가져오기
+    gait_result_latest = gait_result_queryset[0]
+    created_dt = gait_result_latest.created_dt
+
+    # CodeInfo에서 보행 관련 코드 정보 가져오기 (그룹 ID '02'는 보행 관련 코드)
+    gait_code_info = CodeInfo.objects.filter(group_id='02').order_by('seq_no')
+
+    # 코드 정보를 code_id를 키로 하는 dictionary로 변환
+    code_info_dict = {code.code_id: code for code in gait_code_info}
+
+    # 정상 범위 데이터 가져오기
+    normal_ranges = {
+        'velocity': {
+            'normal_min': code_info_dict['velocity'].normal_min_value,
+            'normal_max': code_info_dict['velocity'].normal_max_value,
+            'min': code_info_dict['velocity'].min_value,
+            'max': code_info_dict['velocity'].max_value,
+            'direction': code_info_dict['velocity'].direction
+        },
+        'cadence': {
+            'normal_min': 90, 'normal_max': 120, 'min': 60, 'max': 150,
+            'direction': 'positive'
+        },
+        'stride_len': {
+            'normal_min': code_info_dict['stride_len_l'].normal_min_value,
+            'normal_max': code_info_dict['stride_len_l'].normal_max_value,
+            'min': code_info_dict['stride_len_l'].min_value,
+            'max': code_info_dict['stride_len_l'].max_value,
+            'direction': code_info_dict['stride_len_l'].direction
+        },
+        'cycle_time': {
+            'normal_min': 0.9, 'normal_max': 1.2, 'min': 0.7, 'max': 1.5,
+            'direction': 'negative'
+        },
+        'swing_perc': {
+            'normal_min': code_info_dict['swing_perc_l'].normal_min_value,
+            'normal_max': code_info_dict['swing_perc_l'].normal_max_value,
+            'min': code_info_dict['swing_perc_l'].min_value,
+            'max': code_info_dict['swing_perc_l'].max_value,
+            'direction': code_info_dict['swing_perc_l'].direction
+        },
+        'stance_perc': {
+            'normal_min': code_info_dict['stance_perc_l'].normal_min_value,
+            'normal_max': code_info_dict['stance_perc_l'].normal_max_value,
+            'min': code_info_dict['stance_perc_l'].min_value,
+            'max': code_info_dict['stance_perc_l'].max_value,
+            'direction': code_info_dict['stance_perc_l'].direction
+        },
+        'd_supp_perc': {
+            'normal_min': code_info_dict['d_supp_perc_l'].normal_min_value,
+            'normal_max': code_info_dict['d_supp_perc_l'].normal_max_value,
+            'min': code_info_dict['d_supp_perc_l'].min_value,
+            'max': code_info_dict['d_supp_perc_l'].max_value,
+            'direction': code_info_dict['d_supp_perc_l'].direction
+        },
+        'score': {
+            'normal_min': code_info_dict['score'].normal_min_value,
+            'normal_max': code_info_dict['score'].normal_max_value,
+            'min': code_info_dict['score'].min_value,
+            'max': code_info_dict['score'].max_value,
+            'direction': code_info_dict['score'].direction
+        }
+    }
+
+    # 기본 데이터 포맷 준비
+    gait_data = {
+        'velocity': gait_result_latest.velocity,
+        'cadence': gait_result_latest.cadence,
+        'stride_len_l': gait_result_latest.stride_len_l,
+        'stride_len_r': gait_result_latest.stride_len_r,
+        'cycle_time_l': gait_result_latest.cycle_time_l,
+        'cycle_time_r': gait_result_latest.cycle_time_r,
+        'swing_perc_l': gait_result_latest.swing_perc_l,
+        'swing_perc_r': gait_result_latest.swing_perc_r,
+        'stance_perc_l': gait_result_latest.stance_perc_l,
+        'stance_perc_r': gait_result_latest.stance_perc_r,
+        'd_supp_perc_l': gait_result_latest.d_supp_perc_l,
+        'd_supp_perc_r': gait_result_latest.d_supp_perc_r,
+        'score': gait_result_latest.score
+    }
+
+    # 변화 추이 데이터 준비 (최근 5개 결과)
+    gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:5]
+
+    if len(gait_trends) >= 1:  # 추이 데이터가 1개 이상인 경우에만 차트 생성
+        trend_data = {
+            'dates': [],
+            'velocity': [],
+            'cadence': [],
+            'score': []
+        }
+
+        # 가장 오래된 결과부터 표시하기 위해 역순으로 정렬
+        for result in reversed(list(gait_trends)):
+            trend_data['dates'].append(result.created_dt.strftime('%Y-%m-%d'))
+            trend_data['velocity'].append(result.velocity)
+            trend_data['cadence'].append(result.cadence)
+            trend_data['score'].append(result.score)
+    else:
+        trend_data = None
+
+    # 정상 범위 텍스트 포맷팅
+    stride_len_normal = f"{normal_ranges['stride_len']['normal_min']}~{normal_ranges['stride_len']['normal_max']} cm"
+    cycle_time_normal = f"{normal_ranges['cycle_time']['normal_min']}~{normal_ranges['cycle_time']['normal_max']} sec"
+    swing_perc_normal = f"{normal_ranges['swing_perc']['normal_min']}~{normal_ranges['swing_perc']['normal_max']} %"
+    stance_perc_normal = f"{normal_ranges['stance_perc']['normal_min']}~{normal_ranges['stance_perc']['normal_max']} %"
+    d_supp_perc_normal = f"{normal_ranges['d_supp_perc']['normal_min']}~{normal_ranges['d_supp_perc']['normal_max']} %"
+    velocity_normal = f"{normal_ranges['velocity']['normal_min']}~{normal_ranges['velocity']['normal_max']} cm/sec"
+    score_normal = f"{normal_ranges['score']['normal_min']}~{normal_ranges['score']['normal_max']} 점"
+
+    # 코드 정보를 컨텍스트에 추가
+    code_info_context = {
+        code.code_id: {
+            'code_name': code.code_name,
+            'min_value': code.min_value,
+            'max_value': code.max_value,
+            'normal_min_value': code.normal_min_value,
+            'normal_max_value': code.normal_max_value,
+            'caution_min_value': code.caution_min_value,
+            'caution_max_value': code.caution_max_value,
+            'unit_name': code.unit_name,
+            'direction': code.direction
+        }
+        for code in gait_code_info
+    }
+
+    # 컨텍스트 데이터 준비
+    context = {
+        'user': user,
+        'created_dt': created_dt,
+        'current_date': dt.now(),
+        'velocity': gait_result_latest.velocity,
+        'cadence': gait_result_latest.cadence,
+        'stride_len_l': gait_result_latest.stride_len_l,
+        'stride_len_r': gait_result_latest.stride_len_r,
+        'cycle_time_l': gait_result_latest.cycle_time_l,
+        'cycle_time_r': gait_result_latest.cycle_time_r,
+        'swing_perc_l': gait_result_latest.swing_perc_l,
+        'swing_perc_r': gait_result_latest.swing_perc_r,
+        'stance_perc_l': gait_result_latest.stance_perc_l,
+        'stance_perc_r': gait_result_latest.stance_perc_r,
+        'd_supp_perc_l': gait_result_latest.d_supp_perc_l,
+        'd_supp_perc_r': gait_result_latest.d_supp_perc_r,
+        'score': gait_result_latest.score,
+        'stride_len_normal': stride_len_normal,
+        'cycle_time_normal': cycle_time_normal,
+        'swing_perc_normal': swing_perc_normal,
+        'stance_perc_normal': stance_perc_normal,
+        'd_supp_perc_normal': d_supp_perc_normal,
+        'velocity_normal': velocity_normal,
+        'score_normal': score_normal,
+        'gait_data': json.dumps(gait_data),
+        'gait_trend_data': json.dumps(trend_data) if trend_data else None,
+        'normal_ranges': json.dumps(normal_ranges),
+        'code_info': json.dumps(code_info_context, cls=DjangoJSONEncoder)
+    }
+
+    return render(request, 'gait_print.html', context)

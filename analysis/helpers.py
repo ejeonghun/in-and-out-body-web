@@ -141,7 +141,7 @@ def parse_userinfo_kiosk(userinfo_obj):
         'student_grade': userinfo_obj.student_grade if userinfo_obj.student_grade else -1,
         'student_class': userinfo_obj.student_class if userinfo_obj.student_class else -1,
         'student_number': userinfo_obj.student_number if userinfo_obj.student_number else -1,
-        'student_name': userinfo_obj.student_name if userinfo_obj.student_name else 'N/A',
+        'student_name': userinfo_obj.student_name if userinfo_obj.student_name else '회원',
         'phone_number': userinfo_obj.phone_number if userinfo_obj.phone_number else 'N/A',
         'user_display_name': userinfo_obj.user_display_name if userinfo_obj.user_display_name else 'N/A',
         'dob': userinfo_obj.dob if userinfo_obj.dob else 'N/A',
@@ -420,18 +420,18 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
 
 
 """ 키오스크 최신 버전 캐싱 함수 """
-def get_kiosk_latest_version():
-    version = cache.get('KIOSK_LATEST_VERSION')
+# def get_kiosk_latest_version():
+#     version = cache.get('KIOSK_LATEST_VERSION')
 
-    if version is None:
-        # id=-1 데이터를 가져오거나 없으면 새로 생성
-        kiosk, created = KioskInfo.objects.get_or_create(
-            id=-1,
-            defaults={'version': '1.0.0'}  # 기본 버전 설정
-        )
-        version = kiosk.version
+#     if version is None:
+#         # id=-1 데이터를 가져오거나 없으면 새로 생성
+#         kiosk, created = KioskInfo.objects.get_or_create(
+#             id=-1,
+#             defaults={'version': '1.0.0'}  # 기본 버전 설정
+#         )
+#         version = kiosk.version
 
-        # 캐시에 저장 (30분 동안 유지)
-        cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)
+#         # 캐시에 저장 (30분 동안 유지)
+#         cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)
 
-    return version
+#     return version

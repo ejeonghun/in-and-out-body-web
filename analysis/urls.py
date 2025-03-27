@@ -48,6 +48,7 @@ urlpatterns = [
     # 관리자 페이지 보행 관련 대시보드
     path('gait-report/', views.gait_report, name='gait_report'),
     path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
+    path('gait-print/<int:id>/', views.gait_print, name='gait_print'),
 
     path('body-print/<int:id>/', views.body_print, name='body_print'),
 
@@ -76,6 +77,7 @@ urlpatterns = [
     path('api/get-userinfo-session/', views_kiosk.get_userinfo_session, name='get_userinfo_session'),
     path('api/end-session/', views_kiosk.end_session, name='end_session'),
     path('api/checksession/', views_kiosk.check_session, name='check_session'),
+    path('api/signup-kiosk/', views_kiosk.kiosk_signup, name='kiosk_signup'),
 
     path('api/analysis/gait/create_result/', views_kiosk.create_gait_result, name='create_gait_result'),
     path('api/analysis/gait/get_result/', views_kiosk.get_gait_result, name='get_gait_result'),
