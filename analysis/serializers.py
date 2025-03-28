@@ -58,6 +58,14 @@ class BodyResultSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class KioskInfoSerializer(serializers.Serializer):
+    class Meta:
+        model = BodyResult
+        fields = '__all__'
+        read_only_fields = ['id']
+
+
+
 class GaitResponseSerializer(serializers.Serializer):
     data = GaitResultSerializer(many=True)
     message = serializers.CharField(default="OK")

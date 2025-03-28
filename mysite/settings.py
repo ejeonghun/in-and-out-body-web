@@ -24,6 +24,7 @@ dev : 개발 환경
 
 ENVIRONMENT = os.getenv('ENVIRONMENT') # 운영 환경
 SECRETKEY = os.getenv('SECRET_KEY') # 시크릿
+LOCAL = os.getenv('LOCAL') # 로컬 환경
 
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
@@ -32,6 +33,10 @@ if ENVIRONMENT == 'dev' or ENVIRONMENT == 'debug':
     DEBUG = True
 else:
     DEBUG = False
+
+if LOCAL == 'true':
+    DEBUG = True
+    print('로컬 환경에서 실행됨')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
