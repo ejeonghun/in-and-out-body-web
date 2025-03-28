@@ -366,7 +366,7 @@ class Keypoint(models.Model):
 ### created_dt = 생성일(카운팅 일)
 class KioskCount(models.Model):
     id = models.AutoField(primary_key=True)
-    kiosk_id = models.ForeignKey(KioskInfo, on_delete=models.CASCADE)
+    kiosk = models.ForeignKey(KioskInfo, on_delete=models.CASCADE)
     type1 = models.IntegerField(default=0)
     type2 = models.IntegerField(default=0)
     type3 = models.IntegerField(default=0)
