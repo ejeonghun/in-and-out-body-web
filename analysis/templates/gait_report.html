@@ -466,6 +466,15 @@
                 .then(data => {
                     if (data.status === 200) {
                         gaitNormalRanges = data.data;
+                        gaitNormalRanges['score'] = {
+                            normal_range_min: 70,
+                            normal_range_max: 100,
+                            caution_range_min: 40,
+                            caution_range_max: 100,
+                            value_range_min: 0,
+                            value_range_max: 90
+                        };
+
                         console.log('정상 범위 데이터 로드 완료:', gaitNormalRanges);
                     }
                 })
@@ -754,7 +763,27 @@ function updateModalChart(chartId, label, value, codeId) {
         // 서버에서 받은 user_results 데이터를 전역 변수로 저장
         window.userResultsData = {{ user_results_json|safe }};
 
-        console.log(userResultsData);
+
+        userResultsData.forEach(column => {
+            const userResults = column.gait_results;
+            if (userResults) {
+                userResults.forEach(result => {
+                    for (const key in result) {
+                        if (key !== 'score' && typeof result[key] === 'number') {
+                            // 소수점 2자리 이상이 있다면 버림
+                            result[key] = Math.floor(result[key] * 100) / 100;
+                        }
+
+                        if (key === 'score') {
+                            result[key] = Math.floor(result[key] * 10);
+                        }
+                    }
+                });
+            } else {
+                console.warn('gait_results가 없습니다:', column);
+            }
+        });
+        console.log('처리된 userResultsData:', userResultsData);
     });
     
 

@@ -382,6 +382,7 @@ def get_body_result(request):
     return Response({'data': serializer.data, 'message': 'OK', 'status': 200})
 
 
+from django.db import IntegrityError
 
 @swagger_auto_schema(**kiosk_login_kiosk_)
 @api_view(['POST'])
@@ -390,31 +391,33 @@ def login_kiosk(request):
     kiosk_version = request.data.get('version')
     if not kiosk_id:
         return Response({'data': {'message': 'kiosk_id_required', 'status': 400}})
+
+    print(kiosk_id)
+
+    try:
+        kiosk_info, created = KioskInfo.objects.update_or_create(
+            kiosk_id=kiosk_id,
+            defaults={'version': kiosk_version}
+        )
+
+        # 키오스크 활성화 여부 체크
+        if not kiosk_info.active:
+            return Response({'data': {'message': 'kiosk_inactive', 'status': 401}})
+
+        # POST 메소드를 사용하여 키오스크 로그인 요청 처리
+        session_key = uuid.uuid4().hex
+        
+        # 여기가 수정된 부분 - kiosk_id 필드에 kiosk_info 객체를 직접 전달
+        SessionInfo.objects.update_or_create(
+            session_key=session_key,
+            defaults={'kiosk_id': kiosk_info.kiosk_id}
+        )
+
+        return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
     
-    # if not kiosk_version:
-    #     return Response({'data': {'message': 'kiosk_version_required', 'status': 400}})
-
-    # 최신버전 체크 (키오스크 버전이 최신이 아닌 경우)
-    # if kiosk_version != KIOSK_LATEST_VERSION:
-    #     return Response({'data': {'message': 'kiosk_update_required', 'status': 401}})
-
-    kiosk_info, created = KioskInfo.objects.update_or_create( # 키오스크 버전 정보 업데이트 또는 생성
-        kiosk_id=kiosk_id,  # 키오스크 ID
-        defaults={'version': kiosk_version}  # version을 갱신
-    )
-
-    # 키오스크 활성화 여부 체크
-    # if not kiosk_info.active:
-    #     return Response({'data': {'message': 'kiosk_inactive', 'status': 401}})
-
-    # POST 메소드를 사용하여 키오스크 로그인 요청 처리
-    session_key = uuid.uuid4().hex
-    SessionInfo.objects.update_or_create(
-        session_key=session_key,
-        kiosk_id=kiosk_info.kiosk_id,
-    )
-
-    return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
+    except IntegrityError as e:
+        print(f"IntegrityError: {e}")
+        return Response({'data': {'message': 'database_error', 'status': 500}})
 
 
 
@@ -566,7 +569,6 @@ def kiosk_signup(request):
     except SessionInfo.DoesNotExist:
         return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 1}})
 
-
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
         return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
@@ -579,21 +581,14 @@ def kiosk_signup(request):
 
     if not phone_number or not password:
         return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
-    
 
     # 세션 키로 해당 키오스크가 사용되고 있는 기관 정보 조회
-    kiosk = session_info.kiosk_id
-
-    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk).first()
+    kiosk_id = session_info.kiosk_id
+    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk_id).first()
     if not kiosk_info:
         return JsonResponse({'message': 'kiosk_not_found', 'status': 5})
-    
 
     kiosk_use_org = kiosk_info.Org
-
-    if kiosk_use_org:
-        org = OrganizationInfo.objects.filter(organization_name = kiosk_use_org).first()
-        # print(type(org)) # <class 'analysis.models.OrganizationInfo'>
 
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
         phone_number=phone_number,
@@ -603,7 +598,7 @@ def kiosk_signup(request):
             department='방문자',
             student_name=phone_number,
             user_type='O',
-            organization=org if kiosk_use_org else None,  # Org가 존재하면 포함, 없으면 None
+            organization=kiosk_use_org if not kiosk_use_org else None,
         ))
 
     if authorized_user_info.school is not None:
@@ -611,9 +606,8 @@ def kiosk_signup(request):
     elif authorized_user_info.organization is not None:
         authorized_user_info.user_type = 'O'
     else:
-        authorized_user_info.user_type = 'G'    
+        authorized_user_info.user_type = 'G'
 
     authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
 
     return JsonResponse({'message': 'success', 'status': 0})
-

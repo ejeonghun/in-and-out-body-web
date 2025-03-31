@@ -78,8 +78,8 @@ class UserInfo(ExportModelOperationsMixin('user_info'), AbstractUser):
     student_number = models.IntegerField(null=True, blank=True)
     student_name = models.CharField(max_length=100, null=True, blank=True)
     user_display_name = models.CharField(max_length=100, null=True, blank=True)
-    dob = models.CharField(max_length=8, null=True, blank=True)
-    gender = models.CharField(max_length=1, null=True)
+    dob = models.CharField(max_length=8, null=True, blank=True)                       # YYYYMMDD
+    gender = models.CharField(max_length=1, null=True)                                # M: 남성, F: 여성
     height = models.FloatField(null=True, blank=True)
     year = models.IntegerField(null=True, blank=True)
     created_dt = models.DateTimeField(auto_now_add=True)
@@ -105,7 +105,7 @@ class KioskInfo(models.Model):
     remark = models.CharField(max_length=100, null=True, blank=True)   # 비고
     active = models.BooleanField(default=True)                         # 활성화 여부
     Org = models.ForeignKey(OrganizationInfo, on_delete=models.SET_NULL, null=True, blank=True)  # 관리자
-    created_dt = models.DateTimeField(auto_now_add=True)               # 생성일"
+    created_dt = models.DateTimeField(auto_now_add=True)               # 생성일
 
 
 class SessionInfo(models.Model):
