@@ -403,7 +403,16 @@ kiosk_signup_ = {
             'password': openapi.Schema(
                 type=openapi.TYPE_STRING,
                 description='사용자 비밀번호'
-            )
+            ),
+            'dob': openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description='사용자 생년월일 (YYYY)',
+            ),
+            'gender': openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description='사용자 성별 (0 : M, 1 : F)',
+                enum=['0', '1']
+            ),
         }
     ),
     'responses': {
@@ -426,7 +435,7 @@ kiosk_signup_ = {
                         type=openapi.TYPE_STRING,
                         description='오류 메시지 (phone_number_already_exists, phone_number_and_password_required, 또는 invalid_phone_number_format)'
                     ),
-                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드', example="0: 성공, 1: 세션키 없음, 2:전화번호 형식 확인, 3:이미 가입됨, 4:필수 파라미터 누락")
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드', example="0: 성공, 1: 세션키 없음, 2:전화번호, 성별, 생년월일 형식 확인, 3:이미 가입됨, 4:필수 파라미터 누락")
                 }
             )
         )

@@ -291,6 +291,7 @@ ALLOWED_HOSTS = [
     'test-body.aicu.life',
     '10.0.2.2', # Android Emulator
     'host.docker.internal' # HOST OS addr
+    '54.180.114.131'
 ]
 
 

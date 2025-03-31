@@ -17,9 +17,11 @@ from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
     calculate_normal_ratio, create_excel_report, session_check_expired
-from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, KioskCount
+from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
+    KioskInfo, KioskCount
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
-from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, SessionInfoSerializer, KioskInfoSerializer
+from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, SessionInfoSerializer, \
+    KioskInfoSerializer
 
 from django.db.models import Min, Max, Exists, OuterRef, Count
 from django.db.models.functions import ExtractYear
@@ -377,6 +379,9 @@ def get_body_result(request):
     return Response({'data': serializer.data, 'message': 'OK', 'status': 200})
 
 
+from django.db import IntegrityError
+
+
 @swagger_auto_schema(**kiosk_login_kiosk_)
 @api_view(['POST'])
 def login_kiosk(request):
@@ -385,23 +390,32 @@ def login_kiosk(request):
     if not kiosk_id:
         return Response({'data': {'message': 'kiosk_id_required', 'status': 400}})
 
-    kiosk_info, created = KioskInfo.objects.update_or_create(  # 키오스크 버전 정보 업데이트 또는 생성
-        kiosk_id=kiosk_id,  # 키오스크 ID
-        defaults={'version': kiosk_version}  # version을 갱신
-    )
+    print(kiosk_id)
 
-    # 키오스크 활성화 여부 체크
-    if not kiosk_info.active:
-        return Response({'data': {'message': 'kiosk_inactive', 'status': 401}})
+    try:
+        kiosk_info, created = KioskInfo.objects.update_or_create(
+            kiosk_id=kiosk_id,
+            defaults={'version': kiosk_version}
+        )
 
-    # POST 메소드를 사용하여 키오스크 로그인 요청 처리
-    session_key = uuid.uuid4().hex
-    SessionInfo.objects.update_or_create(
-        session_key=session_key,
-        kiosk_id=kiosk_info,
-    )
+        # 키오스크 활성화 여부 체크
+        if not kiosk_info.active:
+            return Response({'data': {'message': 'kiosk_inactive', 'status': 401}})
 
-    return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
+        # POST 메소드를 사용하여 키오스크 로그인 요청 처리
+        session_key = uuid.uuid4().hex
+
+        # 여기가 수정된 부분 - kiosk_id 필드에 kiosk_info 객체를 직접 전달
+        SessionInfo.objects.update_or_create(
+            session_key=session_key,
+            defaults={'kiosk_id': kiosk_info.kiosk_id}
+        )
+
+        return Response({'data': {'session_key': session_key, 'message': 'success', 'status': 200}})
+
+    except IntegrityError as e:
+        print(f"IntegrityError: {e}")
+        return Response({'data': {'message': 'database_error', 'status': 500}})
 
 
 @swagger_auto_schema(**kiosk_login_kiosk_id)
@@ -533,13 +547,14 @@ def kiosk_use_count(request):
         return Response({'data': {'message': 'kiosk_id_not_found', 'status': 404}})
 
 
-
 @swagger_auto_schema(**kiosk_signup_)
 @api_view(['POST'])
 def kiosk_signup(request):
     session_key = request.data.get('session_key')
     phone_number = request.data.get('phone_number')
     password = request.data.get('password')
+    dob = str(request.data.get('dob'))  # YYYY
+    gender = str(request.data.get('gender'))  # 0: M or 1: F
 
     try:
         session_info = SessionInfo.objects.get(session_key=session_key)
@@ -549,6 +564,23 @@ def kiosk_signup(request):
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
         return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
+
+    if dob:
+        try:
+            print(type(dob))
+            if not re.match(r'^\d{4}$', dob):  # YYYY 문자열
+                return JsonResponse({'message': 'invalid_dob_format', 'status': 2})
+
+        except ValueError:
+            return JsonResponse({'message': 'dob_not_integer', 'status': 2})
+
+    if gender:
+        if not re.match(r'^[01]$', gender):  # 0 또는 1만 허용
+            return JsonResponse({'message': 'invalid_gender_format', 'status': 2})
+        try:
+            int(gender)
+        except ValueError:
+            return JsonResponse({'message': 'gender_not_integer', 'status': 2})
 
     try:
         UserInfo.objects.get(phone_number=phone_number)
@@ -560,12 +592,17 @@ def kiosk_signup(request):
         return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
 
     # 세션 키로 해당 키오스크가 사용되고 있는 기관 정보 조회
-    kiosk_id = session_info.kiosk_id
-    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk_id).first()
+    kiosk = session_info.kiosk_id
+
+    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk).first()
     if not kiosk_info:
         return JsonResponse({'message': 'kiosk_not_found', 'status': 5})
 
     kiosk_use_org = kiosk_info.Org
+
+    if kiosk_use_org:
+        org = OrganizationInfo.objects.filter(organization_name=kiosk_use_org).first()
+        # print(type(org)) # <class 'analysis.models.OrganizationInfo'>
 
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
         phone_number=phone_number,
@@ -575,7 +612,9 @@ def kiosk_signup(request):
             department='방문자',
             student_name=phone_number,
             user_type='O',
-            organization=kiosk_use_org if not kiosk_use_org else None,
+            organization=org if kiosk_use_org else None,  # Org가 존재하면 포함, 없으면 None
+            dob=dob if dob is not None else None,
+            gender='M' if int(gender) == 0 else 'F'
         ))
 
     if authorized_user_info.school is not None:
