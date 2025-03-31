@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 
 import dotenv
+import sentry_sdk
+
 dotenv.load_dotenv(override=True)
 
 
@@ -318,3 +320,12 @@ LOGGING = {
         },
     },
 }
+
+
+# 모니터링 SDK 설정
+sentry_sdk.init(
+    dsn="https://8c2ca4b3d666763ef090daea2efb03f5@o4509054364745728.ingest.de.sentry.io/4509054367236176",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)

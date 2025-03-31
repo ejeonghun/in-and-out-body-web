@@ -31,6 +31,7 @@ pytz==2024.2
 PyYAML==6.0.2
 requests==2.32.3
 s3transfer==0.10.4
+sentry-sdk==2.24.1
 six==1.17.0
 sqlparse==0.5.2
 tzdata==2024.2
