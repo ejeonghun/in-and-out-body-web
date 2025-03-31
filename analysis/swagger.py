@@ -404,15 +404,15 @@ kiosk_signup_ = {
                 type=openapi.TYPE_STRING,
                 description='사용자 비밀번호'
             ),
-            'dob': openapi.Schema(
-                type=openapi.TYPE_INTEGER,
-                description='사용자 생년월일 (YYYY)',
-            ),
-            'gender': openapi.Schema(
-                type=openapi.TYPE_INTEGER,
-                description='사용자 성별 (0 : M, 1 : F)',
-                enum=['0', '1']
-            ),
+            # 'dob': openapi.Schema(
+            #     type=openapi.TYPE_INTEGER,
+            #     description='사용자 생년월일 (YYYY)',
+            # ),
+            # 'gender': openapi.Schema(
+            #     type=openapi.TYPE_INTEGER,
+            #     description='사용자 성별 (0 : M, 1 : F)',
+            #     enum=['0', '1']
+            # ),
         }
     ),
     'responses': {

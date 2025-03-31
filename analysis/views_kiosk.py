@@ -553,8 +553,6 @@ def kiosk_signup(request):
     session_key = request.data.get('session_key')
     phone_number = request.data.get('phone_number')
     password = request.data.get('password')
-    dob = str(request.data.get('dob'))  # YYYY
-    gender = str(request.data.get('gender'))  # 0: M or 1: F
 
     try:
         session_info = SessionInfo.objects.get(session_key=session_key)
@@ -564,23 +562,6 @@ def kiosk_signup(request):
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
         return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
-
-    if dob:
-        try:
-            print(type(dob))
-            if not re.match(r'^\d{4}$', dob):  # YYYY 문자열
-                return JsonResponse({'message': 'invalid_dob_format', 'status': 2})
-
-        except ValueError:
-            return JsonResponse({'message': 'dob_not_integer', 'status': 2})
-
-    if gender:
-        if not re.match(r'^[01]$', gender):  # 0 또는 1만 허용
-            return JsonResponse({'message': 'invalid_gender_format', 'status': 2})
-        try:
-            int(gender)
-        except ValueError:
-            return JsonResponse({'message': 'gender_not_integer', 'status': 2})
 
     try:
         UserInfo.objects.get(phone_number=phone_number)
@@ -592,17 +573,12 @@ def kiosk_signup(request):
         return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
 
     # 세션 키로 해당 키오스크가 사용되고 있는 기관 정보 조회
-    kiosk = session_info.kiosk_id
-
-    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk).first()
+    kiosk_id = session_info.kiosk_id
+    kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk_id).first()
     if not kiosk_info:
         return JsonResponse({'message': 'kiosk_not_found', 'status': 5})
 
     kiosk_use_org = kiosk_info.Org
-
-    if kiosk_use_org:
-        org = OrganizationInfo.objects.filter(organization_name=kiosk_use_org).first()
-        # print(type(org)) # <class 'analysis.models.OrganizationInfo'>
 
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
         phone_number=phone_number,
@@ -612,9 +588,7 @@ def kiosk_signup(request):
             department='방문자',
             student_name=phone_number,
             user_type='O',
-            organization=org if kiosk_use_org else None,  # Org가 존재하면 포함, 없으면 None
-            dob=dob if dob is not None else None,
-            gender='M' if int(gender) == 0 else 'F'
+            organization=kiosk_use_org if not kiosk_use_org else None,
         ))
 
     if authorized_user_info.school is not None:
@@ -627,4 +601,3 @@ def kiosk_signup(request):
     authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
 
     return JsonResponse({'message': 'success', 'status': 0})
-
