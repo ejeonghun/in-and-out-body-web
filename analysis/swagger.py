@@ -142,6 +142,44 @@ kiosk_create_body_result_ = dict(
                     'scoliosis_hip_ratio': openapi.Schema(type=openapi.TYPE_NUMBER, description='Scoliosis hip ratio'),
                 },
             ),
+            'front_data': openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'keypoints': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        description='Keypoints for 33 parts',
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'x': openapi.Schema(type=openapi.TYPE_NUMBER, description='x'),
+                                'y': openapi.Schema(type=openapi.TYPE_NUMBER, description='y'),
+                                'z': openapi.Schema(type=openapi.TYPE_NUMBER, description='z'),
+                                'visibility': openapi.Schema(type=openapi.TYPE_NUMBER, description='visibility'),
+                                'presence': openapi.Schema(type=openapi.TYPE_NUMBER, description='presence'),
+                            }
+                        )
+                    ),
+                },
+            ),
+            'side_data': openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'keypoints': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            description='Keypoints for 33 parts',
+                            properties={
+                                'x': openapi.Schema(type=openapi.TYPE_NUMBER, description='x'),
+                                'y': openapi.Schema(type=openapi.TYPE_NUMBER, description='y'),
+                                'z': openapi.Schema(type=openapi.TYPE_NUMBER, description='z'),
+                                'visibility': openapi.Schema(type=openapi.TYPE_NUMBER, description='visibility'),
+                                'presence': openapi.Schema(type=openapi.TYPE_NUMBER, description='presence'),
+                            }
+                        )
+                    ),
+                },
+            ),
             'image_front': openapi.Schema(type=openapi.TYPE_STRING,
                                           description='Base64 encoded bytes of the front image'),
             'image_side': openapi.Schema(type=openapi.TYPE_STRING,
