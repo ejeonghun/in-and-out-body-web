@@ -535,7 +535,7 @@ def kiosk_use_count(request):
 
 
 @swagger_auto_schema(**kiosk_signup_)
-@api_view(['POST'])
+@api_view(['POST']) #
 def kiosk_signup(request):
     session_key = request.data.get('session_key')
     phone_number = request.data.get('phone_number')
