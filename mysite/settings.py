@@ -292,6 +292,7 @@ ALLOWED_HOSTS = [
     '10.0.2.2', # Android Emulator
     'host.docker.internal', # Docker HOST OS addr
     '172.17.0.1', # Docker Host addr
+    '54.180.114.131'
 ]
 
 

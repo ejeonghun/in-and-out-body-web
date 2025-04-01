@@ -78,8 +78,8 @@ class UserInfo(ExportModelOperationsMixin('user_info'), AbstractUser):
     student_number = models.IntegerField(null=True, blank=True)
     student_name = models.CharField(max_length=100, null=True, blank=True)
     user_display_name = models.CharField(max_length=100, null=True, blank=True)
-    dob = models.CharField(max_length=8, null=True, blank=True)
-    gender = models.CharField(max_length=1, null=True)
+    dob = models.CharField(max_length=8, null=True, blank=True)  # YYYYMMDD
+    gender = models.CharField(max_length=1, null=True)  # M: 남성, F: 여성
     height = models.FloatField(null=True, blank=True)
     year = models.IntegerField(null=True, blank=True)
     created_dt = models.DateTimeField(auto_now_add=True)
@@ -98,6 +98,7 @@ class UserInfo(ExportModelOperationsMixin('user_info'), AbstractUser):
 
 
 class KioskInfo(models.Model):
+    id = models.AutoField(primary_key=True)
     kiosk_id = models.CharField(max_length=100, unique=True)  # 키오스크 ID - 중복 불가
     version = models.CharField(max_length=50, null=True, blank=True)  # 키오스크 버전 정보 기록
     location = models.CharField(max_length=100, null=True, blank=True)  # 키오스크 설치 위치 정보
@@ -105,9 +106,6 @@ class KioskInfo(models.Model):
     active = models.BooleanField(default=True)  # 활성화 여부
     Org = models.ForeignKey(OrganizationInfo, on_delete=models.SET_NULL, null=True, blank=True)  # 관리자
     created_dt = models.DateTimeField(auto_now_add=True)  # 생성일
-
-    def __str__(self):
-        return f"{self.kiosk_id}"
 
 
 class SessionInfo(models.Model):
@@ -119,7 +117,7 @@ class SessionInfo(models.Model):
         on_delete=models.SET_NULL,  # KioskInfo가 삭제되면 kiosk_id를 NULL로 설정
         null=True,
         blank=True,
-        to_field='kiosk_id',  # KioskInfo의 kiosk_id 필드를 참조
+        to_field='kiosk_id'
     )
     is_issued = models.BooleanField(default=False)
     created_dt = models.DateTimeField(auto_now_add=True)
@@ -366,7 +364,7 @@ class Keypoint(models.Model):
 ### created_dt = 생성일(카운팅 일)
 class KioskCount(models.Model):
     id = models.AutoField(primary_key=True)
-    kiosk = models.ForeignKey(KioskInfo, on_delete=models.CASCADE)
+    kiosk = models.ForeignKey(KioskInfo, on_delete=models.CASCADE, related_name='kiosk_info', null=True, blank=True)
     type1 = models.IntegerField(default=0)
     type2 = models.IntegerField(default=0)
     type3 = models.IntegerField(default=0)
