@@ -466,8 +466,8 @@ def create_family_user(request) -> Response:
     if not user_id:  # 사용자 ID가 없는 경우
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
 
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 생성 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 생성 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
 
     if not request.data.get('family_member_name') or not request.data.get('gender') or not request.data.get(
             'relationship'):
@@ -535,8 +535,8 @@ def get_family_user(request):
     if not user_id:
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
 
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 조회 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 조회 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
 
     family_user_id = request.GET.get('family_user_id', None)
 
@@ -569,8 +569,8 @@ def delete_family_user(request):
     if not user_id:
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
 
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 삭제 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 삭제 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
 
     family_user_id = request.query_params.get('family_user_id', None)
 
@@ -598,8 +598,8 @@ def update_family_user(request):
     if not user_id:
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
 
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 수정 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 수정 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
 
     family_user_id = request.data.get('family_user_id', None)
     if family_user_id is None:
