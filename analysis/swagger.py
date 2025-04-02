@@ -497,8 +497,8 @@ kiosk_send_sms_ = dict(
         200: openapi.Response('Success', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'message': openapi.Schema(type=openapi.TYPE_STRING),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200)
             }
         )),
         400: openapi.Response('Bad Request', openapi.Schema(
@@ -506,15 +506,6 @@ kiosk_send_sms_ = dict(
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING),
                 'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-            }
-        )),
-        1: openapi.Response('Session Key Not Found', openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'data': openapi.Schema(type=openapi.TYPE_OBJECT, properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-                })
             }
         )),
     },
@@ -538,8 +529,8 @@ kiosk_check_sms_ = dict(
         200: openapi.Response('Success', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'message': openapi.Schema(type=openapi.TYPE_STRING),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200)
             }
         )),
         400: openapi.Response('Bad Request', openapi.Schema(
@@ -547,15 +538,6 @@ kiosk_check_sms_ = dict(
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING),
                 'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-            }
-        )),
-        1: openapi.Response('Session Key Not Found', openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'data': openapi.Schema(type=openapi.TYPE_OBJECT, properties={
-                    'message': openapi.Schema(type=openapi.TYPE_STRING),
-                    'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-                })
             }
         )),
     },
