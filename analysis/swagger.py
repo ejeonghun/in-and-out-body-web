@@ -482,6 +482,86 @@ kiosk_signup_ = {
 }
 
 
+kiosk_send_sms_ = dict(
+    method='POST',
+    operation_summary= '회원가입 시 인증번호 발송 API',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='전화번호 (010으로 시작하는 11자리)'),
+            'session_key': openapi.Schema(type=openapi.TYPE_STRING, description='세션 키')
+        },
+        required=['phone_number', 'session_key']
+    ),
+    responses={
+        200: openapi.Response('Success', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+            }
+        )),
+        400: openapi.Response('Bad Request', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+            }
+        )),
+        1: openapi.Response('Session Key Not Found', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'data': openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+                })
+            }
+        )),
+    },
+    tags= ['kiosk']
+)
+
+
+kiosk_check_sms_ = dict(
+    method='POST',
+    operation_summary= '회원가입 시 인증번호 검증 API',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='전화번호 (010으로 시작하는 11자리)'),
+            'session_key': openapi.Schema(type=openapi.TYPE_STRING, description='세션 키'),
+            'auth_code': openapi.Schema(type=openapi.TYPE_STRING, description='인증 코드')
+        },
+        required=['phone_number', 'session_key', 'auth_code']
+    ),
+    responses={
+        200: openapi.Response('Success', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+            }
+        )),
+        400: openapi.Response('Bad Request', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+            }
+        )),
+        1: openapi.Response('Session Key Not Found', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'data': openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+                })
+            }
+        )),
+    },
+    tags= ['kiosk']
+)
+
 ############################################################################################################
 ############################################################################################################
 ##################################               모바일 공용               ####################################

@@ -16,7 +16,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
-    calculate_normal_ratio, create_excel_report, session_check_expired
+    calculate_normal_ratio, create_excel_report, session_check_expired, check_sms_code, send_sms
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, KioskInfo, KioskCount
 from .forms import UploadFileForm, CustomPasswordChangeForm, CustomUserCreationForm, CustomPasswordResetForm
 from .serializers import BodyResultSerializer, GaitResponseSerializer, GaitResultSerializer, SessionInfoSerializer, KioskInfoSerializer, KeypointSerializer
@@ -33,8 +33,13 @@ from django.http import JsonResponse, HttpResponse
 from urllib.parse import quote
 from django.db.models import Q
 
-from analysis.swagger import kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, kiosk_end_session_, kiosk_check_session_, kiosk_use_count_, kiosk_signup_
+from analysis.swagger import (
+    kiosk_create_gait_result_, kiosk_get_gait_result_, kiosk_get_info_, kiosk_create_body_result_, kiosk_get_body_result_, kiosk_login_kiosk_, kiosk_login_kiosk_id, kiosk_get_userinfo_session_, 
+    kiosk_end_session_, kiosk_check_session_, kiosk_use_count_, kiosk_signup_, kiosk_check_sms_, kiosk_send_sms_)
 
+
+# from .custom.sms_send import NCPSMSSender
+# from .custom.redis_func import RedisClient
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
@@ -789,3 +794,62 @@ def kiosk_signup(request):
     authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
 
     return JsonResponse({'message': 'success', 'status': 0})
+
+
+@swagger_auto_schema(**kiosk_send_sms_)
+@api_view(['POST'])
+def kiosk_send_sms(request):
+    phone_number = request.data.get('phone_number')
+    session_key = request.data.get('session_key')
+
+    if not phone_number or not session_key:
+        return JsonResponse({'message': 'phone_number_or_session_key_required', 'status': 400}, status=HTTP_200_OK)
+    try:
+        session_info = SessionInfo.objects.get(session_key=session_key)
+    except SessionInfo.DoesNotExist:
+        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 400}}, status=HTTP_200_OK)
+
+    # 전화번호 형식 검사 (010으로 시작하는 11자리 문자열)
+    if not re.match(r'^010\d{8}$', phone_number):
+        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 400}, status=HTTP_200_OK)
+    
+    try:
+        UserInfo.objects.get(phone_number=phone_number)
+        return JsonResponse({'message': 'phone_number_already_exists', 'status': 400}, status=HTTP_200_OK)
+    except UserInfo.DoesNotExist:
+        pass
+
+    
+    result = send_sms(phone_number)
+
+    if (result == 'send'):
+        return JsonResponse({'message': 'success', 'status': 200}, status=HTTP_200_OK)
+    else:
+        return JsonResponse({'message': 'failed', 'status': 400}, status=HTTP_200_OK)
+
+
+@swagger_auto_schema(**kiosk_check_sms_)
+@api_view(['POST'])
+def kiosk_check_sms(request):
+    phone_number = request.data.get('phone_number')
+    session_key = request.data.get('session_key')
+    auth_code = request.data.get('auth_code')
+
+    if not phone_number or not session_key or not auth_code:
+        return JsonResponse({'message': 'phone_number_or_session_key_or_auth_code_required', 'status': 400}, status=HTTP_200_OK)
+
+    try:
+        session_info = SessionInfo.objects.get(session_key=session_key)
+    except SessionInfo.DoesNotExist:
+        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 400}}, status=HTTP_200_OK)
+    
+    try:
+        result = check_sms_code(phone_number, auth_code)
+
+        if result:
+            return JsonResponse({'message': 'success', 'status': 200}, status=HTTP_200_OK)
+        else:
+            return JsonResponse({'message': 'failed', 'status': 400}, status=HTTP_200_OK)
+    
+    except Exception as e:
+        return JsonResponse({'message': str(e), 'status': 500})

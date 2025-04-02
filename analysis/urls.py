@@ -78,6 +78,8 @@ urlpatterns = [
     path('api/end-session/', views_kiosk.end_session, name='end_session'),
     path('api/checksession/', views_kiosk.check_session, name='check_session'),
     path('api/signup-kiosk/', views_kiosk.kiosk_signup, name='kiosk_signup'),
+    path('api/send-sms/', views_kiosk.kiosk_send_sms, name='send_sms'),
+    path('api/check-sms/', views_kiosk.kiosk_check_sms, name='check_sms'),
 
     path('api/analysis/gait/create_result/', views_kiosk.create_gait_result, name='create_gait_result'),
     path('api/analysis/gait/get_result/', views_kiosk.get_gait_result, name='get_gait_result'),
