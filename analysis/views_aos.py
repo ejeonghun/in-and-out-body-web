@@ -14,7 +14,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from analysis.custom.metrics import calculate_active_users
 from analysis.helpers import (
-     upload_image_to_s3, verify_image, parse_userinfo_mobile, generate_presigned_url
+    upload_image_to_s3, verify_image, parse_userinfo_mobile, generate_presigned_url
 )
 from analysis.models import (
     BodyResult, SchoolInfo, UserInfo, AuthInfo, FamilyUserInfo
@@ -25,20 +25,16 @@ from analysis.serializers import (
 
 from datetime import datetime as dt
 
-
-
-
-
 # / *********************************************************************** /
 
 # / ***********************  (체형분석앱) 로직   ****************************** /
 
-from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_, create_family_user_, select_family_user_, get_body_result_aos_, delete_family_user_, get_body_result_aos_id_, update_family_user_
+from analysis.swagger import login_mobile_register_, mobile_create_body_result_, mobile_body_sync_, create_family_user_, \
+    select_family_user_, get_body_result_aos_, delete_family_user_, get_body_result_aos_id_, update_family_user_
 
 import pytz
 
 kst = pytz.timezone('Asia/Seoul')
-
 
 
 # family_user_id 입력이 없으면 전체 아니면 0 이면 해당 ID만 나머지는 user_id와 family_user_id 기준으로 필터링
@@ -53,7 +49,6 @@ def get_body_result_aos(request):
     mobile = request.GET.get("mobile", "n")  # mobile_yn 필터링
 
     family_user_id = request.GET.get("family_user_id", None)  # family_yn 필터링
-    
 
     # 기본 쿼리셋 정의
     query_filters = {'user_id': user_id}
@@ -136,7 +131,6 @@ def get_body_result_aos(request):
     }
 
     return Response(response_data, status=status.HTTP_200_OK)
-
 
 
 @swagger_auto_schema(**get_body_result_aos_id_)
@@ -316,7 +310,8 @@ def create_body_result(request) -> Response:
         front_data = request.data.get('front_data', {})
         side_data = request.data.get('side_data', {})
         family_user_id = request.data.get('family_user_id', None)
-        req_created_dt = request.data.get('created_dt', None) # 클라이언트 생성(요청) 시간  | 앱 - 서버 간 동기화 작업을 위해서는 동일한 Timestamp를 사용할 필요성이 있음. - Jerry
+        req_created_dt = request.data.get('created_dt',
+                                          None)  # 클라이언트 생성(요청) 시간  | 앱 - 서버 간 동기화 작업을 위해서는 동일한 Timestamp를 사용할 필요성이 있음. - Jerry
         height = request.data.get('height', None)
         weight = request.data.get('weight', None)
 
@@ -325,20 +320,20 @@ def create_body_result(request) -> Response:
             user_info = UserInfo.objects.get(id=user_id)
         except UserInfo.DoesNotExist:  # 유저가 존재하지 않는 경우
             return Response({'data': {'message': 'user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
-        
+
         try:
             if family_user_id is not None:
                 FamilyUserInfo.objects.get(id=family_user_id, user_id=user_id)
         except FamilyUserInfo.DoesNotExist:
-            return Response({'data': {'message': 'family_user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)   
-        
+            return Response({'data': {'message': 'family_user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
 
         if req_created_dt is not None:
             try:
                 # req_created_dt를 datetime 객체로 변환
                 created_dt = dt.strptime(req_created_dt, '%Y-%m-%dT%H:%M:%S.%f')
             except ValueError as e:
-                return Response({'data': {'message': f'Invalid date format: {str(e)}'}}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'data': {'message': f'Invalid date format: {str(e)}'}},
+                                status=status.HTTP_400_BAD_REQUEST)
         else:
             created_dt = dt.now()
 
@@ -353,7 +348,7 @@ def create_body_result(request) -> Response:
             'height': height if height else None,
             'weight': weight if weight else None
         }
-        
+
         # null_school 처리
         null_school, created = SchoolInfo.objects.get_or_create(
             id=-1,
@@ -460,7 +455,6 @@ def create_body_result(request) -> Response:
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 # / *********************************************************************** /
 # / ********************  (체형분석앱) - 가족 관련 로직   *********************** /
 # / *********************************************************************** /
@@ -469,20 +463,20 @@ def create_body_result(request) -> Response:
 @permission_classes([permissions.IsAuthenticated])
 def create_family_user(request) -> Response:
     user_id = request.user.id
-    if not user_id:                   # 사용자 ID가 없는 경우
+    if not user_id:  # 사용자 ID가 없는 경우
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
 
-    if request.user.user_type != 'G': # 일반 유저만 가족 유저 생성 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 생성 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not request.data.get('family_member_name') or not request.data.get('gender') or not request.data.get('relationship'):
+    if not request.data.get('family_member_name') or not request.data.get('gender') or not request.data.get(
+            'relationship'):
         return Response({'data': {'message': 'required_fields_missing'}}, status=status.HTTP_400_BAD_REQUEST)
 
     req_user_families = FamilyUserInfo.objects.filter(user_id=user_id)
 
-    if len(req_user_families) >= 3: # 가족 유저는 최대 3명까지 생성 가능
+    if len(req_user_families) >= 3:  # 가족 유저는 최대 3명까지 생성 가능
         return Response({'data': {'message': 'family_user_limit_exceeded'}}, status=status.HTTP_400_BAD_REQUEST)
-
 
     try:
         # 가족 사용자 데이터 준비
@@ -494,15 +488,11 @@ def create_family_user(request) -> Response:
             'profile_image': request.data.get('profile_image') is not None  # 이미지가 있는지 확인 (True/False)
         }
 
-
-        
-
-        #시리얼라이저 생성 및 유효성 검사
+        # 시리얼라이저 생성 및 유효성 검사
         # FamilyUserInfoSerializer가 필요합니다 - 아래는 예시 코드입니다
         serializer = FamilyUserInfoSerializer(data=family_data)
         if not serializer.is_valid():
             return Response({'data': {'message': serializer.errors}}, status=status.HTTP_400_BAD_REQUEST)
-
 
         # 트랜잭션으로 DB 작업 처리
         with transaction.atomic():
@@ -514,27 +504,27 @@ def create_family_user(request) -> Response:
             if request.data.get('profile_image'):
                 try:
                     profile_image = verify_image(request.data.get('profile_image'))
-                    
-                    created_dt = dt.strptime(serializer.data['created_dt'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y%m%dT%H%M%S%f')
-                    
+
+                    created_dt = dt.strptime(serializer.data['created_dt'], '%Y-%m-%dT%H:%M:%S.%f').strftime(
+                        '%Y%m%dT%H%M%S%f')
+
                     # S3에 이미지 업로드
                     upload_image_to_s3(profile_image, ['profile', created_dt])
 
                     profile_image_url = generate_presigned_url(file_keys=['profile/profile', created_dt])
                 except ValueError as ve:
-                    return Response({'data': {'message': f"Invalid image format: {str(ve)}"}}, 
-                                   status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'data': {'message': f"Invalid image format: {str(ve)}"}},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
-        
         # 성공 응답 반환
         return Response(
-            {'data': {'message': 'family_user_created', 'family_data' :{'id': family_user.id, 'profile_image_url': profile_image_url}}},
+            {'data': {'message': 'family_user_created',
+                      'family_data': {'id': family_user.id, 'profile_image_url': profile_image_url}}},
             status=status.HTTP_201_CREATED
         )
-    
+
     except Exception as e:
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
 
 
 @swagger_auto_schema(**select_family_user_)
@@ -544,9 +534,9 @@ def get_family_user(request):
     user_id = request.user.id
     if not user_id:
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 조회 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
+
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 조회 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
 
     family_user_id = request.GET.get('family_user_id', None)
 
@@ -559,7 +549,8 @@ def get_family_user(request):
         family_user_responses = FamilyUserResponseSerializer(family_users, many=True).data
 
         return Response(
-            {'data': {'message': 'success', 'family_users': family_user_responses, 'items': len(family_user_responses)}},
+            {'data': {'message': 'success', 'family_users': family_user_responses,
+                      'items': len(family_user_responses)}},
             status=status.HTTP_200_OK
         )
 
@@ -568,7 +559,7 @@ def get_family_user(request):
 
     except Exception as e:
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
 
 @swagger_auto_schema(**delete_family_user_)
 @api_view(['POST'])
@@ -577,27 +568,27 @@ def delete_family_user(request):
     user_id = request.user.id
     if not user_id:
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 삭제 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
-    
+
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 삭제 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_403_FORBIDDEN)
+
     family_user_id = request.query_params.get('family_user_id', None)
 
     if family_user_id is None:
         return Response({'data': {'message': 'family_user_id_required'}}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         family_user = FamilyUserInfo.objects.get(id=family_user_id, user_id=user_id)
         family_user.delete()
 
         return Response({'data': {'message': 'family_user_deleted'}}, status=status.HTTP_200_OK)
-    
+
     except FamilyUserInfo.DoesNotExist:
         return Response({'data': {'message': 'family_user_not_found'}}, status=status.HTTP_404_NOT_FOUND)
-    
+
     except Exception as e:
         return Response({'data': {'message': str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
 
 @swagger_auto_schema(**update_family_user_)
 @api_view(['POST'])
@@ -606,23 +597,22 @@ def update_family_user(request):
     user_id = request.user.id
     if not user_id:
         return Response({'data': {'message': 'token_required'}}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if request.user.user_type != 'G':  # 일반 유저만 가족 유저 수정 가능
-        return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
+
+    # if request.user.user_type != 'G':  # 일반 유저만 가족 유저 수정 가능
+    #     return Response({'data': {'message': 'user_not_permission'}}, status=status.HTTP_400_BAD_REQUEST)
 
     family_user_id = request.data.get('family_user_id', None)
     if family_user_id is None:
         return Response({'data': {'message': 'family_user_id_required'}}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         family_user = FamilyUserInfo.objects.get(id=family_user_id, user_id=user_id)
-        
+
         family_member_name = request.data.get('family_member_name')
         gender = request.data.get('gender')
         relationship = request.data.get('relationship')
         profile_image = request.data.get('profile_image')
 
-        
         # 제공된 값만 업데이트
         if family_member_name:
             family_user.family_member_name = family_member_name
@@ -630,32 +620,32 @@ def update_family_user(request):
             family_user.gender = gender
         if relationship:
             family_user.relationship = relationship
-        
+
         # 프로필 이미지가 제공된 경우에만 처리
         if profile_image:
             try:
                 verified_image = verify_image(profile_image)
                 created_dt = family_user.created_dt.strftime('%Y%m%dT%H%M%S%f')
-                
+
                 # S3에 이미지 업로드
                 upload_image_to_s3(verified_image, ['profile', created_dt])
                 family_user.profile_image = True
-                
+
             except ValueError as ve:
                 return Response(
-                    {'data': {'message': f"Invalid image format: {str(ve)}"}}, 
+                    {'data': {'message': f"Invalid image format: {str(ve)}"}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
         family_user.save()
-        
+
         # 프로필 이미지 URL 생성 (이미지가 있는 경우에만)
         # profile_image_url = None
         # if family_user.profile_image:
         #    created_dt = family_user.created_dt.strftime('%Y%m%dT%H%M%S%f')
         #    profile_image_url = generate_presigned_url(file_keys=['profile', created_dt])
-        # 업로드 후 S3에 전파되기까지의 시간이 필요함 현재 업로드 후 바로 URL 생성 시 S3에서 404 에러 발생 
-        
+        # 업로드 후 S3에 전파되기까지의 시간이 필요함 현재 업로드 후 바로 URL 생성 시 S3에서 404 에러 발생
+
         return Response({
             'data': {
                 'message': 'family_user_updated',
@@ -664,15 +654,15 @@ def update_family_user(request):
                 }
             }
         }, status=status.HTTP_200_OK)
-        
+
     except FamilyUserInfo.DoesNotExist:
         return Response(
-            {'data': {'message': 'family_user_not_found'}}, 
+            {'data': {'message': 'family_user_not_found'}},
             status=status.HTTP_404_NOT_FOUND
         )
-    
+
     except Exception as e:
         return Response(
-            {'data': {'message': str(e)}}, 
+            {'data': {'message': str(e)}},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
