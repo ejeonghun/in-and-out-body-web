@@ -477,6 +477,7 @@ def delete_body_result(request):
 @swagger_auto_schema(**mobile_send_auth_sms_)
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def mobile_send_auth_sms(request):
     phone_number = request.data.get('phone_number', None)
     # 추후 모바일의 UUID 등으로 기기 확인 처리 해야할 것 같음.
@@ -506,6 +507,7 @@ def mobile_send_auth_sms(request):
 @swagger_auto_schema(**mobile_check_auth_sms_)
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def mobile_check_auth_sms(request):
     phone_number = request.data.get('phone_number')
     auth_code = request.data.get('auth_code')
@@ -528,6 +530,7 @@ def mobile_check_auth_sms(request):
 @swagger_auto_schema(**mobile_signup_)
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def mobile_signup(request):
     phone_number = request.data.get('phone_number')
     password = request.data.get('password')
