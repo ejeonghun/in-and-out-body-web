@@ -34,23 +34,26 @@ class RedisClient:
         today = datetime.now().strftime("%Y-%m-%d")
         key = f"sms:{phone_number}:{today}"
 
-        # 현재 요청 횟수 조회
-        current_count = redis_client.get(key)
+        return True
 
-        if current_count is None:
-            # 새로운 번호면 1로 설정하고 TTL 7일로 설정
-            redis_client.set(key, 1, ex=7 * 24 * 60 * 60)
-            return True
+        # # 현재 요청 횟수 조회
+        # current_count = redis_client.get(key)
 
-        current_count = int(current_count)
+        # if current_count is None:
+        #     # 새로운 번호면 1로 설정하고 TTL 7일로 설정
+        #     redis_client.set(key, 1, ex=7 * 24 * 60 * 60)
+        #     return True
 
-        if current_count < 2:
-            # 횟수 증가
-            redis_client.incr(key)
-            return True
+        # current_count = int(current_count)
 
-        # 2회 초과 시 전송 차단
-        return False
+        # if current_count < 2:
+        #     # 횟수 증가
+        #     redis_client.incr(key)
+        #     return True
+
+        # # 2회 초과 시 전송 차단
+        # return False
+
 
 
     def save_code(self, phone_number: str, verification_code: str) -> None:

@@ -814,7 +814,11 @@ def kiosk_send_sms(request):
         return JsonResponse({'message': 'invalid_phone_number_format', 'status': 400}, status=HTTP_200_OK)
     
     try:
-        UserInfo.objects.get(phone_number=phone_number)
+        user = UserInfo.objects.get(phone_number=phone_number)
+
+        if user.phone_number == '01065751635':
+            pass
+
         return JsonResponse({'message': 'phone_number_already_exists', 'status': 400}, status=HTTP_200_OK)
     except UserInfo.DoesNotExist:
         pass

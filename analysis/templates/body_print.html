@@ -9,7 +9,7 @@
     <title>체형 분석 보고서 - 인쇄용</title>
     <style>
         /* 기본 스타일 */
-        body {
+        {% comment %} body {
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0px;
@@ -19,9 +19,9 @@
             max-width: 210mm;
             margin: 0 auto;
             box-sizing: border-box;
-        }
+        } {% endcomment %}
         
-        .container {
+        {% comment %} .container {
             margin: 0 auto;
             background-color: white;
             padding: 15px;
@@ -29,897 +29,805 @@
             width: 100%;
             max-width: 190mm;
             box-sizing: border-box;
+        } {% endcomment %}
+
+        .container {
+            margin: 0 auto;
+            background-color: white;
+            display: flex;
+            justify-content: space-evenly;
+            padding:5px;
         }
-        
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 15px;
+
+        .top_left_container { /* AICU 심볼 및 바디스캐너 Div */
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .top_left_container > h2 { /* 최상단 바디스캐너 텍스트  */
+            margin-left: 10px;
             font-size: 20px;
+            color: #828282;
         }
 
-        /* 상단 헤더 스타일 */
-        .report-header {
+        .top_left_container > img { /* AICU 심볼 이미지 */
+            width: 84px; 
+            height: 24px; 
+            object-fit: contain;
+        }
+
+        .top_left_container > #top-text {
+            margin-top: -15px;
+            text-weight: bold;
+        }
+
+        .userinfo {
+            margin-top: 20px;
+            border-bottom: 3px solid #000; 
+            border-top: 3px solid #000; 
+            padding: 4px;
+            display: table;
+            
+        }
+
+        .userinfo div {
+            display: table-row;
+            text-align: left;
+        }
+
+        .userinfo div > div {
+            display: table-cell;
+            padding: 5px 10px;
+
+        }
+
+        .userinfo .header {
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+
+        }
+
+        .userinfo .date {
+            text-align: left; 
+        }
+
+        #top { 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        
-        .report-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .user-info {
-            text-align: center;
-            margin-bottom: 15px;
-            background-color: #f0f7fc;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 5px solid #3498db;
-        }
-        
-        .user-info h1 {
-            margin: 0;
-            font-size: 18px;
+            padding: 10px 0;
         }
 
-        /* 이미지 컨테이너 */
-        .image-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            border: 2px solid #3498db;
-            border-radius: 10px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .image-block {
-            width: 48%;
-        }
-        
-        .image-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-align: center;
-            font-size: 12px;
-        }
-        
-        .image-wrapper {
-            position: relative;
-        }
-        
-        .image-wrapper img {
-            width: 100%;
-            border-radius: 8px;
-            max-height: 13.5cm;
-            object-fit: contain;
-        }
-        
-        
-        /* 그리드 레이아웃 */
-        .report-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .report-grid-item {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
-            background-color: white;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        /* 보고서 카드 스타일 */
-        .report-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #eee;
-        }
-        
-        .left-content {
-            flex: 1;
-        }
-        
-        .title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        
-        .description-label {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-bottom: 5px;
-        }
-        
-        .description-value {
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-        
-        .result-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .card-icon {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-            filter: brightness(0);
-        }
-        
-        /* 차트 캔버스 스타일 수정 */
-        .chart-canvas {
-            width: 100% !important;
-            height: 160px !important;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-        }
-        
-        .sub-title {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #2c3e50;
-        }
-        
-        /* 섹션 스타일 */
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 20px 0 10px 0;
-            color: #2c3e50;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .section-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .section-item {
-            break-inside: avoid;
-            background-color: #f9f9f9;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        
-        .section-item h3 {
-            font-size: 14px;
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-        
-        .section-item p, .section-item li {
-            font-size: 12px;
-            line-height: 1.5;
+        .sub_title { /* 정면/측면 측정결과 text */
             margin: 0;
-        }
-        
-        .section-item ul {
-            padding-left: 20px;
-            margin: 0;
-        }
-        
-        .divider {
-            height: 1px;
-            background-color: #eee;
-            margin: 8px 0;
-        }
-        
-        /* 인쇄 버튼 */
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background-color: #3498db;
+            padding: 1px;
+            display: inline-block;
+            background-color: black;
             color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .print-button:hover {
-            background-color: #2980b9;
-        }
-        
-        /* 그래프 그리드 스타일 수정 */
-        .graph-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .graph-item {
-            background-color: white;
-            border-radius: 8px;
-            padding: 5px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        /* 인쇄 관련 스타일 추가 */
-        @media print {
-            @page {
-                size: A4 portrait;
-                margin: 0.8cm;
-            }
-            
-            body {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                background-color: white;
-                max-width: none;
-            }
-            
-            .container {
-                width: 100%;
-                max-width: none;
-                padding: 0.4cm;
-                margin: 0;
-                box-shadow: none;
-            }
-            
-            .graph-grid {
-                page-break-before: auto;
-                break-before: auto;
-                page-break-inside: auto;
-                break-inside: auto;
-            }
-            
-            .main-title:nth-of-type(3) {
-                page-break-before: auto;
-                break-before: auto;
-            }
-            
-            .report-grid-item, .graph-item {
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }
-            
-            .report-header {
-                display: block;
-            }
-            
-            .main-title {
-                margin: 8px 0 5px 0;
-            }
-            
-            .title {
-                font-size: 11pt !important;
-            }
-            
-            .description-value, .description-label {
-                font-size: 9pt !important;
-            }
-            
-            .result-value {
-                font-size: 9pt !important;
-            }
-            
-            .sub-title {
-                font-size: 11pt !important;
-            }
-            
-            h1 {
-                font-size: 14pt !important;
-            }
-            
-            .section-item h3 {
-                font-size: 10pt !important;
-            }
-            
-            .section-item p, .section-item li {
-                font-size: 9pt !important;
-            }
-            
-            .image-container {
-                padding: 6px;
-                margin-bottom: 8px;
-                max-width: 100%;
-                page-break-inside: avoid;
-                background-color: #f8f9fa !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .image-wrapper img {
-                max-height: 10cm;
-            }
-            
-            #print-button {
-                display: none;
-            }
-            
-            .main-title {
-                border-left: 5px solid #3498db;
-                background-color: #f0f7fc !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
         }
 
-        /* 목차 스타일 추가 */
-        .main-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 15px 0 8px 0;
-            padding: 6px 10px;
-            border-left: 5px solid #3498db;
-            background-color: #f0f7fc;
-            border-radius: 0 4px 4px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+
+        /* ################################ */
+        /*         막대그래프 스타일          */
+        /* ################################ */
+
+        .left_inside_container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px; /* 요소 간 간격 */
+        }
+
+
+
+        #sliders-container {
+            margin-left: 2mm;
+            width:40mm;
+        }
+
+        .range-container {
+            width: 100%;
+            margin: 20px auto;
+        }
+
+        /* 제목과 현재 값 */
+        .range-container p {
+            font-size: 12px;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        /* 슬라이더 트랙 */
+        .slider-wrapper {
             position: relative;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
         }
 
-        .main-title::before {
-            content: "■";
-            color: #3498db;
-            margin-right: 8px;
-            font-size: 16px;
+        .track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
         }
 
-        .spinal_imbalance_text_result {
-            font-size: 8px;
+        /* 현재 값을 나타내는 인디케이터 */
+        .indicator {
+            position: absolute;
+            height: 20px;
+            width: 2px;
+            background-color: black;
+            top: -5px;
+        }
+
+        /* 최소/최대값 레이블 */
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+
+        .labels span {
+            font-size: 12px;
+        }
+
+
+        .hidden-slider {
+            position: absolute;
+            opacity: 0; /* 완전히 숨김 */
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        * {
+        
+            box-sizing: border-box;
+        
+            -moz-box-sizing: border-box;
+        
+        }
+        
+        #all_content {
+        
+            width: 210mm;
+        
+            min-height: 297mm;
+        
+            padding: 10mm; /* set contents area */
+        
+            margin: 10mm auto;
+        
+            border-radius: 5px;
+        
+            background: #fff;
+        
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        
+        }
+    
+         
+        
+        @page {
+        
+            size: A4;
+        
+            margin: 0;
+        
+        }
+        
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                background: #fff;
+            }
+        
+            #all_content {
+                margin: 0;
+                border: initial;
+                border-radius: initial;
+                width: initial;
+                min-height: initial;
+                box-shadow: initial;
+                background: initial;
+                page-break-after: always;
+            }
+        
         }
     </style>
 </head>
 <body>
-    <div class="print-button-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-        <button id="print-report" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200 flex items-center" onclick="body_print()">
-            <i class="bi bi-printer mr-2"></i> 인쇄하기
-        </button>
-    </div>
-    
-    <div class="container">
-        <!-- 헤더 영역 -->
-        <div class="report-header">
-            <div class="report-title">체형 분석 보고서</div>
-            <div class="report-date">{{ current_date|date:"Y년 m월 d일" }}</div>
+    <div id="all_content">
+    <div id="top">
+        <div>
+            <div class="top_left_container"><img src="/static/images/AICU_CI.png" alt="logo"><h2>바디스캐너</h2></div>
+            <div class="top_left_container"><h1 id="top-text">체형분석 결과</h1></div>
         </div>
-        
-        <!-- 사용자 정보 -->
-        <div class="user-info">
-            {% if user.user_type == 'S' %}
-                <h1>{{ user.school.school_name }} {{ user.student_grade }}학년 {{ user.student_class }}반 {{ user.student_number }}번 {{ user.student_name }} 님의 체형 분석 결과</h1>
-            {% elif user.user_type == 'O' %}
-                <h1>{{ user.organization.organization_name }} {{ user.department }} {{ user.student_name }} 님의 체형 분석 결과</h1>
-            {% else %}
-                <h1>{{ user.student_name }} 님의 체형 분석 결과</h1>
-            {% endif %}
-        </div>
-        
-        <!-- 이미지 섹션 -->
-        <div class="image-container">
-            <div class="image-block">
-                <p class="image-title">정면 이미지</p>
-                <div class="image-wrapper">
-                    <img src="{{ image_front_url }}" alt="Front Image" id="front-image">
-                </div>
+        <div class="userinfo">
+            <div class="header">
+                <div>연령</div>
+                <div>성별</div>
+                <div class="date">검사일시</div>
             </div>
-            <div class="image-block">
-                <p class="image-title">측면 이미지</p>
-                <div class="image-wrapper">
-                    <img src="{{ image_side_url }}" alt="Side Image" id="side-image">
-                </div>
+            <div>
+                <div>만 34세</div>
+                <div>여성</div>
+                <div class="date">2025년 04월 01일</div>
             </div>
         </div>
-        
-        <!-- 리포트 카드 그리드 -->
-        <div class="main-title">체형 스캔 상세 결과</div>
-        <div class="report-grid">
-            {% for item in report_items %}
-                <div class="report-grid-item">
-                    <div class="report-card">
-                        <div class="left-content">
-                            <div class="title {{ item.alias }}_text">{{ item.title }}</div>
-                            <div class="description-label {{ item.alias }}_text">측정 결과 | {{ item.metric }}</div>
-                            {% if item.description_list %}
-                                {% for description_item in item.description %}
-                                    <div class="description-value {{ item.alias }}_text">⭐️ {{ description_item }}</div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="description-value {{ item.alias }}_text">{{ item.description }}</div>
-                            {% endif %}
-                            {% comment %} {% if item.alias != 'spinal_imbalance' %} {% endcomment %}
-                            <div class="result-value {{ item.alias }}_text_result" style="font-size: {% if item.alias ==  'spinal_imbalance'%}6px {% else %}{% if item.result|split:','|length > 1 %}13px{% else %}16px{% endif %}{% endif %};">
-                                {% for result_item in item.result|split:',' %}
-                                    {{ result_item|trim }}{% if not forloop.last %}<br>{% endif %}
-                                {% endfor %}
-                            </div>
-                            {% comment %} {% endif %} {% endcomment %}
-                        </div>
-                        <img src="{% static 'icons/' %}{{ item.alias }}.svg" alt="{{ item.title }} icon" class="card-icon" style="width: 40px; height: 40px;">
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+    </div>
 
-        <!-- 주의 문구 -->
-        {% comment %} <div class="caution-text">⚠️ 위 내용은 일반적으로 알려진 의학상식에 대한 설명이며 스캔 결과가 의학적 판단 및 진단과는 무관합니다. 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.</div> {% endcomment %}
+    <!-- 정면 측정결과 , 측면 측정 결과를 포함하는 컨테이너 -->
+    <div class="container" style="background-color: white; max-width: none;">
+        <div class="sub_container" style="border: 3px solid #000;">
+            <h3 class="sub_title">정면 측정결과</h3>
 
-        <!-- 그래프 그리드 -->
-        <div class="main-title">변화 추이</div>
-        <div class="graph-grid">
-            {% for item in report_items %}
-                <div class="graph-item">
-                    <div class="sub-title">{{ item.title }}</div>
-                    <canvas id="chart_{{ item.alias }}" class="chart-canvas"></canvas>
-                </div>
-            {% endfor %}
-        </div>
-        
-        <!-- 상세 정보 섹션 -->
-        {% comment %} <div class="main-title">상세 정보</div>
-        {% for item in report_items %}
-            <div class="sub-title">{{ item.title }} 상세 정보</div>
-            <div class="section-grid">
-                {% for key, content in item.sections.items %}
-                    <div class="section-item">
-                        <h3>{{ key }}</h3>
-                        {% if key == '권장계획' %}
-                            <ul>
-                            {% for content_ in content %}
-                                <li>{{ content_|safe }}</li>
-                            {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p>{{ content|safe }}</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
+             <!-- 슬라이더 컨테이너 추가 -->
+            <div class="left_inside_container">
+                <div id="sliders-container"></div>
+                {% comment %} <img src="/static/images/example_body.svg" alt="Body Scanner" style="width: 100%; height: auto; margin-top: 20px;"> {% endcomment %}
+                <canvas id="frontCanvas" width="200" height= "600"></canvas>
             </div>
-            {% if not forloop.last %}
-                <div class="divider"></div>
-            {% endif %}
-        {% endfor %} {% endcomment %}
-        
-        <div class="caution-text">⚠️ 위 내용은 일반적으로 알려진 의학상식에 대한 설명이며 스캔 결과가 의학적 판단 및 진단과는 무관합니다. 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.</div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="text-align:left">
-            https://aicu.life/
         </div>
-        <div style="text-align:right">
-            <img src="/static/images/AICU_CI.png" alt="logo" style="width: 100px; height: 100px; object-fit: contain;">
-        </div>
-    </div>
+        <div class="sub_container" style="border: 3px solid #000;">
+            <h3 class="sub_title">측면 측정결과</h3>
+            <canvas id="sideCanvas" width="200" height="600"></canvas>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // 페이지 렌더링이 모두 완료되면
-        const sideImage = document.getElementById('side-image');
-        const frontImage = document.getElementById('front-image');
-        const printButton = document.getElementById('print-report');
-        
-        {% comment %} sideImage.addEventListener('load', function() {
-            // 이미지가 로드되면 인쇄
-            // window.print();
-            
-        });
-        
-        frontImage.addEventListener('load', function() {
-            // 이미지가 로드되면 인쇄
-            // window.print();
-            
-        }); {% endcomment %}
-
-        if (sideImage.complete && frontImage.complete) {
-            // 이미지가 로드되면 인쇄
-            // 0.1초 후
-
-            printButton.style.display = 'none';
-
-            console.log('이미지 로드 완료');
-            window.print();
-        }
-
-        function body_print() {
-            printButton.style.display = 'none';
-            window.print();
-        }
-
-
-        </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const datesSize = '{{sorted_dates|length}}';
-            const dateScores = {};
-            const trendDataDict = {{ trend_data_dict|safe }};
-            
-            console.log(trendDataDict);
-            
-            // 점수 계산
-            {% for item in report_items %}
-            var itemAlias = '{{ item.alias }}';
-            var normalRange = {{ item.normal_range|safe }};
-            var trendData = trendDataDict[itemAlias];
-            
-            console.log(normalRange);
-            console.log(trendData);
-
-            trendData.dates.forEach((date, index) => {
-                if (!dateScores[date]) {
-                    dateScores[date] = {normal: 0, total: 11};
-                }
-                
-                if (itemAlias === 'spinal_imbalance' || itemAlias === 'o_x_legs' || itemAlias === 'knee_angle') {
-                    const val1 = trendData.val1[index];
-                    const val2 = trendData.val2[index];
-                    if (val1 >= normalRange[0] && val1 <= normalRange[1]) {
-                        dateScores[date].normal++;
-                    }
-                    if (val2 >= normalRange[0] && val2 <= normalRange[1]) {
-                        dateScores[date].normal++;
-                    }
-                } else {
-                    const value = trendData.values[index];
-                    if (value >= normalRange[0] && value <= normalRange[1]) {
-                        dateScores[date].normal++;
-                    }
-                }
-            });
-            {% endfor %}
-
-            if (parseInt(datesSize) > 1) {
-                // 날짜별 점수 표시 업데이트
-                function updateDateScoreDisplay() {
-                    Object.entries(dateScores).forEach(([date, score]) => {
-                        const emoji = document.getElementById(`emoji-${date}`);
-                        const scoreElement = document.getElementById(`score-${date}`);
-                        if (!emoji || !scoreElement) return;
-                        
-                        const ratio = score.normal / score.total;
-                        
-                        // 이모지 설정
-                        if (ratio >= 0.8) {
-                            emoji.textContent = '😊';
-                            scoreElement.className = 'score score-high';
-                        } else if (ratio >= 0.5) {
-                            emoji.textContent = '🙂';
-                            scoreElement.className = 'score score-medium';
-                        } else {
-                            emoji.textContent = '😟';
-                            scoreElement.className = 'score score-low';
-                        }
-                        
-                        // 점수 표시
-                        scoreElement.textContent = `점수 : ${score.normal}/${score.total}`;
-                    });
-
-                    const items_size = document.getElementById('items_size');
-                    if (items_size) {
-                        items_size.textContent = `총 ${datesSize}개의 검사 결과`;
-                    }
-                }
-
-                // 선택된 날짜까지의 스크롤 함수
-                function scrollToSelectedDate() {
-                    const container = document.querySelector('.date-score-container');
-                    const selectedDate = document.querySelector('.date-item.selected');
-                    
-                    if (container && selectedDate) {
-                        const containerRect = container.getBoundingClientRect();
-                        const selectedRect = selectedDate.getBoundingClientRect();
-                        
-                        container.scrollLeft = selectedRect.left - containerRect.left + container.scrollLeft - (containerRect.width / 2) + (selectedRect.width / 2);
-                    }
-                }
-                
-                updateDateScoreDisplay();
-                scrollToSelectedDate();
-            }
-            
-            // 각 차트 초기화
-            {% for item in report_items %}
-            const ctx_{{ item.alias }} = document.getElementById('chart_{{ item.alias }}').getContext('2d');
-            const normalRange_{{ item.alias }} = {{ item.normal_range|safe }};
-            const valueRange_{{ item.alias }} = {{ item.value_range|safe }};
-            
-            {% if item.alias == 'spinal_imbalance' or item.alias == 'o_x_legs' or item.alias == 'knee_angle' %}
-                // 날짜 포맷 조정
-                const formattedDates_{{ item.alias }} = trendDataDict['{{ item.alias }}'].dates.map(date => date.slice(0, 10));
-                
-                new Chart(ctx_{{ item.alias }}, {
-                    type: 'line',
-                    data: {
-                        labels: formattedDates_{{ item.alias }},
-                        datasets: [
-                            // 실제 데이터
-                            {
-                                label: trendDataDict['{{ item.alias }}'].part[0],
-                                data: trendDataDict['{{ item.alias }}'].val1,
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                borderWidth: 2,
-                                pointRadius: 3,
-                                fill: false
-                            },
-                            {
-                                label: trendDataDict['{{ item.alias }}'].part[1],
-                                data: trendDataDict['{{ item.alias }}'].val2,
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                borderWidth: 2,
-                                pointRadius: 3,
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                min: valueRange_{{ item.alias }}[0],
-                                max: valueRange_{{ item.alias }}[1],
-                                // 배경에 정상 범위 영역 색칠
-                                grid: {
-                                    drawOnChartArea: true,
-                                    color: function(context) {
-                                        // Y축 값 얻기
-                                        const value = context.tick.value;
-                                        // 정상 범위 내 그리드 줄은 투명하게
-                                        if (value >= normalRange_{{ item.alias }}[0] && value <= normalRange_{{ item.alias }}[1]) {
-                                            return 'rgba(0, 0, 0, 0.05)'; // 매우 연한 회색
-                                        }
-                                        return 'rgba(0, 0, 0, 0.1)'; // 연한 회색
-                                    }
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 8
-                                    }
-                                },
-                                // 정상 범위 배경색 추가
-                                afterDraw: function(chart) {
-                                    const ctx = chart.ctx;
-                                    const yAxis = chart.scales.y;
-                                    const xAxis = chart.scales.x;
-                                    
-                                    // 정상 범위 시작점과 끝점
-                                    const yStart = yAxis.getPixelForValue(normalRange_{{ item.alias }}[0]);
-                                    const yEnd = yAxis.getPixelForValue(normalRange_{{ item.alias }}[1]);
-                                    
-                                    // 배경색 칠하기
-                                    ctx.fillStyle = 'rgba(75, 192, 192, 0.2)'; // 연한 초록색
-                                    ctx.fillRect(xAxis.left, yEnd, xAxis.width, yStart - yEnd);
-                                    
-                                    // 정상 범위 경계선 그리기
-                                    ctx.beginPath();
-                                    ctx.lineWidth = 1;
-                                    ctx.strokeStyle = 'rgba(75, 192, 192, 0.5)';
-                                    ctx.setLineDash([5, 5]);
-                                    
-                                    // 하한선
-                                    ctx.moveTo(xAxis.left, yStart);
-                                    ctx.lineTo(xAxis.right, yStart);
-                                    
-                                    // 상한선
-                                    ctx.moveTo(xAxis.left, yEnd);
-                                    ctx.lineTo(xAxis.right, yEnd);
-                                    
-                                    ctx.stroke();
-                                    ctx.setLineDash([]);
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    font: {
-                                        size: 8
-                                    },
-                                    maxRotation: 45,
-                                    minRotation: 45
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    boxWidth: 8,
-                                    font: {
-                                        size: 8
-                                    }
-                                },
-                                position: 'top',
-                                align: 'center'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const value = context.raw;
-                                        const dsLabel = context.dataset.label;
-                                        
-                                        let label = dsLabel + ': ' + value;
-                                        
-                                        // 정상 범위 안에 있는지 표시
-                                        if (value >= normalRange_{{ item.alias }}[0] && value <= normalRange_{{ item.alias }}[1]) {
-                                            label += ' (정상 범위)';
-                                        }
-                                        
-                                        return label;
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    plugins: [{
-                        id: 'normalRangeBackground',
-                        beforeDraw: function(chart) {
-                            const ctx = chart.ctx;
-                            const yAxis = chart.scales.y;
-                            const xAxis = chart.scales.x;
-                            
-                            // 정상 범위 시작점과 끝점
-                            const yStart = yAxis.getPixelForValue(normalRange_{{ item.alias }}[0]);
-                            const yEnd = yAxis.getPixelForValue(normalRange_{{ item.alias }}[1]);
-                            
-                            // 배경색 칠하기
-                            ctx.fillStyle = 'rgba(75, 192, 192, 0.2)'; // 연한 초록색
-                            ctx.fillRect(xAxis.left, yEnd, xAxis.width, yStart - yEnd);
-                            
-                            // 정상 범위 경계선 그리기
-                            ctx.beginPath();
-                            ctx.lineWidth = 1;
-                            ctx.strokeStyle = 'rgba(75, 192, 192, 0.5)';
-                            ctx.setLineDash([5, 5]);
-                            
-                            // 하한선
-                            ctx.moveTo(xAxis.left, yStart);
-                            ctx.lineTo(xAxis.right, yStart);
-                            
-                            // 상한선
-                            ctx.moveTo(xAxis.left, yEnd);
-                            ctx.lineTo(xAxis.right, yEnd);
-                            
-                            ctx.stroke();
-                            ctx.setLineDash([]);
-                        }
-                    }]
-                });
-            {% else %}
-                // 단일 값 차트에 대해서도 동일하게 적용
-                // 날짜 포맷 조정
-                const formattedDates_{{ item.alias }} = trendDataDict['{{ item.alias }}'].dates.map(date => date.slice(0, 10));
-                
-                new Chart(ctx_{{ item.alias }}, {
-                    type: 'line',
-                    data: {
-                        labels: formattedDates_{{ item.alias }},
-                        datasets: [
-                            // 실제 데이터
-                            {
-                                label: '{{ item.title }}',
-                                data: trendDataDict['{{ item.alias }}'].values,
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                borderWidth: 2,
-                                pointRadius: 3,
-                                fill: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                min: valueRange_{{ item.alias }}[0],
-                                max: valueRange_{{ item.alias }}[1],
-                                ticks: {
-                                    font: {
-                                        size: 8
-                                    }
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    font: {
-                                        size: 8
-                                    },
-                                    maxRotation: 45,
-                                    minRotation: 45
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    boxWidth: 8,
-                                    font: {
-                                        size: 8
-                                    }
-                                },
-                                position: 'top',
-                                align: 'center'
-                            }
-                        }
-                    },
-                    plugins: [{
-                        id: 'normalRangeBackground',
-                        beforeDraw: function(chart) {
-                            const ctx = chart.ctx;
-                            const yAxis = chart.scales.y;
-                            const xAxis = chart.scales.x;
-                            
-                            // 정상 범위 시작점과 끝점
-                            const yStart = yAxis.getPixelForValue(normalRange_{{ item.alias }}[0]);
-                            const yEnd = yAxis.getPixelForValue(normalRange_{{ item.alias }}[1]);
-                            
-                            // 배경색 칠하기
-                            ctx.fillStyle = 'rgba(75, 192, 192, 0.2)'; // 연한 초록색
-                            ctx.fillRect(xAxis.left, yEnd, xAxis.width, yStart - yEnd);
-                            
-                            // 정상 범위 경계선 그리기
-                            ctx.beginPath();
-                            ctx.lineWidth = 1;
-                            ctx.strokeStyle = 'rgba(75, 192, 192, 0.5)';
-                            ctx.setLineDash([5, 5]);
-                            
-                            // 하한선
-                            ctx.moveTo(xAxis.left, yStart);
-                            ctx.lineTo(xAxis.right, yStart);
-                            
-                            // 상한선
-                            ctx.moveTo(xAxis.left, yEnd);
-                            ctx.lineTo(xAxis.right, yEnd);
-                            
-                            ctx.stroke();
-                            ctx.setLineDash([]);
-                        }
-                    }]
-                });
-            {% endif %}
-            {% endfor %}
-            
-            // 인쇄 직전에 차트 크기 업데이트 및 최적화
-            window.addEventListener('beforeprint', function() {
-                // 인쇄 최적화를 위한 강제 delay
-                setTimeout(() => {
-                    {% for item in report_items %}
-                    const chart_{{ item.alias }} = Chart.getChart(document.getElementById('chart_{{ item.alias }}'));
-                    if (chart_{{ item.alias }}) {
-                        chart_{{ item.alias }}.resize();
-                        chart_{{ item.alias }}.update();
-                    }
-                    {% endfor %}
-                }, 200);
-            });
-        });
-    </script>    
+</div>
 </body>
+<script>
+    {% comment %} window.onload = function() {
+        window.print();
+    } {% endcomment %}
+                       
+                    
+                        // itemTitle : 검사항목 이름
+                        // itemAlias : 검사항목 영문
+                        // normalRange : 검사항목 정상범위 [int, int]
+                        // trendData : 검사항목의 데이터 {dates: ['2025-03-26 hh:mm:ss'], values: [float]}
+                        // minMaxRange : 검사항목의 min, max 범위 [int, int] 
+
+            
+                        document.addEventListener('DOMContentLoaded', function () {
+                            // 데이터를 Django 템플릿에서 전달받습니다.
+                            const trendDataDict = {{ trend_data_dict|safe }};
+                            const slidersContainer = document.getElementById('sliders-container');
+                        
+                            // 슬라이더 데이터를 저장할 배열
+                            const slidersData = [];
+                            const sideSlidersData = [];
+                        
+                            console.log(trendDataDict);
+
+                            // Helper function to add sliders for items with two values
+                            function addDualValueSlider(itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, unit) {
+                                // 좌측 슬라이더 추가
+                                slidersData.push({
+                                    id: `${itemAlias}_left`,
+                                    title: `${itemTitle} (좌)`,
+                                    alias: `${itemAlias}_left`,
+                                    minValue: minMaxRange[0],
+                                    maxValue: minMaxRange[1],
+                                    normalRange: normalRange,
+                                    currentValue: trendData.val1[latestIndex], // 좌측 값
+                                    unit: unit,
+                                });
+                                // 우측 슬라이더 추가
+                                slidersData.push({
+                                    id: `${itemAlias}_right`,
+                                    title: `${itemTitle} (우)`,
+                                    alias: `${itemAlias}_right`,
+                                    minValue: minMaxRange[0],
+                                    maxValue: minMaxRange[1],
+                                    normalRange: normalRange,
+                                    currentValue: trendData.val2[latestIndex], // 우측 값
+                                    unit: unit,
+                                });
+                            }
+
+                            // 각 report_item에 대해 슬라이더 데이터 생성
+                            {% for item in report_items %}
+                            var itemTitle = '{{ item.title }}'; // 검사항목 이름
+                            var itemAlias = '{{ item.alias }}'; // 검사항목 영문 이름
+                            var normalRange = {{ item.normal_range|safe }}; // 정상 범위 [min, max]
+                            var minMaxRange = {{ item.value_range|safe }}; // 전체 범위 [min, max]
+                            var trendData = trendDataDict[itemAlias]; // 검사항목의 트렌드 데이터
+                            
+
+                            console.log("{{item.metric}}");
+                            console.log("{{item.unit}}")
+                        
+                            // 가장 최근 날짜 데이터 가져오기 (마지막 인덱스 사용)
+                            var latestIndex = trendData.dates.length - 1;
+                            var currentValue = 0;
+                        
+                            // 항목 유형에 따라 현재 값 설정
+                            if (itemAlias === 'spinal_imbalance' || itemAlias === 'knee_angle' || itemAlias === 'o_x_legs') {
+                                // 두 값이 있는 경우 (예: 양쪽 무릎 각도)
+                                addDualValueSlider(itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, "{{ item.unit }}");
+                            } else {
+                                // 단일 값인 경우
+                                currentValue = trendData.values ? trendData.values[latestIndex] : 0;
+                                slidersData.push({
+                                    id: "{{ forloop.counter }}",
+                                    title: itemTitle,
+                                    alias: itemAlias,
+                                    minValue: minMaxRange[0],
+                                    maxValue: minMaxRange[1],
+                                    normalRange: normalRange,
+                                    currentValue: currentValue,
+                                    unit: "{{ item.unit }}",
+                                });
+                            }
+                            // 슬라이더 데이터 추가
+                            
+                            {% endfor %}
+                        
+                            // 모든 슬라이더 생성
+                            createSliders(slidersData);
+                        
+                            /**
+                             * 슬라이더 생성 함수
+                             * @param {Array} slidersData - 슬라이더 데이터를 포함한 배열
+                             */
+                            function createSliders(slidersData) {
+                                slidersData.forEach(item => {
+                                    // 슬라이더 컨테이너 생성
+                                    const sliderContainer = document.createElement('div');
+                                    sliderContainer.className = 'range-container';
+                                    sliderContainer.id = `rangeContainer${item.id}`;
+                        
+                                    // 제목과 현재값 표시 요소 생성
+                                    const titleElement = document.createElement('p');
+                                    const valueDirection = item.currentValue > 0 ? '우' : '좌';
+                                    const absValue = Math.abs(item.currentValue).toFixed(2);
+                                    titleElement.innerHTML = `${item.id}. <b>${item.title}</b> <span id="currentValue${item.id}">${valueDirection} ${absValue}${item.unit}</span>`;
+                        
+                                    // 슬라이더 wrapper 생성
+                                    const sliderWrapper = document.createElement('div');
+                                    sliderWrapper.className = 'slider-wrapper';
+                        
+                                    // 트랙 (배경색 포함) 생성
+                                    const track = document.createElement('div');
+                                    track.className = 'track';
+                                    track.id = `track${item.id}`;
+                        
+                                    // 인디케이터 (현재 값 표시) 생성
+                                    const indicator = document.createElement('div');
+                                    indicator.className = 'indicator';
+                                    indicator.id = `indicator${item.id}`;
+                        
+                                    // 라벨 (최소, 최대값) 생성
+                                    const labels = document.createElement('div');
+                                    labels.className = 'labels';
+                                    labels.innerHTML = `
+                                        <span id="minLabel${item.id}">좌 ${Math.abs(item.minValue).toFixed(1)}°</span>
+                                        <span id="maxLabel${item.id}">우 ${item.maxValue.toFixed(1)}°</span>
+                                    `;
+                        
+                                    // 숨겨진 슬라이더 (필요시에만) 생성
+                                    const slider = document.createElement('input');
+                                    slider.type = 'range';
+                                    slider.className = 'hidden-slider';
+                                    slider.id = `rangeSlider${item.id}`;
+                                    slider.min = item.minValue;
+                                    slider.max = item.maxValue;
+                                    slider.step = 0.01;
+                                    slider.value = item.currentValue;
+                        
+                                    // 요소 조립
+                                    sliderWrapper.appendChild(track);
+                                    sliderWrapper.appendChild(indicator);
+                        
+                                    sliderContainer.appendChild(titleElement);
+                                    sliderContainer.appendChild(sliderWrapper);
+                                    sliderContainer.appendChild(labels);
+                                    sliderContainer.appendChild(slider);
+                        
+                                    // 슬라이더 컨테이너에 추가
+                                    slidersContainer.appendChild(sliderContainer);
+                        
+                                    // 트랙 색상 및 인디케이터 위치 설정
+                                    updateTrackColors(item.id, item.minValue, item.maxValue, item.normalRange);
+                                    updateSliderPosition(item.id, item.minValue, item.maxValue, item.currentValue);
+                                });
+                            }
+                        
+                            /**
+                             * 트랙 색상 업데이트 함수
+                             * @param {string} id - 슬라이더 ID
+                             * @param {number} minValue - 전체 범위 최소값
+                             * @param {number} maxValue - 전체 범위 최대값
+                             * @param {Array} normalRange - 정상 범위 [min, max]
+                             */
+                            function updateTrackColors(id, minValue, maxValue, normalRange) {
+                                const track = document.getElementById(`track${id}`);
+                                const normalStartPercent =
+                                  ((normalRange[0] - minValue) / (maxValue - minValue)) * 100;
+                                const normalEndPercent =
+                                  ((normalRange[1] - minValue) / (maxValue - minValue)) * 100;
+                        
+                                track.style.background = `
+                                  linear-gradient(to right,
+                                      red ${normalStartPercent}%,
+                                      #38ACFF ${normalStartPercent}%,
+                                      #38ACFF ${normalEndPercent}%,
+                                      red ${normalEndPercent}%
+                                  )
+                                `;
+                            }
+                        
+                            /**
+                             * 슬라이더 위치 업데이트 함수 (현재 값 기준)
+                             * @param {string} id - 슬라이더 ID
+                             * @param {number} minValue - 전체 범위 최소값
+                             * @param {number} maxValue - 전체 범위 최대값
+                             * @param {number} value - 현재 값
+                             */
+                            function updateSliderPosition(id, minValue, maxValue, value) {
+                                const indicator = document.getElementById(`indicator${id}`);
+                                const percent =
+                                  ((value - minValue) / (maxValue - minValue)) * 100;
+                                indicator.style.left = `${percent}%`;
+                            }
+
+                            const drawFrontImage = async () => {
+                                const canvas = document.getElementById('frontCanvas');
+                                const ctx = canvas.getContext('2d');
+                                
+                                try {
+                                    // Load and draw base SVG
+                                    const svgImage = await loadSVG("{% static 'images/male_front_silhouette.svg' %}");
+                                    const {x, y, scaledWidth, scaledHeight} = drawBaseImage(ctx, canvas, svgImage);
+                                    const centerX = x + scaledWidth / 2;
+                
+                                    // Draw face level angle line
+                                    const faceY = y + scaledHeight * 0.075;
+                                    const faceLevelAngle = trendDataDict['face_level_angle'].values[0];
+                                    const faceAngleLineLength = scaledWidth * 0.2;
+                
+                                    // Determine color based on normal range (-5 to 5)
+                                    const faceColor = (faceLevelAngle >= -5 && faceLevelAngle < 5) ? '#38ACFF' : '#FF0202';
+                                    drawAngleLine(ctx, centerX, faceY, faceLevelAngle, faceAngleLineLength, faceColor);
+                
+                                    // Draw shoulder level angle line
+                                    const shoulderY = y + scaledHeight * 0.195;
+                                    const shoulderLevelAngle = trendDataDict['shoulder_level_angle'].values[0];
+                                    const shoulderAngleLineLength = scaledWidth * 0.5;
+                                    const shoulderImbalance = trendDataDict['spinal_imbalance'].val1[0];
+                                    const shoulderOffset = scaledWidth * (shoulderImbalance / 100);
+                
+                                    // Determine color based on normal range (-5 to 5)
+                                    const shoulderColor = (shoulderLevelAngle >= -5 && shoulderLevelAngle < 5) ? '#38ACFF' : '#FF0202';
+                                    const {centerX: shoulderCenterX, centerY: shoulderCenterY} = 
+                                        drawAngleLine(ctx, centerX + shoulderOffset, shoulderY, shoulderLevelAngle, shoulderAngleLineLength, shoulderColor);
+                
+                                    // Draw hip level angle line
+                                    const hipY = y + scaledHeight * 0.457;
+                                    const hipLevelAngle = trendDataDict['hip_level_angle'].values[0];
+                                    const hipAngleLineLength = scaledWidth * 0.4;
+                                    const hipImbalance = trendDataDict['spinal_imbalance'].val2[0];
+                                    const hipOffset = scaledWidth * (hipImbalance / 100);
+                
+                                    // Determine color based on normal range (-3 to 3)
+                                    const hipColor = (hipLevelAngle >= -3 && hipLevelAngle < 3) ? '#38ACFF' : '#FF0202';
+                                    const {centerX: hipCenterX, centerY: hipCenterY} = 
+                                        drawAngleLine(ctx, centerX + hipOffset, hipY, hipLevelAngle, hipAngleLineLength, hipColor);
+                
+                                    // Draw spinal alignment line
+                                    drawSpinalLine(ctx, shoulderCenterX, shoulderCenterY, hipCenterX, hipCenterY, centerX);
+                
+                                    // Draw leg length and O/X legs
+                                    drawLegs(ctx, centerX, y, scaledWidth, scaledHeight, trendDataDict);
+                                    
+                                } catch (error) {
+                                    console.error('Error loading or drawing front SVG:', error);
+                                }
+                            };
+                
+                            const drawSideImage = async () => {
+                                const canvas = document.getElementById('sideCanvas');
+                                const ctx = canvas.getContext('2d');
+                                
+                                try {
+                                    // Load and draw base SVG
+                                    const svgImage = await loadSVG("{% static 'images/male_side_silhouette.svg' %}");
+                                    const {x, y, scaledWidth, scaledHeight} = drawBaseImage(ctx, canvas, svgImage);
+                
+                                    // Draw forward head angle line
+                                    const forwardHeadAngle = trendDataDict['forward_head_angle'].values[0];
+                                    const headLineLength = scaledHeight * 0.12;
+                                    const chinY = y + scaledHeight * 0.2;
+                                    const chinX = x + scaledWidth * 0.72;
+                
+                                    // Determine color based on normal range (0 to 50)
+                                    const headColor = (forwardHeadAngle >= 0 && forwardHeadAngle < 50) ? '#38ACFF' : '#FF0202';
+                                    drawForwardHeadLine(ctx, chinX, chinY, forwardHeadAngle, headLineLength, headColor);
+                
+                                    // Draw knee angle lines
+                                    drawKneeAngles(ctx, x, y, scaledWidth, scaledHeight, trendDataDict);
+                                    
+                                } catch (error) {
+                                    console.error('Error loading or drawing side SVG:', error);
+                                }
+                            };
+                
+                            // Helper functions
+                            const drawBaseImage = (ctx, canvas, svgImage) => {
+                                // Clear canvas
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                
+                                // Calculate scaling to maintain aspect ratio
+                                const scale = Math.min(
+                                    canvas.width / svgImage.width,
+                                    canvas.height / svgImage.height
+                                );
+                                
+                                const scaledWidth = svgImage.width * scale;
+                                const scaledHeight = svgImage.height * scale;
+                                
+                                // Center the image
+                                const x = (canvas.width - scaledWidth) / 2;
+                                const y = (canvas.height - scaledHeight) / 2;
+                                
+                                // Draw the SVG image with proper scaling
+                                ctx.drawImage(svgImage, x, y, scaledWidth, scaledHeight);
+                                
+                                return {x, y, scaledWidth, scaledHeight};
+                            };
+                
+                            const drawAngleLine = (ctx, centerX, centerY, angle, length, color) => {
+                                // Save the current context state
+                                ctx.save();
+                                
+                                // Move to the center point and rotate
+                                ctx.translate(centerX, centerY);
+                                ctx.rotate(angle * Math.PI / 180);
+                                
+                                // Draw the line
+                                ctx.beginPath();
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(-length/2, 0);
+                                ctx.lineTo(length/2, 0);
+                                ctx.stroke();
+                
+                                // Draw circles at both ends
+                                ctx.beginPath();
+                                ctx.fillStyle = color;
+                                ctx.arc(-length/2, 0, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.arc(length/2, 0, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                
+                                // Restore the context state
+                                ctx.restore();
+                                
+                                return {centerX, centerY};
+                            };
+                
+                            const drawSpinalLine = (ctx, shoulderX, shoulderY, hipX, hipY, centerX) => {
+                                // Draw spinal alignment line
+                                ctx.beginPath();
+                                ctx.strokeStyle = '#38ACFF';
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(shoulderX, shoulderY);
+                                ctx.lineTo(hipX, hipY);
+                                ctx.stroke();
+                
+                                // Draw circles at spinal line points
+                                ctx.beginPath();
+                                ctx.fillStyle = '#38ACFF';
+                                ctx.arc(shoulderX, shoulderY, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.arc(centerX, (shoulderY + hipY) / 2, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                            };
+                
+                            const drawLegs = (ctx, centerX, y, scaledWidth, scaledHeight, trendDataDict) => {
+                                // Draw leg length ratio lines
+                                const legLengthRatio = trendDataDict['leg_length_ratio'].values[0];
+                                const legStartY = y + scaledHeight * 0.457;
+                                const baseLegLength = scaledHeight * 0.48;
+                                const legWidth = scaledWidth * 0.1;
+                                
+                                // Calculate the leg lengths based on the ratio
+                                const leftLegLength = baseLegLength * (1 + legLengthRatio/100);
+                                const rightLegLength = baseLegLength * (1 - legLengthRatio/100);
+                                
+                                const leftLegX = centerX - legWidth/2 - 12;
+                                const rightLegX = centerX + legWidth/2 + 12;
+                
+                                // Determine color based on normal range (-3 to 3)
+                                const legColor = (legLengthRatio >= -3 && legLengthRatio < 3) ? '#38ACFF' : '#FF0202';
+                
+                                // Draw leg length lines
+                                drawLegLine(ctx, leftLegX, legStartY, leftLegLength, legColor);
+                                drawLegLine(ctx, rightLegX, legStartY, rightLegLength, legColor);
+                
+                                // Draw O/X legs
+                                const leftOXAngle = trendDataDict['o_x_legs'].val1[0];
+                                const rightOXAngle = trendDataDict['o_x_legs'].val2[0];
+                                const kneeHeight = legStartY + baseLegLength * 0.565; // Position of knees
+                                const lineLength = scaledWidth * 0.1; // Length of the horizontal line
+                
+                                // Determine colors based on normal range (165 to 195)
+                                const leftOXColor = (leftOXAngle >= 165 && leftOXAngle <= 195) ? '#38ACFF' : '#FF0202';
+                                const rightOXColor = (rightOXAngle >= 165 && rightOXAngle <= 195) ? '#38ACFF' : '#FF0202';
+                
+                                // Calculate knee deviation from neutral position
+                                // For angles > 180: knee moves outward (positive offset)
+                                // For angles < 180: knee moves inward (negative offset)
+                                const leftKneeOffset = (leftOXAngle - 180) * lineLength / 15;
+                                const rightKneeOffset = (rightOXAngle - 180) * lineLength / 15;
+                
+                                drawKneeDeviation(ctx, leftLegX, kneeHeight, leftKneeOffset, leftOXColor);
+                                drawKneeDeviation(ctx, rightLegX, kneeHeight, rightKneeOffset, rightOXColor);
+                            };
+                
+                            const drawLegLine = (ctx, x, startY, length, color) => {
+                                // Draw leg line
+                                ctx.beginPath();
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(x, startY);
+                                ctx.lineTo(x, startY + length);
+                                ctx.stroke();
+                
+                                // Draw circles at both ends
+                                ctx.beginPath();
+                                ctx.fillStyle = color;
+                                // Top point
+                                ctx.arc(x, startY, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                // Bottom point
+                                ctx.beginPath();
+                                ctx.arc(x, startY + length, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                            };
+                
+                            const drawKneeDeviation = (ctx, legX, kneeHeight, offset, color) => {
+                                // Draw knee deviation line
+                                ctx.beginPath();
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(legX, kneeHeight);
+                                ctx.lineTo(legX + offset, kneeHeight);
+                                ctx.stroke();
+                
+                                // Draw circle at non-center knee position
+                                ctx.beginPath();
+                                ctx.fillStyle = color;
+                                ctx.arc(legX + offset, kneeHeight, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                            };
+                
+                            const drawForwardHeadLine = (ctx, chinX, chinY, angle, length, color) => {
+                                // Save the current context state
+                                ctx.save();
+                                
+                                // Move to the center point and rotate
+                                ctx.translate(chinX, chinY);
+                                ctx.rotate(-angle * Math.PI / 180);
+                                
+                                // Draw the line
+                                ctx.beginPath();
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(0, 0);
+                                ctx.lineTo(0, -length);
+                                ctx.stroke();
+                
+                                // Draw circles at both ends
+                                ctx.beginPath();
+                                ctx.fillStyle = color;
+                                ctx.arc(0, 0, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.arc(0, -length, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                
+                                // Restore the context state
+                                ctx.restore();
+                            };
+                
+                            const drawKneeAngles = (ctx, x, y, scaledWidth, scaledHeight, trendDataDict) => {
+                                // Draw knee angle lines
+                                const leftKneeAngle = trendDataDict['knee_angle'].val1[0];
+                                const rightKneeAngle = trendDataDict['knee_angle'].val2[0];
+                                const legLengthRatio = trendDataDict['leg_length_ratio'].values[0];
+                                const baseHipToKneeLength = scaledHeight * 0.27;
+                                const baseKneeToAnkleLength = scaledHeight * 0.375;
+                                
+                                // Calculate leg lengths based on ratio
+                                const leftHipToKneeLength = baseHipToKneeLength * (1 + legLengthRatio/100);
+                                const rightHipToKneeLength = baseHipToKneeLength * 0.4;
+                                const leftKneeToAnkleLength = baseKneeToAnkleLength * (1 + legLengthRatio/100);
+                                const rightKneeToAnkleLength = baseKneeToAnkleLength * (1 - legLengthRatio/100);
+                                
+                                // Left knee
+                                const leftHipX = x + scaledWidth * 0.7;
+                                const leftHipY = y + scaledHeight * 0.457;
+                                
+                                const leftAngleRad = (leftKneeAngle - 180) * Math.PI / 180;
+                                const leftKneeX = leftHipX + Math.sin(leftAngleRad) * leftHipToKneeLength;
+                                const leftKneeY = leftHipY + Math.cos(leftAngleRad) * leftHipToKneeLength;
+                                
+                                const leftAnkleX = leftHipX + 6;
+                                const leftAnkleY = leftHipY + leftHipToKneeLength + leftKneeToAnkleLength - 80;
+                                
+                                // Right knee (moved to the left)
+                                const rightHipX = x + scaledWidth * 0.35;
+                                const rightHipY = y + scaledHeight * 0.6;
+                                
+                                const rightAngleRad = (rightKneeAngle - 180) * Math.PI / 180;
+                                const rightKneeX = rightHipX + Math.sin(rightAngleRad) * rightHipToKneeLength;
+                                const rightKneeY = rightHipY + Math.cos(rightAngleRad) * rightHipToKneeLength;
+                                
+                                const rightAnkleX = rightHipX + 32;
+                                const rightAnkleY = rightHipY + rightHipToKneeLength + rightKneeToAnkleLength - 80;
+                
+                                // Determine colors based on normal range (170 to 180)
+                                const leftKneeColor = (leftKneeAngle >= 170 && leftKneeAngle < 180) ? '#38ACFF' : '#FF0202';
+                                const rightKneeColor = (rightKneeAngle >= 170 && rightKneeAngle < 180) ? '#38ACFF' : '#FF0202';
+                                
+                                // Draw left knee lines
+                                ctx.beginPath();
+                                ctx.strokeStyle = leftKneeColor;
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(leftHipX, leftHipY);
+                                ctx.lineTo(leftKneeX, leftKneeY);
+                                ctx.lineTo(leftAnkleX, leftAnkleY);
+                                ctx.stroke();
+                                
+                                // Draw right knee lines
+                                ctx.beginPath();
+                                ctx.strokeStyle = rightKneeColor;
+                                ctx.lineWidth = 2;
+                                ctx.moveTo(rightHipX, rightHipY);
+                                ctx.lineTo(rightKneeX, rightKneeY);
+                                ctx.lineTo(rightAnkleX, rightAnkleY);
+                                ctx.stroke();
+                
+                                // Draw circles at knee positions
+                                ctx.beginPath();
+                                ctx.fillStyle = leftKneeColor;
+                                ctx.arc(leftKneeX, leftKneeY, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.fillStyle = rightKneeColor;
+                                ctx.arc(rightKneeX, rightKneeY, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                            };
+                
+                            // Load SVG from file
+                            const loadSVG = (url) => {
+                                return new Promise((resolve, reject) => {
+                                    const img = new Image();
+                                    img.onload = () => resolve(img);
+                                    img.onerror = (e) => reject(e);
+                                    img.src = url;
+                                });
+                            };
+                
+                            // Initial draw when page loads
+                            drawFrontImage();
+                            drawSideImage();
+                        });
+                        
+
+                        
+</script>
 </html>

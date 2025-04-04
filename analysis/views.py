@@ -1564,6 +1564,7 @@ def body_print(request, id):
         for body_result in body_result_queryset:
             body_code_id_ = body_info.code_id
             alias = body_info.code_id
+            unit = body_info.unit_name
             if 'leg_alignment' in body_code_id_ or 'back_knee' in body_code_id_ or 'scoliosis' in body_code_id_:
                 is_paired = True
                 if 'scoliosis' in body_code_id_:
@@ -1679,7 +1680,8 @@ def body_print(request, id):
                     'value_range': [body_info.min_value, body_info.max_value],
                     'trend': trend_data,
                     'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
-                                 ['outline', 'risk', 'improve', 'recommended']}
+                                 ['outline', 'risk', 'improve', 'recommended']},
+                    "unit": unit
                 })
         else:
             result_val = getattr(body_result_latest, body_info.code_id)
@@ -1730,7 +1732,8 @@ def body_print(request, id):
                 'value_range': [body_info.min_value, body_info.max_value],
                 'trend': trend_data,
                 'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
-                             ['outline', 'risk', 'improve', 'recommended']}
+                             ['outline', 'risk', 'improve', 'recommended']},
+                "unit": unit
             })
 
     user = UserInfo.objects.filter(id=id).first()
@@ -1742,17 +1745,34 @@ def body_print(request, id):
 
     # Prepare trend data for each report item
     trend_data_dict = {}
+    side_data_dict = {}
     for item in report_items:
         alias = item['alias']
         trend_data = item['trend']
 
-        if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']:
+        print(alias)
+
+        if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']: # 어깨-골반, 휜다리, 무릎 기울기
             trend_data_dict[alias] = {
                 'val1': [value[0] for value in trend_data],  # 왼쪽 또는 상부
                 'val2': [value[1] for value in trend_data],  # 오른쪽 또는 하부
                 'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
                 'part': ['어깨', '골반'] if alias == 'spinal_imbalance' else ['왼쪽', '오른쪽']
             }
+
+            if alias == 'knee_angle':
+                side_data_dict[alias + "_left"] = {
+                    'val1': [value[0] for value in trend_data],  # 왼쪽
+                    'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
+                    'part': ['왼쪽']
+                }
+
+                side_data_dict[alias + "_right"] = {
+                    'val2': [value[1] for value in trend_data],  # 오른쪽
+                    'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
+                    'part': ['오른쪽']
+                }
+            
         else:
             trend_data_dict[alias] = {
                 'values': [value[0] for value in trend_data],
@@ -1768,6 +1788,7 @@ def body_print(request, id):
         'user': user,
         'report_items': report_items,
         'trend_data_dict': trend_data_dict,
+        'side_data_dict': side_data_dict,
         'image_front_url': front_img_url,
         'image_side_url': side_img_url
     }
