@@ -775,6 +775,9 @@ def kiosk_signup(request):
 
         if result:
             pass
+
+        elif phone_number == '01065751635':
+            return JsonResponse({'message': 'success', 'status': 0}) # 테스트용 전화번호 - Error Code 0
         else:
             return JsonResponse({'message': 'auth_code not equals', 'status': 5}, status=HTTP_200_OK) # 인증번호 불일치 - Error Code 5 
     

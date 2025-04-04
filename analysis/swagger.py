@@ -447,7 +447,7 @@ kiosk_signup_ = {
                 description='사용자 생년월일 (YYYY)',
             ),
             'gender': openapi.Schema(
-                type=openapi.TYPE_INTEGER,
+                type=openapi.TYPE_STRING,
                 description='사용자 성별 (0 : M, 1 : F)',
                 enum=['0', '1']
             ),
