@@ -457,6 +457,9 @@ def send_sms(phone_number: str) -> str:
         auth_code = randint(100000, 999999)
 
         # SMS 전송
+        if not phone_number or not auth_code:
+            return 'required'
+        
         send_result = ncp_client.send(phone=phone_number, verification_code=auth_code)
 
         if send_result:

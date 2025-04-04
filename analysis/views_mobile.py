@@ -23,11 +23,12 @@ from django.db.models import Subquery
 from datetime import datetime as dt
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
 
 import re
 
 from analysis.swagger import (login_mobile_, login_mobile_id_pw_, login_mobile_uuid_, delete_user_, get_user_, get_code_, get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_, delete_body_result_
-                              , mobile_send_sms_, mobile_check_sms_, mobile_signup_)
+                              , mobile_send_auth_sms_, mobile_check_auth_sms_, mobile_signup_)
 
 kst = pytz.timezone('Asia/Seoul')
 
@@ -473,9 +474,10 @@ def delete_body_result(request):
 #         return Response({'data': {'message': 'user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-@swagger_auto_schema(**mobile_send_sms_)
+@swagger_auto_schema(**mobile_send_auth_sms_)
+@csrf_exempt
 @api_view(['POST'])
-def mobile_send_sms(request):
+def mobile_send_auth_sms(request):
     phone_number = request.data.get('phone_number', None)
     # 추후 모바일의 UUID 등으로 기기 확인 처리 해야할 것 같음.
 
@@ -488,10 +490,6 @@ def mobile_send_sms(request):
     
     try:
         user = UserInfo.objects.get(phone_number=phone_number)
-
-        if user.phone_number == '01065751635':
-            pass
-
         return Response({'message': 'phone_number_already_exists', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
     except UserInfo.DoesNotExist:
         pass
@@ -504,9 +502,11 @@ def mobile_send_sms(request):
     else:
         return Response({'message': 'transmission failed', 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@swagger_auto_schema(**mobile_check_sms_)
+
+@swagger_auto_schema(**mobile_check_auth_sms_)
+@csrf_exempt
 @api_view(['POST'])
-def mobile_check_sms(request):
+def mobile_check_auth_sms(request):
     phone_number = request.data.get('phone_number')
     auth_code = request.data.get('auth_code')
 
@@ -526,6 +526,7 @@ def mobile_check_sms(request):
     
 
 @swagger_auto_schema(**mobile_signup_)
+@csrf_exempt
 @api_view(['POST'])
 def mobile_signup(request):
     phone_number = request.data.get('phone_number')

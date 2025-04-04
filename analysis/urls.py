@@ -109,8 +109,8 @@ urlpatterns = [
     path('api/mobile/body/delete_body_result/', views_mobile.delete_body_result, name='mobile-body-delete_body_result'), # 체형 결과 삭제
     # path('api/mobile/gait/sync_gait_result/',   views_mobile.mobile_gait_sync,   name='mobile-gait-mobile_gait_sync'),   # 보행 결과 동기화(gaitresults의 ID값만 반환함)
     path('api/mobile/login-mobile-id/',         views_mobile.login_mobile_id,    name='mobile-auth-request_auth_id'),     # ID 로그인 요청 (ID를 사용하여 로그인)
-    path('api/mobile/auth/sms_send/',        views_mobile.send_sms,              name='mobile-auth-send_sms'),           # SMS 인증 요청
-    path('api/mobile/auth/sms_check/',       views_mobile.check_sms_code,        name='mobile-auth-check_sms'),          # SMS 인증 확인
+    path('api/mobile/auth/sms_send/',        views_mobile.mobile_send_auth_sms,              name='mobile-auth-send_sms'),           # SMS 인증 요청
+    path('api/mobile/auth/sms_check/',       views_mobile.mobile_check_auth_sms,        name='mobile-auth-check_sms'),          # SMS 인증 확인
     path('api/mobile/auth/signup/',       views_mobile.mobile_signup,            name='mobile-auth-signup'),             # 회원가입
 
 

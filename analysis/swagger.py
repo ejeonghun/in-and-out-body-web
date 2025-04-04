@@ -477,7 +477,7 @@ kiosk_signup_ = {
                         type=openapi.TYPE_STRING, 
                         description='오류 메시지 (phone_number_already_exists, phone_number_and_password_required, 또는 invalid_phone_number_format)'
                     ),
-                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드', example="0: 성공, 1: 세션키 없음, 2:전화번호, 성별, 생년월일 형식 확인, 3:이미 가입됨, 4:필수 파라미터 누락")
+                    'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='상태 코드', example="0: 성공, 1: 세션키 없음, 2:전화번호, 성별, 생년월일 형식 확인, 3:이미 가입됨, 4:필수 파라미터 누락, 5: 세션키에 키오스크를 정보가 없음")
                 }
             )
         )
@@ -1111,9 +1111,7 @@ delete_body_result_ = dict(
 # 적용범위 : Flutter, AOS
 ############################################################################################################
 
-# analysis/swagger.py
-
-mobile_send_sms_ = dict(
+mobile_send_auth_sms_ = dict(
     method='POST',
     operation_summary='회원가입 시 인증번호 발송 API',
     request_body=openapi.Schema(
@@ -1149,7 +1147,7 @@ mobile_send_sms_ = dict(
     tags=['mobile']
 )
 
-mobile_check_sms_ = dict(
+mobile_check_auth_sms_ = dict(
     method='POST',
     operation_summary='인증번호 확인 API',
     request_body=openapi.Schema(

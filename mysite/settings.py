@@ -281,6 +281,7 @@ ALLOWED_HOSTS = [
     'www.body.aicu.life',
     'aicu-office.iptime.org',
     'localhost',
+    '127.0.0.1',
     'test-body.aicu.life',
     '10.0.2.2' # Android Emulator
 ]
