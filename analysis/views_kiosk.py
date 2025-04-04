@@ -783,10 +783,6 @@ def kiosk_signup(request):
 
     kiosk_use_org = kiosk_info.Org
 
-    
-    if phone_number == '01065751635':
-        return JsonResponse({'message': 'success', 'status': 0}) # 테스트용 전화번호 - Error Code 0
-
     authorized_user_info, user_created = UserInfo.objects.get_or_create(
         phone_number=phone_number,
         defaults=dict(
@@ -831,10 +827,6 @@ def kiosk_send_sms(request):
     
     try:
         user = UserInfo.objects.get(phone_number=phone_number)
-
-        if user.phone_number == '01065751635':
-            pass
-
         return JsonResponse({'message': 'phone_number_already_exists', 'status': 2}, status=HTTP_200_OK)
     except UserInfo.DoesNotExist:
         pass
