@@ -823,11 +823,11 @@ def kiosk_send_sms(request):
     try:
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
-        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 400}}, status=HTTP_200_OK)
+        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 3}}, status=HTTP_200_OK)
 
     # 전화번호 형식 검사 (010으로 시작하는 11자리 문자열)
     if not re.match(r'^010\d{8}$', phone_number):
-        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 400}, status=HTTP_200_OK)
+        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 1}, status=HTTP_200_OK)
     
     try:
         user = UserInfo.objects.get(phone_number=phone_number)
@@ -835,7 +835,7 @@ def kiosk_send_sms(request):
         if user.phone_number == '01065751635':
             pass
 
-        return JsonResponse({'message': 'phone_number_already_exists', 'status': 400}, status=HTTP_200_OK)
+        return JsonResponse({'message': 'phone_number_already_exists', 'status': 2}, status=HTTP_200_OK)
     except UserInfo.DoesNotExist:
         pass
 
@@ -843,9 +843,9 @@ def kiosk_send_sms(request):
     result = send_sms(phone_number)
 
     if (result == 'send'):
-        return JsonResponse({'message': 'success', 'status': 200}, status=HTTP_200_OK)
+        return JsonResponse({'message': 'success', 'status': 0}, status=HTTP_200_OK)
     else:
-        return JsonResponse({'message': 'failed', 'status': 400}, status=HTTP_200_OK)
+        return JsonResponse({'message': 'failed', 'status': 500}, status=HTTP_200_OK)
 
 
 @swagger_auto_schema(**kiosk_check_sms_)

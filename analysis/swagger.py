@@ -502,14 +502,7 @@ kiosk_send_sms_ = dict(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200)
-            }
-        )),
-        400: openapi.Response('Bad Request', openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'message': openapi.Schema(type=openapi.TYPE_STRING),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER)
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example="0: 성공 , 1: 전화번호 형식 검사 실패, 2: 이미 가입된 전화번호, 3:전화번호나 세션키가 요청 파라미터에 없음, 500: 발송실패 , ")
             }
         )),
     },
@@ -1113,8 +1106,117 @@ delete_body_result_ = dict(
 )
 
 
+############################################################################################################
+# 사용위치 : views_mobile.py 
+# 적용범위 : Flutter, AOS
+############################################################################################################
 
+# analysis/swagger.py
 
+mobile_send_sms_ = dict(
+    method='POST',
+    operation_summary='회원가입 시 인증번호 발송 API',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='전화번호 (010으로 시작하는 11자리)', example='01012345678'),
+        },
+        required=['phone_number']
+    ),
+    responses={
+        200: openapi.Response('Success', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200),
+            }
+        )),
+        400: openapi.Response('Bad Request', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='phone_number_required'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=400),
+            }
+        )),
+        500: openapi.Response('Internal Server Error', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='transmission failed'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=500),
+            }
+        )),
+    },
+    tags=['mobile']
+)
+
+mobile_check_sms_ = dict(
+    method='POST',
+    operation_summary='인증번호 확인 API',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='전화번호', example='01012345678'),
+            'auth_code': openapi.Schema(type=openapi.TYPE_STRING, description='인증번호', example='123456'),
+        },
+        required=['phone_number', 'auth_code']
+    ),
+    responses={
+        200: openapi.Response('Success', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200),
+            }
+        )),
+        400: openapi.Response('Bad Request', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='phone_number_or_auth_code_required'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=400),
+            }
+        )),
+        500: openapi.Response('Internal Server Error', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='transmission failed'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=500),
+            }
+        )),
+    },
+    tags=['mobile']
+)
+
+mobile_signup_ = dict(
+    method='POST',
+    operation_summary='회원가입 API',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='전화번호 (010으로 시작하는 11자리)', example='01012345678'),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, description='비밀번호', example='your_password'),
+            'dob': openapi.Schema(type=openapi.TYPE_STRING, description='생년 (YYYY 형식)', example='1990'),
+            'gender': openapi.Schema(type=openapi.TYPE_STRING, description='성별 (0: 남성, 1: 여성)', example='0'),
+        },
+        required=['phone_number', 'password']
+    ),
+    responses={
+        200: openapi.Response('Success', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=0),
+            }
+        )),
+        400: openapi.Response('Bad Request', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='invalid_phone_number_format'),
+                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=400),
+            }
+        )),
+    },
+    tags=['mobile']
+)
 
 
 
