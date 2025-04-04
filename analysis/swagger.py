@@ -451,6 +451,10 @@ kiosk_signup_ = {
                 description='사용자 성별 (0 : M, 1 : F)',
                 enum=['0', '1']
             ),
+            'auth_code': openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description='SMS 인증 코드'
+            ),
         }
     ),
     'responses': {

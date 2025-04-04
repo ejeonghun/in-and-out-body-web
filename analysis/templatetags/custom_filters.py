@@ -33,3 +33,20 @@ def round_one_decimal(value):   # 소수점 첫번째자리까지만 출력 할 
         return "{:.1f}".format(float(value))  # 소수점 첫 번째 자리까지 출력
     except (ValueError, TypeError):
         return "0.0"
+    
+@register.filter
+def split_string(value, index):
+    """Splits a string by a comma and returns the part at the specified index."""
+    parts = value.split(',')
+    try:
+        return parts[index].strip()  # Return the part at the specified index, stripped of whitespace
+    except IndexError:
+        return ''  # Return an empty string if the index is out of range
+    
+@register.filter
+def get_item(lst, index):
+    """Returns the item at the specified index from a list."""
+    try:
+        return lst[index]
+    except IndexError:
+        return ''  # Return an empty string if the index is out of range

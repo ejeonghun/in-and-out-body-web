@@ -1557,6 +1557,8 @@ def body_print(request, id):
     body_result_latest = body_result_queryset[len(body_result_queryset) - 1]
 
     report_items = []
+    dates = ''
+
     for body_info in body_info_queryset:
         trend_data = []
         is_paired = False
@@ -1750,8 +1752,6 @@ def body_print(request, id):
         alias = item['alias']
         trend_data = item['trend']
 
-        print(alias)
-
         if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']: # 어깨-골반, 휜다리, 무릎 기울기
             trend_data_dict[alias] = {
                 'val1': [value[0] for value in trend_data],  # 왼쪽 또는 상부
@@ -1778,11 +1778,15 @@ def body_print(request, id):
                 'values': [value[0] for value in trend_data],
                 'dates': [value[1] for value in trend_data]
             }
+            dates = trend_data[-1][1]  # 마지막 날짜를 가져옴
 
     created_dt = body_result_latest.created_dt.strftime('%Y%m%dT%H%M%S%f')
 
     front_img_url = generate_presigned_url(file_keys=['front', created_dt])
     side_img_url = generate_presigned_url(file_keys=['side', created_dt])
+
+    # 날짜 형식 변경 YYYY년 MM월 DD일
+    dates = datetime.strptime(dates, '%Y-%m-%d %H:%M:%S').strftime('%Y년 %m월 %d일')
 
     context = {
         'user': user,
@@ -1790,7 +1794,8 @@ def body_print(request, id):
         'trend_data_dict': trend_data_dict,
         'side_data_dict': side_data_dict,
         'image_front_url': front_img_url,
-        'image_side_url': side_img_url
+        'image_side_url': side_img_url,
+        'dates': dates,
     }
 
     return render(request, 'body_print.html', context)

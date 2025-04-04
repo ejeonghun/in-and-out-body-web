@@ -732,34 +732,35 @@ def kiosk_signup(request):
     password = request.data.get('password')
     dob = request.data.get('dob', None)
     gender = request.data.get('gender', None)
+    auth_code = request.data.get('auth_code')
 
     try:
         session_info = SessionInfo.objects.get(session_key=session_key)
     except SessionInfo.DoesNotExist:
-        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 1}})
+        return JsonResponse({'data': {'message': 'session_key_not_found', 'status': 1}}) # 세션 키 없음 - Error Code 1
 
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
-        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2})
+        return JsonResponse({'message': 'invalid_phone_number_format', 'status': 2}) # 잘못된 전화번호 형식 - Error Code 2
 
     try:
         UserInfo.objects.get(phone_number=phone_number)
-        return JsonResponse({'message': 'phone_number_already_exists', 'status': 3})
+        return JsonResponse({'message': 'phone_number_already_exists', 'status': 3}) # 전화번호 중복 - Error Code 3
     except UserInfo.DoesNotExist:
         pass
 
     if not phone_number or not password:
-        return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4})
+        return JsonResponse({'message': 'phone_number_and_password_required', 'status': 4}) # 전화번호와 비밀번호 필수 - Error Code 4
 
     if dob is not None:
         # YYYY 형태의 문자열인지 확인 (년도만 입력받음)
         if len(str(dob)) != 4:
-            return JsonResponse({'message': 'invalid_dob_format', 'status': 2})
+            return JsonResponse({'message': 'invalid_dob_format', 'status': 2}) # 잘못된 생년월일 형식 - Error Code 2
     
     if gender is not None:
         # 0, 1로 입력 받아서 확인을 거치고, 0: M, 1: F로 변환
         if gender not in ['0', '1']:
-            return JsonResponse({'message': 'invalid_gender_format', 'status': 2})
+            return JsonResponse({'message': 'invalid_gender_format', 'status': 2}) # 잘못된 성별 형식 - Error Code 2
         else:
             gender_format = 'M' if gender == '0' else 'F'  # Correct assignment
 
@@ -768,6 +769,17 @@ def kiosk_signup(request):
     kiosk_info = KioskInfo.objects.filter(kiosk_id=kiosk_id).first()
     if not kiosk_info:
         return JsonResponse({'message': 'kiosk_not_found', 'status': 5})
+    
+    try:
+        result = check_sms_code(phone_number, auth_code)
+
+        if result:
+            pass
+        else:
+            return JsonResponse({'message': 'auth_code not equals', 'status': 5}, status=HTTP_200_OK) # 인증번호 불일치 - Error Code 5 
+    
+    except Exception as e:
+        return JsonResponse({'message': str(e), 'status': 500})
 
     kiosk_use_org = kiosk_info.Org
 
@@ -781,7 +793,7 @@ def kiosk_signup(request):
             user_type='O',
             organization=kiosk_use_org if not kiosk_use_org else None,
             dob=dob if dob is not None else None, 
-            gender=gender_format if gender is not None else None  
+            gender=gender_format if gender is not None else None
         ))
 
     if authorized_user_info.school is not None:

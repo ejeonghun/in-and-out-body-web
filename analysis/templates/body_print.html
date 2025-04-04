@@ -20,7 +20,7 @@
             margin: 0 auto;
             box-sizing: border-box;
         } {% endcomment %}
-        
+
         {% comment %} .container {
             margin: 0 auto;
             background-color: white;
@@ -36,7 +36,7 @@
             background-color: white;
             display: flex;
             justify-content: space-evenly;
-            padding:5px;
+            padding: 5px;
         }
 
         .top_left_container { /* AICU 심볼 및 바디스캐너 Div */
@@ -52,8 +52,8 @@
         }
 
         .top_left_container > img { /* AICU 심볼 이미지 */
-            width: 84px; 
-            height: 24px; 
+            width: 84px;
+            height: 24px;
             object-fit: contain;
         }
 
@@ -64,11 +64,11 @@
 
         .userinfo {
             margin-top: 20px;
-            border-bottom: 3px solid #000; 
-            border-top: 3px solid #000; 
+            border-bottom: 3px solid #000;
+            border-top: 3px solid #000;
             padding: 4px;
             display: table;
-            
+
         }
 
         .userinfo div {
@@ -89,10 +89,10 @@
         }
 
         .userinfo .date {
-            text-align: left; 
+            text-align: left;
         }
 
-        #top { 
+        #top {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -108,7 +108,6 @@
         }
 
 
-
         /* ################################ */
         /*         막대그래프 스타일          */
         /* ################################ */
@@ -121,10 +120,9 @@
         }
 
 
-
         #sliders-container {
             margin-left: 2mm;
-            width:40mm;
+            width: 40mm;
         }
 
         .range-container {
@@ -180,6 +178,75 @@
             opacity: 0; /* 완전히 숨김 */
         }
 
+        /* 목차 스타일 추가 */
+        .main-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 15px 0 8px 0;
+            padding: 6px 10px;
+            border-left: 5px solid #3498db;
+            background-color: #f0f7fc;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .main-title::before {
+            content: "■";
+            color: #3498db;
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        /* 그리드 레이아웃 */
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .report-grid-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 보고서 카드 스타일 */
+        .report-card {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+
+        .card-content h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .card-content p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .card-icon {
+            flex: 3; /* 이미지 영역의 비율 */
+            text-align: right; /* 이미지를 오른쪽 정렬 */
+        }
+
+        .card-icon img {
+            width: auto;
+            height: 60px; /* 이미지 크기 고정 */
+            filter: brightness(0);
+        }
+
         body {
             width: 100%;
             height: 100%;
@@ -187,50 +254,35 @@
             padding: 0;
             background-color: #f5f5f5;
         }
-        
+
         * {
-        
             box-sizing: border-box;
-        
             -moz-box-sizing: border-box;
-        
         }
-        
+
         #all_content {
-        
             width: 210mm;
-        
             min-height: 297mm;
-        
             padding: 10mm; /* set contents area */
-        
             margin: 10mm auto;
-        
             border-radius: 5px;
-        
             background: #fff;
-        
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        
+
         }
-    
-         
-        
+
+
         @page {
-        
             size: A4;
-        
             margin: 0;
-        
         }
-        
+
         @media print {
             html, body {
                 width: 210mm;
                 height: 297mm;
-                background: #fff;
             }
-        
+
             #all_content {
                 margin: 0;
                 border: initial;
@@ -238,18 +290,19 @@
                 width: initial;
                 min-height: initial;
                 box-shadow: initial;
-                background: initial;
                 page-break-after: always;
             }
-        
+
+            /* 인쇄 시 배경 그래픽을 클릭해줘야지 그래프가 나옴 */
         }
     </style>
 </head>
 <body>
-    <div id="all_content">
+<div id="all_content">
     <div id="top">
         <div>
-            <div class="top_left_container"><img src="/static/images/AICU_CI.png" alt="logo"><h2>바디스캐너</h2></div>
+            <div class="top_left_container"><img src="/static/images/AICU_CI.png" alt="logo">
+                <h2>바디스캐너</h2></div>
             <div class="top_left_container"><h1 id="top-text">체형분석 결과</h1></div>
         </div>
         <div class="userinfo">
@@ -261,7 +314,7 @@
             <div>
                 <div>만 34세</div>
                 <div>여성</div>
-                <div class="date">2025년 04월 01일</div>
+                <div class="date">{{ dates }}</div>
             </div>
         </div>
     </div>
@@ -271,193 +324,353 @@
         <div class="sub_container" style="border: 3px solid #000;">
             <h3 class="sub_title">정면 측정결과</h3>
 
-             <!-- 슬라이더 컨테이너 추가 -->
+            <!-- 슬라이더 컨테이너 추가 -->
             <div class="left_inside_container">
-                <div id="sliders-container"></div>
+                <div id="front-sliders-container"></div>
                 {% comment %} <img src="/static/images/example_body.svg" alt="Body Scanner" style="width: 100%; height: auto; margin-top: 20px;"> {% endcomment %}
-                <canvas id="frontCanvas" width="200" height= "600"></canvas>
+                <canvas id="frontCanvas" width="200" height="600"></canvas>
             </div>
         </div>
         <div class="sub_container" style="border: 3px solid #000;">
             <h3 class="sub_title">측면 측정결과</h3>
-            <canvas id="sideCanvas" width="200" height="600"></canvas>
+
+            <div class="left_inside_container">
+                <div id="side-sliders-container"></div>
+                <canvas id="sideCanvas" width="200" height="600"></canvas>
+            </div>
+        </div>
+
     </div>
 
+
+    <!-- 리포트 카드 그리드 -->
+    <div class="report-grid">
+        {% for item in report_items %}
+        {% if item.alias != 'spinal_imbalance' %}
+        <div class="report-card">
+            <!-- 텍스트 영역 -->
+            <div class="card-content">
+                <h3>{{ item.title }}</h3>
+                <p><strong>측정 항목:</strong> {{ item.metric }}</p>
+                <p><strong>측정 결과:</strong> {{ item.result }}</p>
+                <p><strong>상세 설명:</strong> {{ item.description }}</p>
+                <p><strong>측정 기준:</strong> {{ item.metric }}</p>
+            </div>
+
+            <!-- 이미지 영역 -->
+            <div class="card-icon">
+                <img src="{% static 'icons/' %}{{ item.alias }}.svg" alt="{{ item.title }} 아이콘">
+            </div>
+        </div>
+        {% else %}
+        <!-- 척추-어깨 리포트 카드 -->
+        <div class="report-card">
+            <!-- 텍스트 영역 -->
+            <div class="card-content">
+                <h3>{{ item.title }} - 척추-어깨</h3>
+                <p><strong>측정 항목:</strong> {{ item.metric }}</p>
+                <p><strong>측정 결과:</strong> · 척추-어깨: {{ item.result|split_string:0 }}</p>
+                <p><strong>상세 설명:</strong> {{ item.description|get_item:0 }}</p>
+                <p><strong>측정 기준:</strong> {{ item.metric }}</p>
+            </div>
+
+            <!-- 이미지 영역 -->
+            <div class="card-icon">
+                <img src="{% static 'icons/' %}{{ item.alias }}.svg" alt="{{ item.title }} 아이콘">
+            </div>
+        </div>
+
+        <!-- 척추-골반 리포트 카드 -->
+        <div class="report-card">
+            <!-- 텍스트 영역 -->
+            <div class="card-content">
+                <h3>{{ item.title }} - 척추-골반</h3>
+                <p><strong>측정 항목:</strong> {{ item.metric }}</p>
+                <p><strong>측정 결과:</strong> · 척추-골반: {{ item.result|split_string:1 }}</p>
+                <p><strong>상세 설명:</strong> {{ item.description|get_item:1 }}</p>
+                <p><strong>측정 기준:</strong> {{ item.metric }}</p>
+            </div>
+
+            <!-- 이미지 영역 -->
+            <div class="card-icon">
+                <img src="{% static 'icons/' %}{{ item.alias }}.svg" alt="{{ item.title }} 아이콘">
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
 </div>
+
+
 </body>
 <script>
     {% comment %} window.onload = function() {
         window.print();
     } {% endcomment %}
-                       
-                    
-                        // itemTitle : 검사항목 이름
-                        // itemAlias : 검사항목 영문
-                        // normalRange : 검사항목 정상범위 [int, int]
-                        // trendData : 검사항목의 데이터 {dates: ['2025-03-26 hh:mm:ss'], values: [float]}
-                        // minMaxRange : 검사항목의 min, max 범위 [int, int] 
 
-            
-                        document.addEventListener('DOMContentLoaded', function () {
-                            // 데이터를 Django 템플릿에서 전달받습니다.
-                            const trendDataDict = {{ trend_data_dict|safe }};
-                            const slidersContainer = document.getElementById('sliders-container');
-                        
-                            // 슬라이더 데이터를 저장할 배열
-                            const slidersData = [];
-                            const sideSlidersData = [];
-                        
-                            console.log(trendDataDict);
 
-                            // Helper function to add sliders for items with two values
-                            function addDualValueSlider(itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, unit) {
-                                // 좌측 슬라이더 추가
-                                slidersData.push({
-                                    id: `${itemAlias}_left`,
-                                    title: `${itemTitle} (좌)`,
-                                    alias: `${itemAlias}_left`,
-                                    minValue: minMaxRange[0],
-                                    maxValue: minMaxRange[1],
-                                    normalRange: normalRange,
-                                    currentValue: trendData.val1[latestIndex], // 좌측 값
-                                    unit: unit,
-                                });
-                                // 우측 슬라이더 추가
-                                slidersData.push({
-                                    id: `${itemAlias}_right`,
-                                    title: `${itemTitle} (우)`,
-                                    alias: `${itemAlias}_right`,
-                                    minValue: minMaxRange[0],
-                                    maxValue: minMaxRange[1],
-                                    normalRange: normalRange,
-                                    currentValue: trendData.val2[latestIndex], // 우측 값
-                                    unit: unit,
-                                });
-                            }
+    // itemTitle : 검사항목 이름
+    // itemAlias : 검사항목 영문
+    // normalRange : 검사항목 정상범위 [int, int]
+    // trendData : 검사항목의 데이터 {dates: ['2025-03-26 hh:mm:ss'], values: [float]}
+    // minMaxRange : 검사항목의 min, max 범위 [int, int]
 
-                            // 각 report_item에 대해 슬라이더 데이터 생성
-                            {% for item in report_items %}
-                            var itemTitle = '{{ item.title }}'; // 검사항목 이름
-                            var itemAlias = '{{ item.alias }}'; // 검사항목 영문 이름
-                            var normalRange = {{ item.normal_range|safe }}; // 정상 범위 [min, max]
-                            var minMaxRange = {{ item.value_range|safe }}; // 전체 범위 [min, max]
-                            var trendData = trendDataDict[itemAlias]; // 검사항목의 트렌드 데이터
-                            
 
-                            console.log("{{item.metric}}");
-                            console.log("{{item.unit}}")
-                        
-                            // 가장 최근 날짜 데이터 가져오기 (마지막 인덱스 사용)
-                            var latestIndex = trendData.dates.length - 1;
-                            var currentValue = 0;
-                        
-                            // 항목 유형에 따라 현재 값 설정
-                            if (itemAlias === 'spinal_imbalance' || itemAlias === 'knee_angle' || itemAlias === 'o_x_legs') {
-                                // 두 값이 있는 경우 (예: 양쪽 무릎 각도)
-                                addDualValueSlider(itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, "{{ item.unit }}");
-                            } else {
-                                // 단일 값인 경우
-                                currentValue = trendData.values ? trendData.values[latestIndex] : 0;
-                                slidersData.push({
-                                    id: "{{ forloop.counter }}",
-                                    title: itemTitle,
-                                    alias: itemAlias,
-                                    minValue: minMaxRange[0],
-                                    maxValue: minMaxRange[1],
-                                    normalRange: normalRange,
-                                    currentValue: currentValue,
-                                    unit: "{{ item.unit }}",
-                                });
-                            }
-                            // 슬라이더 데이터 추가
-                            
-                            {% endfor %}
-                        
-                            // 모든 슬라이더 생성
-                            createSliders(slidersData);
-                        
-                            /**
-                             * 슬라이더 생성 함수
-                             * @param {Array} slidersData - 슬라이더 데이터를 포함한 배열
-                             */
-                            function createSliders(slidersData) {
-                                slidersData.forEach(item => {
-                                    // 슬라이더 컨테이너 생성
-                                    const sliderContainer = document.createElement('div');
-                                    sliderContainer.className = 'range-container';
-                                    sliderContainer.id = `rangeContainer${item.id}`;
-                        
-                                    // 제목과 현재값 표시 요소 생성
-                                    const titleElement = document.createElement('p');
-                                    const valueDirection = item.currentValue > 0 ? '우' : '좌';
-                                    const absValue = Math.abs(item.currentValue).toFixed(2);
-                                    titleElement.innerHTML = `${item.id}. <b>${item.title}</b> <span id="currentValue${item.id}">${valueDirection} ${absValue}${item.unit}</span>`;
-                        
-                                    // 슬라이더 wrapper 생성
-                                    const sliderWrapper = document.createElement('div');
-                                    sliderWrapper.className = 'slider-wrapper';
-                        
-                                    // 트랙 (배경색 포함) 생성
-                                    const track = document.createElement('div');
-                                    track.className = 'track';
-                                    track.id = `track${item.id}`;
-                        
-                                    // 인디케이터 (현재 값 표시) 생성
-                                    const indicator = document.createElement('div');
-                                    indicator.className = 'indicator';
-                                    indicator.id = `indicator${item.id}`;
-                        
-                                    // 라벨 (최소, 최대값) 생성
-                                    const labels = document.createElement('div');
-                                    labels.className = 'labels';
-                                    labels.innerHTML = `
+    document.addEventListener('DOMContentLoaded', function () {
+        // 데이터를 Django 템플릿에서 전달받습니다.
+        const trendDataDict = {{ trend_data_dict|safe }};
+        const frontSlidersContainer = document.getElementById('front-sliders-container');
+        const sideSlidersContainer = document.getElementById('side-sliders-container');
+
+        // 슬라이더 데이터를 저장할 배열
+        const slidersData = [];
+        const sideSlidersData = [];
+
+        console.log(trendDataDict);
+
+        // Helper function to add sliders for items with two values
+        function addDualValueSlider(dual = true, position, itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, unit) {
+            if (position === 'front' && dual && itemAlias !== 'spinal_imbalance') {
+                slidersData.push({
+                    id: aliasToIdMap[itemAlias + "_left"] || "{{ forloop.counter }}",
+                    title: `${itemTitle} (좌)`,
+                    alias: `${itemAlias}_left`,
+                    minValue: minMaxRange[0],
+                    maxValue: minMaxRange[1],
+                    normalRange: normalRange,
+                    currentValue: trendData.val1[latestIndex], // 좌측 값
+                    unit: unit,
+                });
+                slidersData.push({
+                    id: aliasToIdMap[itemAlias + "_right"] || "{{ forloop.counter }}",
+                    title: `${itemTitle} (우)`,
+                    alias: `${itemAlias}_right`,
+                    minValue: minMaxRange[0],
+                    maxValue: minMaxRange[1],
+                    normalRange: normalRange,
+                    currentValue: trendData.val2[latestIndex], // 우측 값
+                    unit: unit,
+                });
+            } else if (position === 'side' && dual && itemAlias !== 'spinal_imbalance') {
+                sideSlidersData.push({
+                    id: aliasToIdMap[itemAlias + "_left"] || "{{ forloop.counter }}",
+                    title: `${itemTitle} (좌)`,
+                    alias: `${itemAlias}_left`,
+                    minValue: minMaxRange[0],
+                    maxValue: minMaxRange[1],
+                    normalRange: normalRange,
+                    currentValue: trendData.val1[latestIndex], // 좌측 값
+                    unit: unit,
+                });
+                sideSlidersData.push({
+                    id: aliasToIdMap[itemAlias + "_right"] || "{{ forloop.counter }}",
+                    title: `${itemTitle} (우)`,
+                    alias: `${itemAlias}_right`,
+                    minValue: minMaxRange[0],
+                    maxValue: minMaxRange[1],
+                    normalRange: normalRange,
+                    currentValue: trendData.val2[latestIndex], // 우측 값
+                    unit: unit,
+                });
+            } else if (itemAlias === 'spinal_imbalance' && position === 'front' && dual) {
+                // spinal_imbalance의 경우
+                const parts = ['어깨', '골반'];
+                parts.forEach((part, index) => {
+                    const currentValue = trendData[`val${index + 1}`][latestIndex]; // val1 또는 val2
+                    const partAlias = (part === '어깨') ? 'scoliosis_shoulder_ratio' : 'scoliosis_hip_ratio';
+                    const title = `척추-${part} 정렬비`; // 제목 설정
+
+                    slidersData.push({
+                        id: aliasToIdMap[partAlias] || "{{ forloop.counter }}",
+                        title: title,
+                        alias: partAlias,
+                        minValue: minMaxRange[0],
+                        maxValue: minMaxRange[1],
+                        normalRange: normalRange,
+                        currentValue: currentValue,
+                        unit: unit,
+                    });
+                });
+            } else {
+                // 단일 값인 경우
+                sideSlidersData.push({
+                    id: aliasToIdMap[itemAlias] || "{{ forloop.counter }}",
+                    title: itemTitle,
+                    alias: itemAlias,
+                    minValue: minMaxRange[0],
+                    maxValue: minMaxRange[1],
+                    normalRange: normalRange,
+                    currentValue: trendData.values ? trendData.values[latestIndex] : 0,
+                    unit: unit,
+                });
+            }
+        }
+
+        // spinal_imbalance - 척추 불균형
+        // scoliosis_hip_ratio : 척추-골반
+        // scoliosis_shoulder_ratio
+        // 미리 지정한 id와 alias의 매핑
+        const aliasToIdMap = {
+            'face_level_angle': '1',
+            'shoulder_level_angle': '2',
+            'scoliosis_shoulder_ratio': '3',
+            'scoliosis_hip_ratio': '4',
+            'hip_level_angle': '5',
+            'o_x_legs_left': '6',
+            'o_x_legs_right': '7',
+            'leg_length_ratio': '8',
+            'forward_head_angle': '1',
+            'knee_angle_left': '2',
+            'knee_angle_right': '3',
+        };
+
+        // 각 report_item에 대해 슬라이더 데이터 생성
+        {% for item in report_items %}
+            var itemTitle = '{{ item.title }}'; // 검사항목 이름
+            var itemAlias = '{{ item.alias }}'; // 검사항목 영문 이름
+            var normalRange = {{ item.normal_range|safe }}; // 정상 범위 [min, max]
+            var minMaxRange = {{ item.value_range|safe }}; // 전체 범위 [min, max]
+            var trendData = trendDataDict[itemAlias]; // 검사항목의 트렌드 데이터
+
+
+            console.log("{{item.metric}}");
+            console.log("{{item.unit}}")
+            console.log(normalRange);
+
+            // 가장 최근 날짜 데이터 가져오기 (마지막 인덱스 사용)
+            var latestIndex = trendData.dates.length - 1;
+            var currentValue = 0;
+
+            // 항목 유형에 따라 현재 값 설정
+            if (itemAlias === 'o_x_legs') {
+                // 두 값이 있는 경우 (예: 양쪽 무릎 각도)
+                addDualValueSlider(true, "front", itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, "{{ item.unit }}");
+            } else if (itemAlias === 'knee_angle') {
+                addDualValueSlider(true, "side", itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, "{{ item.unit }}");
+            } else if (itemAlias === 'forward_head_angle') {
+                addDualValueSlider(false, "side", itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, "{{ item.unit }}");
+            } else if (itemAlias === 'spinal_imbalance') {
+                addDualValueSlider(true, "front", itemTitle, itemAlias, minMaxRange, normalRange, trendData, latestIndex, "{{ item.unit }}");
+            } else {
+                // 단일 값인 경우
+                currentValue = trendData.values ? trendData.values[latestIndex] : 0;
+                slidersData.push({
+                    id: aliasToIdMap[itemAlias] || "{{ forloop.counter }}", // alias에 따라 id 설정
+                    title: itemTitle,
+                    alias: itemAlias,
+                    minValue: minMaxRange[0],
+                    maxValue: minMaxRange[1],
+                    normalRange: normalRange,
+                    currentValue: currentValue,
+                    unit: "{{ item.unit }}",
+                });
+            }
+            // 슬라이더 데이터 추가
+
+        {% endfor %}
+
+        // 모든 슬라이더 생성
+        createSliders(slidersData, frontSlidersContainer);
+        createSliders(sideSlidersData, sideSlidersContainer);
+        console.log(slidersData);
+        console.log(sideSlidersData);
+
+        /**
+         * 슬라이더 생성 함수
+         * @param {Array} slidersData - 슬라이더 데이터를 포함한 배열
+         * @param {HTMLElement} container - 슬라이더를 추가할 컨테이너
+         */
+        function createSliders(slidersData, container) {
+            // id를 기준으로 슬라이더 데이터 정렬
+            slidersData.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+            slidersData.forEach(item => {
+                // 슬라이더 컨테이너 생성
+                const sliderContainer = document.createElement('div');
+                sliderContainer.className = 'range-container';
+                sliderContainer.id = `rangeContainer${item.id}`;
+
+                // 제목과 현재값 표시 요소 생성
+                const titleElement = document.createElement('p');
+                const valueDirection = item.currentValue > 0 ? '우' : '좌';
+                const absValue = Math.abs(item.currentValue).toFixed(2);
+                titleElement.innerHTML = `${item.id}. <b>${item.title}</b> <span id="currentValue${item.id}">${valueDirection} ${absValue}${item.unit}</span>`;
+
+                // 슬라이더 wrapper 생성
+                const sliderWrapper = document.createElement('div');
+                sliderWrapper.className = 'slider-wrapper';
+
+                // 트랙 (배경색 포함) 생성
+                const track = document.createElement('div');
+                track.className = 'track';
+                track.id = (container === frontSlidersContainer) ? `track${item.id}` : `sideTrack${item.id}`;
+
+                // 인디케이터 (현재 값 표시) 생성
+                const indicator = document.createElement('div');
+                indicator.className = 'indicator';
+                indicator.id = (container === frontSlidersContainer) ? `indicator${item.id}` : `sideIndicator${item.id}`;
+
+                // 라벨 (최소, 최대값) 생성
+                const labels = document.createElement('div');
+                labels.className = 'labels';
+                labels.innerHTML = `
                                         <span id="minLabel${item.id}">좌 ${Math.abs(item.minValue).toFixed(1)}°</span>
                                         <span id="maxLabel${item.id}">우 ${item.maxValue.toFixed(1)}°</span>
                                     `;
-                        
-                                    // 숨겨진 슬라이더 (필요시에만) 생성
-                                    const slider = document.createElement('input');
-                                    slider.type = 'range';
-                                    slider.className = 'hidden-slider';
-                                    slider.id = `rangeSlider${item.id}`;
-                                    slider.min = item.minValue;
-                                    slider.max = item.maxValue;
-                                    slider.step = 0.01;
-                                    slider.value = item.currentValue;
-                        
-                                    // 요소 조립
-                                    sliderWrapper.appendChild(track);
-                                    sliderWrapper.appendChild(indicator);
-                        
-                                    sliderContainer.appendChild(titleElement);
-                                    sliderContainer.appendChild(sliderWrapper);
-                                    sliderContainer.appendChild(labels);
-                                    sliderContainer.appendChild(slider);
-                        
-                                    // 슬라이더 컨테이너에 추가
-                                    slidersContainer.appendChild(sliderContainer);
-                        
-                                    // 트랙 색상 및 인디케이터 위치 설정
-                                    updateTrackColors(item.id, item.minValue, item.maxValue, item.normalRange);
-                                    updateSliderPosition(item.id, item.minValue, item.maxValue, item.currentValue);
-                                });
-                            }
-                        
-                            /**
-                             * 트랙 색상 업데이트 함수
-                             * @param {string} id - 슬라이더 ID
-                             * @param {number} minValue - 전체 범위 최소값
-                             * @param {number} maxValue - 전체 범위 최대값
-                             * @param {Array} normalRange - 정상 범위 [min, max]
-                             */
-                            function updateTrackColors(id, minValue, maxValue, normalRange) {
-                                const track = document.getElementById(`track${id}`);
-                                const normalStartPercent =
-                                  ((normalRange[0] - minValue) / (maxValue - minValue)) * 100;
-                                const normalEndPercent =
-                                  ((normalRange[1] - minValue) / (maxValue - minValue)) * 100;
-                        
-                                track.style.background = `
+
+                // 숨겨진 슬라이더 (필요시에만) 생성
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.className = 'hidden-slider';
+                slider.id = `rangeSlider${item.id}`;
+                slider.min = item.minValue;
+                slider.max = item.maxValue;
+                slider.step = 0.01;
+                slider.value = item.currentValue;
+
+                // 요소 조립
+                sliderWrapper.appendChild(track);
+                sliderWrapper.appendChild(indicator);
+
+                sliderContainer.appendChild(titleElement);
+                sliderContainer.appendChild(sliderWrapper);
+                sliderContainer.appendChild(labels);
+                sliderContainer.appendChild(slider);
+
+                // 슬라이더 컨테이너에 추가
+                container.appendChild(sliderContainer);
+
+                position = (container === frontSlidersContainer) ? 'front' : 'side';
+
+
+                // 트랙 색상 및 인디케이터 위치 설정
+                updateTrackColors(position, item.id, item.minValue, item.maxValue, item.normalRange);
+                updateSliderPosition(position, item.id, item.minValue, item.maxValue, item.currentValue);
+            });
+        }
+
+        /**
+         * 트랙 색상 업데이트 함수
+         * @param {string} id - 슬라이더 ID
+         * @param {number} minValue - 전체 범위 최소값
+         * @param {number} maxValue - 전체 범위 최대값
+         * @param {Array} normalRange - 정상 범위 [min, max]
+         */
+        function updateTrackColors(position, id, minValue, maxValue, normalRange) {
+            let track;
+            if (position === 'front') {
+                track = document.getElementById(`track${id}`);
+            } else {
+                track = document.getElementById(`sideTrack${id}`);
+            }
+            if (!track) {
+                console.error(`Track not found for ID: sideTrack${id}`);
+                return;
+            }
+            const normalStartPercent = ((normalRange[0] - minValue) / (maxValue - minValue)) * 100;
+            const normalEndPercent = ((normalRange[1] - minValue) / (maxValue - minValue)) * 100;
+
+            track.style.background = `
                                   linear-gradient(to right,
                                       red ${normalStartPercent}%,
                                       #38ACFF ${normalStartPercent}%,
@@ -465,369 +678,377 @@
                                       red ${normalEndPercent}%
                                   )
                                 `;
-                            }
-                        
-                            /**
-                             * 슬라이더 위치 업데이트 함수 (현재 값 기준)
-                             * @param {string} id - 슬라이더 ID
-                             * @param {number} minValue - 전체 범위 최소값
-                             * @param {number} maxValue - 전체 범위 최대값
-                             * @param {number} value - 현재 값
-                             */
-                            function updateSliderPosition(id, minValue, maxValue, value) {
-                                const indicator = document.getElementById(`indicator${id}`);
-                                const percent =
-                                  ((value - minValue) / (maxValue - minValue)) * 100;
-                                indicator.style.left = `${percent}%`;
-                            }
+            console.log(`Updating track colors for ID: sideTrack${id}, min: ${minValue}, max: ${maxValue}, normalRange: ${normalRange}`);
+        }
 
-                            const drawFrontImage = async () => {
-                                const canvas = document.getElementById('frontCanvas');
-                                const ctx = canvas.getContext('2d');
-                                
-                                try {
-                                    // Load and draw base SVG
-                                    const svgImage = await loadSVG("{% static 'images/male_front_silhouette.svg' %}");
-                                    const {x, y, scaledWidth, scaledHeight} = drawBaseImage(ctx, canvas, svgImage);
-                                    const centerX = x + scaledWidth / 2;
-                
-                                    // Draw face level angle line
-                                    const faceY = y + scaledHeight * 0.075;
-                                    const faceLevelAngle = trendDataDict['face_level_angle'].values[0];
-                                    const faceAngleLineLength = scaledWidth * 0.2;
-                
-                                    // Determine color based on normal range (-5 to 5)
-                                    const faceColor = (faceLevelAngle >= -5 && faceLevelAngle < 5) ? '#38ACFF' : '#FF0202';
-                                    drawAngleLine(ctx, centerX, faceY, faceLevelAngle, faceAngleLineLength, faceColor);
-                
-                                    // Draw shoulder level angle line
-                                    const shoulderY = y + scaledHeight * 0.195;
-                                    const shoulderLevelAngle = trendDataDict['shoulder_level_angle'].values[0];
-                                    const shoulderAngleLineLength = scaledWidth * 0.5;
-                                    const shoulderImbalance = trendDataDict['spinal_imbalance'].val1[0];
-                                    const shoulderOffset = scaledWidth * (shoulderImbalance / 100);
-                
-                                    // Determine color based on normal range (-5 to 5)
-                                    const shoulderColor = (shoulderLevelAngle >= -5 && shoulderLevelAngle < 5) ? '#38ACFF' : '#FF0202';
-                                    const {centerX: shoulderCenterX, centerY: shoulderCenterY} = 
-                                        drawAngleLine(ctx, centerX + shoulderOffset, shoulderY, shoulderLevelAngle, shoulderAngleLineLength, shoulderColor);
-                
-                                    // Draw hip level angle line
-                                    const hipY = y + scaledHeight * 0.457;
-                                    const hipLevelAngle = trendDataDict['hip_level_angle'].values[0];
-                                    const hipAngleLineLength = scaledWidth * 0.4;
-                                    const hipImbalance = trendDataDict['spinal_imbalance'].val2[0];
-                                    const hipOffset = scaledWidth * (hipImbalance / 100);
-                
-                                    // Determine color based on normal range (-3 to 3)
-                                    const hipColor = (hipLevelAngle >= -3 && hipLevelAngle < 3) ? '#38ACFF' : '#FF0202';
-                                    const {centerX: hipCenterX, centerY: hipCenterY} = 
-                                        drawAngleLine(ctx, centerX + hipOffset, hipY, hipLevelAngle, hipAngleLineLength, hipColor);
-                
-                                    // Draw spinal alignment line
-                                    drawSpinalLine(ctx, shoulderCenterX, shoulderCenterY, hipCenterX, hipCenterY, centerX);
-                
-                                    // Draw leg length and O/X legs
-                                    drawLegs(ctx, centerX, y, scaledWidth, scaledHeight, trendDataDict);
-                                    
-                                } catch (error) {
-                                    console.error('Error loading or drawing front SVG:', error);
-                                }
-                            };
-                
-                            const drawSideImage = async () => {
-                                const canvas = document.getElementById('sideCanvas');
-                                const ctx = canvas.getContext('2d');
-                                
-                                try {
-                                    // Load and draw base SVG
-                                    const svgImage = await loadSVG("{% static 'images/male_side_silhouette.svg' %}");
-                                    const {x, y, scaledWidth, scaledHeight} = drawBaseImage(ctx, canvas, svgImage);
-                
-                                    // Draw forward head angle line
-                                    const forwardHeadAngle = trendDataDict['forward_head_angle'].values[0];
-                                    const headLineLength = scaledHeight * 0.12;
-                                    const chinY = y + scaledHeight * 0.2;
-                                    const chinX = x + scaledWidth * 0.72;
-                
-                                    // Determine color based on normal range (0 to 50)
-                                    const headColor = (forwardHeadAngle >= 0 && forwardHeadAngle < 50) ? '#38ACFF' : '#FF0202';
-                                    drawForwardHeadLine(ctx, chinX, chinY, forwardHeadAngle, headLineLength, headColor);
-                
-                                    // Draw knee angle lines
-                                    drawKneeAngles(ctx, x, y, scaledWidth, scaledHeight, trendDataDict);
-                                    
-                                } catch (error) {
-                                    console.error('Error loading or drawing side SVG:', error);
-                                }
-                            };
-                
-                            // Helper functions
-                            const drawBaseImage = (ctx, canvas, svgImage) => {
-                                // Clear canvas
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                
-                                // Calculate scaling to maintain aspect ratio
-                                const scale = Math.min(
-                                    canvas.width / svgImage.width,
-                                    canvas.height / svgImage.height
-                                );
-                                
-                                const scaledWidth = svgImage.width * scale;
-                                const scaledHeight = svgImage.height * scale;
-                                
-                                // Center the image
-                                const x = (canvas.width - scaledWidth) / 2;
-                                const y = (canvas.height - scaledHeight) / 2;
-                                
-                                // Draw the SVG image with proper scaling
-                                ctx.drawImage(svgImage, x, y, scaledWidth, scaledHeight);
-                                
-                                return {x, y, scaledWidth, scaledHeight};
-                            };
-                
-                            const drawAngleLine = (ctx, centerX, centerY, angle, length, color) => {
-                                // Save the current context state
-                                ctx.save();
-                                
-                                // Move to the center point and rotate
-                                ctx.translate(centerX, centerY);
-                                ctx.rotate(angle * Math.PI / 180);
-                                
-                                // Draw the line
-                                ctx.beginPath();
-                                ctx.strokeStyle = color;
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(-length/2, 0);
-                                ctx.lineTo(length/2, 0);
-                                ctx.stroke();
-                
-                                // Draw circles at both ends
-                                ctx.beginPath();
-                                ctx.fillStyle = color;
-                                ctx.arc(-length/2, 0, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.beginPath();
-                                ctx.arc(length/2, 0, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                
-                                // Restore the context state
-                                ctx.restore();
-                                
-                                return {centerX, centerY};
-                            };
-                
-                            const drawSpinalLine = (ctx, shoulderX, shoulderY, hipX, hipY, centerX) => {
-                                // Draw spinal alignment line
-                                ctx.beginPath();
-                                ctx.strokeStyle = '#38ACFF';
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(shoulderX, shoulderY);
-                                ctx.lineTo(hipX, hipY);
-                                ctx.stroke();
-                
-                                // Draw circles at spinal line points
-                                ctx.beginPath();
-                                ctx.fillStyle = '#38ACFF';
-                                ctx.arc(shoulderX, shoulderY, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.beginPath();
-                                ctx.arc(centerX, (shoulderY + hipY) / 2, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                            };
-                
-                            const drawLegs = (ctx, centerX, y, scaledWidth, scaledHeight, trendDataDict) => {
-                                // Draw leg length ratio lines
-                                const legLengthRatio = trendDataDict['leg_length_ratio'].values[0];
-                                const legStartY = y + scaledHeight * 0.457;
-                                const baseLegLength = scaledHeight * 0.48;
-                                const legWidth = scaledWidth * 0.1;
-                                
-                                // Calculate the leg lengths based on the ratio
-                                const leftLegLength = baseLegLength * (1 + legLengthRatio/100);
-                                const rightLegLength = baseLegLength * (1 - legLengthRatio/100);
-                                
-                                const leftLegX = centerX - legWidth/2 - 12;
-                                const rightLegX = centerX + legWidth/2 + 12;
-                
-                                // Determine color based on normal range (-3 to 3)
-                                const legColor = (legLengthRatio >= -3 && legLengthRatio < 3) ? '#38ACFF' : '#FF0202';
-                
-                                // Draw leg length lines
-                                drawLegLine(ctx, leftLegX, legStartY, leftLegLength, legColor);
-                                drawLegLine(ctx, rightLegX, legStartY, rightLegLength, legColor);
-                
-                                // Draw O/X legs
-                                const leftOXAngle = trendDataDict['o_x_legs'].val1[0];
-                                const rightOXAngle = trendDataDict['o_x_legs'].val2[0];
-                                const kneeHeight = legStartY + baseLegLength * 0.565; // Position of knees
-                                const lineLength = scaledWidth * 0.1; // Length of the horizontal line
-                
-                                // Determine colors based on normal range (165 to 195)
-                                const leftOXColor = (leftOXAngle >= 165 && leftOXAngle <= 195) ? '#38ACFF' : '#FF0202';
-                                const rightOXColor = (rightOXAngle >= 165 && rightOXAngle <= 195) ? '#38ACFF' : '#FF0202';
-                
-                                // Calculate knee deviation from neutral position
-                                // For angles > 180: knee moves outward (positive offset)
-                                // For angles < 180: knee moves inward (negative offset)
-                                const leftKneeOffset = (leftOXAngle - 180) * lineLength / 15;
-                                const rightKneeOffset = (rightOXAngle - 180) * lineLength / 15;
-                
-                                drawKneeDeviation(ctx, leftLegX, kneeHeight, leftKneeOffset, leftOXColor);
-                                drawKneeDeviation(ctx, rightLegX, kneeHeight, rightKneeOffset, rightOXColor);
-                            };
-                
-                            const drawLegLine = (ctx, x, startY, length, color) => {
-                                // Draw leg line
-                                ctx.beginPath();
-                                ctx.strokeStyle = color;
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(x, startY);
-                                ctx.lineTo(x, startY + length);
-                                ctx.stroke();
-                
-                                // Draw circles at both ends
-                                ctx.beginPath();
-                                ctx.fillStyle = color;
-                                // Top point
-                                ctx.arc(x, startY, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                // Bottom point
-                                ctx.beginPath();
-                                ctx.arc(x, startY + length, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                            };
-                
-                            const drawKneeDeviation = (ctx, legX, kneeHeight, offset, color) => {
-                                // Draw knee deviation line
-                                ctx.beginPath();
-                                ctx.strokeStyle = color;
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(legX, kneeHeight);
-                                ctx.lineTo(legX + offset, kneeHeight);
-                                ctx.stroke();
-                
-                                // Draw circle at non-center knee position
-                                ctx.beginPath();
-                                ctx.fillStyle = color;
-                                ctx.arc(legX + offset, kneeHeight, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                            };
-                
-                            const drawForwardHeadLine = (ctx, chinX, chinY, angle, length, color) => {
-                                // Save the current context state
-                                ctx.save();
-                                
-                                // Move to the center point and rotate
-                                ctx.translate(chinX, chinY);
-                                ctx.rotate(-angle * Math.PI / 180);
-                                
-                                // Draw the line
-                                ctx.beginPath();
-                                ctx.strokeStyle = color;
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(0, 0);
-                                ctx.lineTo(0, -length);
-                                ctx.stroke();
-                
-                                // Draw circles at both ends
-                                ctx.beginPath();
-                                ctx.fillStyle = color;
-                                ctx.arc(0, 0, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.beginPath();
-                                ctx.arc(0, -length, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                
-                                // Restore the context state
-                                ctx.restore();
-                            };
-                
-                            const drawKneeAngles = (ctx, x, y, scaledWidth, scaledHeight, trendDataDict) => {
-                                // Draw knee angle lines
-                                const leftKneeAngle = trendDataDict['knee_angle'].val1[0];
-                                const rightKneeAngle = trendDataDict['knee_angle'].val2[0];
-                                const legLengthRatio = trendDataDict['leg_length_ratio'].values[0];
-                                const baseHipToKneeLength = scaledHeight * 0.27;
-                                const baseKneeToAnkleLength = scaledHeight * 0.375;
-                                
-                                // Calculate leg lengths based on ratio
-                                const leftHipToKneeLength = baseHipToKneeLength * (1 + legLengthRatio/100);
-                                const rightHipToKneeLength = baseHipToKneeLength * 0.4;
-                                const leftKneeToAnkleLength = baseKneeToAnkleLength * (1 + legLengthRatio/100);
-                                const rightKneeToAnkleLength = baseKneeToAnkleLength * (1 - legLengthRatio/100);
-                                
-                                // Left knee
-                                const leftHipX = x + scaledWidth * 0.7;
-                                const leftHipY = y + scaledHeight * 0.457;
-                                
-                                const leftAngleRad = (leftKneeAngle - 180) * Math.PI / 180;
-                                const leftKneeX = leftHipX + Math.sin(leftAngleRad) * leftHipToKneeLength;
-                                const leftKneeY = leftHipY + Math.cos(leftAngleRad) * leftHipToKneeLength;
-                                
-                                const leftAnkleX = leftHipX + 6;
-                                const leftAnkleY = leftHipY + leftHipToKneeLength + leftKneeToAnkleLength - 80;
-                                
-                                // Right knee (moved to the left)
-                                const rightHipX = x + scaledWidth * 0.35;
-                                const rightHipY = y + scaledHeight * 0.6;
-                                
-                                const rightAngleRad = (rightKneeAngle - 180) * Math.PI / 180;
-                                const rightKneeX = rightHipX + Math.sin(rightAngleRad) * rightHipToKneeLength;
-                                const rightKneeY = rightHipY + Math.cos(rightAngleRad) * rightHipToKneeLength;
-                                
-                                const rightAnkleX = rightHipX + 32;
-                                const rightAnkleY = rightHipY + rightHipToKneeLength + rightKneeToAnkleLength - 80;
-                
-                                // Determine colors based on normal range (170 to 180)
-                                const leftKneeColor = (leftKneeAngle >= 170 && leftKneeAngle < 180) ? '#38ACFF' : '#FF0202';
-                                const rightKneeColor = (rightKneeAngle >= 170 && rightKneeAngle < 180) ? '#38ACFF' : '#FF0202';
-                                
-                                // Draw left knee lines
-                                ctx.beginPath();
-                                ctx.strokeStyle = leftKneeColor;
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(leftHipX, leftHipY);
-                                ctx.lineTo(leftKneeX, leftKneeY);
-                                ctx.lineTo(leftAnkleX, leftAnkleY);
-                                ctx.stroke();
-                                
-                                // Draw right knee lines
-                                ctx.beginPath();
-                                ctx.strokeStyle = rightKneeColor;
-                                ctx.lineWidth = 2;
-                                ctx.moveTo(rightHipX, rightHipY);
-                                ctx.lineTo(rightKneeX, rightKneeY);
-                                ctx.lineTo(rightAnkleX, rightAnkleY);
-                                ctx.stroke();
-                
-                                // Draw circles at knee positions
-                                ctx.beginPath();
-                                ctx.fillStyle = leftKneeColor;
-                                ctx.arc(leftKneeX, leftKneeY, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.beginPath();
-                                ctx.fillStyle = rightKneeColor;
-                                ctx.arc(rightKneeX, rightKneeY, 3, 0, Math.PI * 2);
-                                ctx.fill();
-                            };
-                
-                            // Load SVG from file
-                            const loadSVG = (url) => {
-                                return new Promise((resolve, reject) => {
-                                    const img = new Image();
-                                    img.onload = () => resolve(img);
-                                    img.onerror = (e) => reject(e);
-                                    img.src = url;
-                                });
-                            };
-                
-                            // Initial draw when page loads
-                            drawFrontImage();
-                            drawSideImage();
-                        });
-                        
+        /**
+         * 슬라이더 위치 업데이트 함수 (현재 값 기준)
+         * @param {string} id - 슬라이더 ID
+         * @param {number} minValue - 전체 범위 최소값
+         * @param {number} maxValue - 전체 범위 최대값
+         * @param {number} value - 현재 값
+         */
+        function updateSliderPosition(position, id, minValue, maxValue, value) {
+            let indicator; // indicator 변수를 여기서 선언
 
-                        
+            if (position === 'front') {
+                indicator = document.getElementById(`indicator${id}`);
+            } else {
+                indicator = document.getElementById(`sideIndicator${id}`);
+            }
+
+            const percent =
+                ((value - minValue) / (maxValue - minValue)) * 100;
+            indicator.style.left = `${percent}%`;
+            console.log(`Updating slider position for ID: ${id}, value: ${value}`);
+        }
+
+        const drawFrontImage = async () => {
+            const canvas = document.getElementById('frontCanvas');
+            const ctx = canvas.getContext('2d');
+
+            try {
+                // Load and draw base SVG
+                const svgImage = await loadSVG("{% static 'images/male_front_silhouette.svg' %}");
+                const {x, y, scaledWidth, scaledHeight} = drawBaseImage(ctx, canvas, svgImage);
+                const centerX = x + scaledWidth / 2;
+
+                // Draw face level angle line
+                const faceY = y + scaledHeight * 0.075;
+                const faceLevelAngle = trendDataDict['face_level_angle'].values[0];
+                const faceAngleLineLength = scaledWidth * 0.2;
+
+                // Determine color based on normal range (-5 to 5)
+                const faceColor = (faceLevelAngle >= -5 && faceLevelAngle < 5) ? '#38ACFF' : '#FF0202';
+                drawAngleLine(ctx, centerX, faceY, faceLevelAngle, faceAngleLineLength, faceColor);
+
+                // Draw shoulder level angle line
+                const shoulderY = y + scaledHeight * 0.195;
+                const shoulderLevelAngle = trendDataDict['shoulder_level_angle'].values[0];
+                const shoulderAngleLineLength = scaledWidth * 0.5;
+                const shoulderImbalance = trendDataDict['spinal_imbalance'].val1[0];
+                const shoulderOffset = scaledWidth * (shoulderImbalance / 100);
+
+                // Determine color based on normal range (-5 to 5)
+                const shoulderColor = (shoulderLevelAngle >= -5 && shoulderLevelAngle < 5) ? '#38ACFF' : '#FF0202';
+                const {centerX: shoulderCenterX, centerY: shoulderCenterY} =
+                    drawAngleLine(ctx, centerX + shoulderOffset, shoulderY, shoulderLevelAngle, shoulderAngleLineLength, shoulderColor);
+
+                // Draw hip level angle line
+                const hipY = y + scaledHeight * 0.457;
+                const hipLevelAngle = trendDataDict['hip_level_angle'].values[0];
+                const hipAngleLineLength = scaledWidth * 0.4;
+                const hipImbalance = trendDataDict['spinal_imbalance'].val2[0];
+                const hipOffset = scaledWidth * (hipImbalance / 100);
+
+                // Determine color based on normal range (-3 to 3)
+                const hipColor = (hipLevelAngle >= -3 && hipLevelAngle < 3) ? '#38ACFF' : '#FF0202';
+                const {centerX: hipCenterX, centerY: hipCenterY} =
+                    drawAngleLine(ctx, centerX + hipOffset, hipY, hipLevelAngle, hipAngleLineLength, hipColor);
+
+                // Draw spinal alignment line
+                drawSpinalLine(ctx, shoulderCenterX, shoulderCenterY, hipCenterX, hipCenterY, centerX);
+
+                // Draw leg length and O/X legs
+                drawLegs(ctx, centerX, y, scaledWidth, scaledHeight, trendDataDict);
+
+            } catch (error) {
+                console.error('Error loading or drawing front SVG:', error);
+            }
+        };
+
+        const drawSideImage = async () => {
+            const canvas = document.getElementById('sideCanvas');
+            const ctx = canvas.getContext('2d');
+
+            try {
+                // Load and draw base SVG
+                const svgImage = await loadSVG("{% static 'images/male_side_silhouette.svg' %}");
+                const {x, y, scaledWidth, scaledHeight} = drawBaseImage(ctx, canvas, svgImage);
+
+                // Draw forward head angle line
+                const forwardHeadAngle = trendDataDict['forward_head_angle'].values[0];
+                const headLineLength = scaledHeight * 0.12;
+                const chinY = y + scaledHeight * 0.2;
+                const chinX = x + scaledWidth * 0.72;
+
+                // Determine color based on normal range (0 to 50)
+                const headColor = (forwardHeadAngle >= 0 && forwardHeadAngle < 50) ? '#38ACFF' : '#FF0202';
+                drawForwardHeadLine(ctx, chinX, chinY, forwardHeadAngle, headLineLength, headColor);
+
+                // Draw knee angle lines
+                drawKneeAngles(ctx, x, y, scaledWidth, scaledHeight, trendDataDict);
+
+            } catch (error) {
+                console.error('Error loading or drawing side SVG:', error);
+            }
+        };
+
+        // Helper functions
+        const drawBaseImage = (ctx, canvas, svgImage) => {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate scaling to maintain aspect ratio
+            const scale = Math.min(
+                canvas.width / svgImage.width,
+                canvas.height / svgImage.height
+            );
+
+            const scaledWidth = svgImage.width * scale;
+            const scaledHeight = svgImage.height * scale;
+
+            // Center the image
+            const x = (canvas.width - scaledWidth) / 2;
+            const y = (canvas.height - scaledHeight) / 2;
+
+            // Draw the SVG image with proper scaling
+            ctx.drawImage(svgImage, x, y, scaledWidth, scaledHeight);
+
+            return {x, y, scaledWidth, scaledHeight};
+        };
+
+        const drawAngleLine = (ctx, centerX, centerY, angle, length, color) => {
+            // Save the current context state
+            ctx.save();
+
+            // Move to the center point and rotate
+            ctx.translate(centerX, centerY);
+            ctx.rotate(angle * Math.PI / 180);
+
+            // Draw the line
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.moveTo(-length / 2, 0);
+            ctx.lineTo(length / 2, 0);
+            ctx.stroke();
+
+            // Draw circles at both ends
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(-length / 2, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(length / 2, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Restore the context state
+            ctx.restore();
+
+            return {centerX, centerY};
+        };
+
+        const drawSpinalLine = (ctx, shoulderX, shoulderY, hipX, hipY, centerX) => {
+            // Draw spinal alignment line
+            ctx.beginPath();
+            ctx.strokeStyle = '#38ACFF';
+            ctx.lineWidth = 2;
+            ctx.moveTo(shoulderX, shoulderY);
+            ctx.lineTo(hipX, hipY);
+            ctx.stroke();
+
+            // Draw circles at spinal line points
+            ctx.beginPath();
+            ctx.fillStyle = '#38ACFF';
+            ctx.arc(shoulderX, shoulderY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(centerX, (shoulderY + hipY) / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        const drawLegs = (ctx, centerX, y, scaledWidth, scaledHeight, trendDataDict) => {
+            // Draw leg length ratio lines
+            const legLengthRatio = trendDataDict['leg_length_ratio'].values[0];
+            const legStartY = y + scaledHeight * 0.457;
+            const baseLegLength = scaledHeight * 0.48;
+            const legWidth = scaledWidth * 0.1;
+
+            // Calculate the leg lengths based on the ratio
+            const leftLegLength = baseLegLength * (1 + legLengthRatio / 100);
+            const rightLegLength = baseLegLength * (1 - legLengthRatio / 100);
+
+            const leftLegX = centerX - legWidth / 2 - 12;
+            const rightLegX = centerX + legWidth / 2 + 12;
+
+            // Determine color based on normal range (-3 to 3)
+            const legColor = (legLengthRatio >= -3 && legLengthRatio < 3) ? '#38ACFF' : '#FF0202';
+
+            // Draw leg length lines
+            drawLegLine(ctx, leftLegX, legStartY, leftLegLength, legColor);
+            drawLegLine(ctx, rightLegX, legStartY, rightLegLength, legColor);
+
+            // Draw O/X legs
+            const leftOXAngle = trendDataDict['o_x_legs'].val1[0];
+            const rightOXAngle = trendDataDict['o_x_legs'].val2[0];
+            const kneeHeight = legStartY + baseLegLength * 0.565; // Position of knees
+            const lineLength = scaledWidth * 0.1; // Length of the horizontal line
+
+            // Determine colors based on normal range (165 to 195)
+            const leftOXColor = (leftOXAngle >= 165 && leftOXAngle <= 195) ? '#38ACFF' : '#FF0202';
+            const rightOXColor = (rightOXAngle >= 165 && rightOXAngle <= 195) ? '#38ACFF' : '#FF0202';
+
+            // Calculate knee deviation from neutral position
+            // For angles > 180: knee moves outward (positive offset)
+            // For angles < 180: knee moves inward (negative offset)
+            const leftKneeOffset = (leftOXAngle - 180) * lineLength / 15;
+            const rightKneeOffset = (rightOXAngle - 180) * lineLength / 15;
+
+            drawKneeDeviation(ctx, leftLegX, kneeHeight, leftKneeOffset, leftOXColor);
+            drawKneeDeviation(ctx, rightLegX, kneeHeight, rightKneeOffset, rightOXColor);
+        };
+
+        const drawLegLine = (ctx, x, startY, length, color) => {
+            // Draw leg line
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.moveTo(x, startY);
+            ctx.lineTo(x, startY + length);
+            ctx.stroke();
+
+            // Draw circles at both ends
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            // Top point
+            ctx.arc(x, startY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            // Bottom point
+            ctx.beginPath();
+            ctx.arc(x, startY + length, 3, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        const drawKneeDeviation = (ctx, legX, kneeHeight, offset, color) => {
+            // Draw knee deviation line
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.moveTo(legX, kneeHeight);
+            ctx.lineTo(legX + offset, kneeHeight);
+            ctx.stroke();
+
+            // Draw circle at non-center knee position
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(legX + offset, kneeHeight, 3, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        const drawForwardHeadLine = (ctx, chinX, chinY, angle, length, color) => {
+            // Save the current context state
+            ctx.save();
+
+            // Move to the center point and rotate
+            ctx.translate(chinX, chinY);
+            ctx.rotate(-angle * Math.PI / 180);
+
+            // Draw the line
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -length);
+            ctx.stroke();
+
+            // Draw circles at both ends
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, -length, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Restore the context state
+            ctx.restore();
+        };
+
+        const drawKneeAngles = (ctx, x, y, scaledWidth, scaledHeight, trendDataDict) => {
+            // Draw knee angle lines
+            const leftKneeAngle = trendDataDict['knee_angle'].val1[0];
+            const rightKneeAngle = trendDataDict['knee_angle'].val2[0];
+            const legLengthRatio = trendDataDict['leg_length_ratio'].values[0];
+            const baseHipToKneeLength = scaledHeight * 0.27;
+            const baseKneeToAnkleLength = scaledHeight * 0.375;
+
+            // Calculate leg lengths based on ratio
+            const leftHipToKneeLength = baseHipToKneeLength * (1 + legLengthRatio / 100);
+            const rightHipToKneeLength = baseHipToKneeLength * 0.4;
+            const leftKneeToAnkleLength = baseKneeToAnkleLength * (1 + legLengthRatio / 100);
+            const rightKneeToAnkleLength = baseKneeToAnkleLength * (1 - legLengthRatio / 100);
+
+            // Left knee
+            const leftHipX = x + scaledWidth * 0.7;
+            const leftHipY = y + scaledHeight * 0.457;
+
+            const leftAngleRad = (leftKneeAngle - 180) * Math.PI / 180;
+            const leftKneeX = leftHipX + Math.sin(leftAngleRad) * leftHipToKneeLength;
+            const leftKneeY = leftHipY + Math.cos(leftAngleRad) * leftHipToKneeLength;
+
+            const leftAnkleX = leftHipX + 6;
+            const leftAnkleY = leftHipY + leftHipToKneeLength + leftKneeToAnkleLength - 80;
+
+            // Right knee (moved to the left)
+            const rightHipX = x + scaledWidth * 0.35;
+            const rightHipY = y + scaledHeight * 0.6;
+
+            const rightAngleRad = (rightKneeAngle - 180) * Math.PI / 180;
+            const rightKneeX = rightHipX + Math.sin(rightAngleRad) * rightHipToKneeLength;
+            const rightKneeY = rightHipY + Math.cos(rightAngleRad) * rightHipToKneeLength;
+
+            const rightAnkleX = rightHipX + 32;
+            const rightAnkleY = rightHipY + rightHipToKneeLength + rightKneeToAnkleLength - 80;
+
+            // Determine colors based on normal range (170 to 180)
+            const leftKneeColor = (leftKneeAngle >= 170 && leftKneeAngle < 180) ? '#38ACFF' : '#FF0202';
+            const rightKneeColor = (rightKneeAngle >= 170 && rightKneeAngle < 180) ? '#38ACFF' : '#FF0202';
+
+            // Draw left knee lines
+            ctx.beginPath();
+            ctx.strokeStyle = leftKneeColor;
+            ctx.lineWidth = 2;
+            ctx.moveTo(leftHipX, leftHipY);
+            ctx.lineTo(leftKneeX, leftKneeY);
+            ctx.lineTo(leftAnkleX, leftAnkleY);
+            ctx.stroke();
+
+            // Draw right knee lines
+            ctx.beginPath();
+            ctx.strokeStyle = rightKneeColor;
+            ctx.lineWidth = 2;
+            ctx.moveTo(rightHipX, rightHipY);
+            ctx.lineTo(rightKneeX, rightKneeY);
+            ctx.lineTo(rightAnkleX, rightAnkleY);
+            ctx.stroke();
+
+            // Draw circles at knee positions
+            ctx.beginPath();
+            ctx.fillStyle = leftKneeColor;
+            ctx.arc(leftKneeX, leftKneeY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = rightKneeColor;
+            ctx.arc(rightKneeX, rightKneeY, 3, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        // Load SVG from file
+        const loadSVG = (url) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = (e) => reject(e);
+                img.src = url;
+            });
+        };
+
+        // Initial draw when page loads
+        drawFrontImage();
+        drawSideImage();
+    });
+
+
 </script>
 </html>
