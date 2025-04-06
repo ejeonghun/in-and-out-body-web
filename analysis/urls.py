@@ -51,6 +51,7 @@ urlpatterns = [
     path('gait-print/<int:id>/', views.gait_print, name='gait_print'),
 
     path('body-print/<int:id>/', views.body_print, name='body_print'),
+    path('body-print-detail/<int:id>/', views.body_print_kiosk, name='body_print_detail'),
 
 
     path('no-result/', views.no_result, name='no_result'),

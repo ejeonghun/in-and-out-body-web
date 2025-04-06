@@ -113,7 +113,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -262,7 +262,8 @@ CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
     'http://aicu-office.iptime.org:65002',
     'https://test-body.aicu.life',
-    'http://10.0.2.2'
+    'http://10.0.2.2',
+    'http://localhost:8000',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용

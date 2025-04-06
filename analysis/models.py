@@ -109,7 +109,7 @@ class KioskInfo(models.Model):
 
 
     def __str__(self):
-        return f"{self.id}번 - {self.Org.organization_name if self.Org is not None else "학교/기관 없음"} - {self.kiosk_id}_{self.version+'ver' if self.version is not None else "버전 정보 없음"}"
+        return f"{self.id}번 - {self.Org.organization_name if self.Org is not None else '학교/기관 없음'} - {self.kiosk_id}_{self.version+'ver' if self.version is not None else '버전 정보 없음'}"
 
 class SessionInfo(models.Model):
     req_type = models.CharField(max_length=1, null=True, blank=True)

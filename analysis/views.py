@@ -1539,9 +1539,11 @@ def gait_report(request):
 
 
 @login_required
-def body_print(request, id):
-    max_count = 20
+def body_print(request, id, detail=None):
+    max_count = 4 # 최대 4개까지 보여줌
     body_info_queryset = CodeInfo.objects.filter(group_id='01').order_by('seq_no')
+
+    user = get_object_or_404(UserInfo, id=id)
 
     # 해당 유저의 모든 검사 결과를 쿼리
     body_result_queryset = BodyResult.objects.filter(
@@ -1798,7 +1800,15 @@ def body_print(request, id):
         'dates': dates,
     }
 
+    if detail is not None:
+        return render(request, 'body_print_kiosk.html', context)
     return render(request, 'body_print.html', context)
+
+
+@login_required()
+def body_print_kiosk(request, id):
+    return body_print(request, id, detail=True)
+
 
 
 @login_required

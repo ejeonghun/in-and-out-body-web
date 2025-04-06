@@ -50,3 +50,15 @@ def get_item(lst, index):
         return lst[index]
     except IndexError:
         return ''  # Return an empty string if the index is out of range
+
+
+@register.filter
+def calc_age(dob_str):
+    try:
+        return f"만 {2025 - int(dob_str)}세"
+    except (ValueError, TypeError):
+        return '정보 없음'
+
+@register.filter
+def is_list(value):
+    return isinstance(value, list)
