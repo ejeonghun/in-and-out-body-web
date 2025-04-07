@@ -1999,3 +1999,7 @@ def gait_print(request, id, detail=None):
 @login_required()
 def gait_print_kiosk(request, id):
     return gait_print(request, id, detail=True)
+
+
+def qr(request):
+    return render(request, 'qr.html')

@@ -34,6 +34,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', views.home, name='home'),
+
+    path('qr', views.qr, name='qr'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html', redirect_authenticated_user=True, next_page='main'), name='login'),
     path('signup/', views.signup, name='signup'),
     # path('register/', views.register, name='register'), 기존 사용자등록 페이지
