@@ -323,3 +323,5 @@ sentry_sdk.init(
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
     send_default_pii=True,
 )
+
+CSRF_FAILURE_VIEW = 'analysis.custom.custom_interceptor.custom_csrf_failure_view'

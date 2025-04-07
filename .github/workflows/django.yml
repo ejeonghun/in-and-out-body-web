@@ -71,7 +71,7 @@ jobs:
           port: ${{ secrets.DEV_SSH_PORT }}
           script: |
             source ~/.zshrc
-            docker exec in-and-out-body-web-dev2-container bash -c "
+            docker exec 3e46978ed280 bash -c "
               git pull origin feature-test &&
               pip install --upgrade pip &&
               pip install -r requirements.txt &&
