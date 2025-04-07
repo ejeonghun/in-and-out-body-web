@@ -16,10 +16,6 @@ import time
 import json
 import random
 import sentry_sdk
-import logging
-
-# Set up a logger for this module
-logger = logging.getLogger(__name__)
 
 class NCPSMSSender:
     _instance = None
@@ -79,25 +75,23 @@ class NCPSMSSender:
             ]
         }
         
-        try:
-            response = requests.post(
-                self.url + self.uri,
-                headers=self._get_headers(),
-                data=json.dumps(data)
-            )
-            result = response.json()
-            
-            # Log the result
-            logger.error(f'Failed to send SMS: {result}')
-            sentry_sdk.capture_message(f'SMS result: {result}')
+        response = requests.post(
+            self.url + self.uri,
+            headers=self._get_headers(),
+            data=json.dumps(data)
+        )
+        
+        result = response.json()
+        
+        # response의 JSON 응답값에 statusCode를 추출 
+        
+        print(result)
+        if result.get('statusCode') != '202':
+            # 에러 발생
+            sentry_sdk.capture_message(f"SMS sending failed: {result}")
+            return False
 
-            return True  # Indicate success
-
-        except Exception as e:
-            # Log the exception and send it to Sentry
-            logger.error(f'Exception occurred while sending SMS: {str(e)}')
-            sentry_sdk.capture_exception(e)
-            return False  # Indicate failure
+        return result.get('statusCode') == '202'
 
             # 'request_id': result.get('requestId'),
             # 'status_code': response.status_code,

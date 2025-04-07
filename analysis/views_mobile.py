@@ -495,13 +495,12 @@ def mobile_send_auth_sms(request):
     except UserInfo.DoesNotExist:
         pass
 
-    
     result = send_sms(phone_number)
 
-    if (result == 'send'):
+    if (result):
         return Response({'message': 'success'}, status=status.HTTP_200_OK)
     else:
-        return Response({'message': 'transmission failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'message': 'not sent'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) # 여러 오류
 
 
 @swagger_auto_schema(**mobile_check_auth_sms_)
@@ -521,7 +520,7 @@ def mobile_check_auth_sms(request):
         if result:
             return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'transmission failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': 'auth_code incorrect'}, status=status.HTTP_400_BAD_REQUEST)
     
     except Exception as e:
         return Response({'message': str(e), 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

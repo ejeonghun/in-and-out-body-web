@@ -445,10 +445,10 @@ def send_sms(phone_number: str) -> str:
     redis_client = RedisClient() # 싱글톤 객체 생성
     
     # SMS 전송 여부 확인 (7일동안 총 2통만 전송 가능)
-    SMSPossible = redis_client.can_send_sms(phone_number)
+    # SMSPossible = redis_client.can_send_sms(phone_number)
 
-    if not SMSPossible:
-        return 'limit'
+    #if not SMSPossible:
+    #    return False
 
     try:
         # (6자리 int 형태의 인증코드 생성)
@@ -458,17 +458,17 @@ def send_sms(phone_number: str) -> str:
 
         # SMS 전송
         if not phone_number or not auth_code:
-            return 'required'
+            return False
         
         send_result = ncp_client.send(phone=phone_number, verification_code=auth_code)
 
         if send_result:
             # Redis에 인증코드 저장
             redis_client.save_code(phone_number=phone_number, verification_code=auth_code)
-            return 'send'
+            return True
 
         else:
-            return 'error'
+            return False
 
     except Exception as e:
         raise e
@@ -478,11 +478,3 @@ def check_sms_code(phone_number: str, verification_code: str) -> bool:
     redis_client = RedisClient() # 싱글톤 객체 생성
 
     return redis_client.check_code(phone_number, verification_code)
-
-
-def write_log(message):
-    import logging
-    # sentry 발송
-    logger = logging.getLogger(__name__)
-    logger.warning(message)
-    logger.exception(message)
