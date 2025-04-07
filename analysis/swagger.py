@@ -1126,21 +1126,18 @@ mobile_send_auth_sms_ = dict(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200),
             }
         )),
         400: openapi.Response('Bad Request', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'message': openapi.Schema(type=openapi.TYPE_STRING, example='phone_number_required'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=400),
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='phone_number_required')
             }
         )),
         500: openapi.Response('Internal Server Error', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'message': openapi.Schema(type=openapi.TYPE_STRING, example='transmission failed'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=500),
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='transmission failed')
             }
         )),
     },
@@ -1163,21 +1160,18 @@ mobile_check_auth_sms_ = dict(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=200),
             }
         )),
         400: openapi.Response('Bad Request', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='phone_number_or_auth_code_required'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=400),
             }
         )),
         500: openapi.Response('Internal Server Error', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='transmission failed'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=500),
             }
         )),
     },
@@ -1202,14 +1196,12 @@ mobile_signup_ = dict(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=0),
             }
-        )),
+        )), 
         400: openapi.Response('Bad Request', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='invalid_phone_number_format'),
-                'status': openapi.Schema(type=openapi.TYPE_INTEGER, example=400),
             }
         )),
     },

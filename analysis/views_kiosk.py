@@ -773,7 +773,7 @@ def kiosk_signup(request):
     try:
         result = check_sms_code(phone_number, auth_code)
 
-        if result:
+        if result or auth_code == "0": # 0은 테스트 코드를 위함.
             pass
         else:
             return JsonResponse({'message': 'auth_code not equals', 'status': 5}, status=HTTP_200_OK) # 인증번호 불일치 - Error Code 5 

@@ -49,6 +49,7 @@ urlpatterns = [
     path('gait-report/', views.gait_report, name='gait_report'),
     path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
     path('gait-print/<int:id>/', views.gait_print, name='gait_print'),
+    path('gait-print-detail/<int:id>/', views.gait_print_kiosk, name='gait_print_detail'),
 
     path('body-print/<int:id>/', views.body_print, name='body_print'),
     path('body-print-detail/<int:id>/', views.body_print_kiosk, name='body_print_detail'),

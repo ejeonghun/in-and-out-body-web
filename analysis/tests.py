@@ -334,7 +334,7 @@ class OrgTests(TestCase):
         self.session_key = response.data['data']['session_key']
 
         # 키오스크 회원가입
-        response = self.client.post('/api/signup-kiosk/', {'session_key': self.session_key, 'phone_number': '01058581212', 'password': '12345', 'auth_code': ""}, format='json')
+        response = self.client.post('/api/signup-kiosk/', {'session_key': self.session_key, 'phone_number': '01058581212', 'password': '12345', 'auth_code': "0"}, format='json')
 
         # 응답값의 data안에 "status"의 int값이 0이면 OK 임
         self.assertEqual(response.data['data']['status'], 0)

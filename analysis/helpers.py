@@ -468,6 +468,7 @@ def send_sms(phone_number: str) -> str:
             return 'send'
 
         else:
+            write_log(f"SMS 전송 실패: {phone_number}, {send_result}")
             return 'error'
 
     except Exception as e:
@@ -478,3 +479,11 @@ def check_sms_code(phone_number: str, verification_code: str) -> bool:
     redis_client = RedisClient() # 싱글톤 객체 생성
 
     return redis_client.check_code(phone_number, verification_code)
+
+
+def write_log(message):
+    import logging
+    # sentry 발송
+    logger = logging.getLogger(__name__)
+    logger.warning(message)
+    logger.exception(message)
