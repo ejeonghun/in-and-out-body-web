@@ -314,3 +314,12 @@ LOGGING = {
         },
     },
 }
+
+import sentry_sdk
+
+sentry_sdk.init(
+    dsn="https://6c60889ff6e509b21a19fcc823a22749@o4509054364745728.ingest.de.sentry.io/4509109585838160",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
