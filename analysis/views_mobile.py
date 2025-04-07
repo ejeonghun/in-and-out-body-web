@@ -483,15 +483,15 @@ def mobile_send_auth_sms(request):
     # 추후 모바일의 UUID 등으로 기기 확인 처리 해야할 것 같음.
 
     if phone_number is None:
-        return Response({'message': 'phone_number_required', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'phone_number_required'}, status=status.HTTP_400_BAD_REQUEST)
 
     # 전화번호 형식 검사 (010으로 시작하는 11자리 문자열)
     if not re.match(r'^010\d{8}$', phone_number):
-        return Response({'message': 'invalid_phone_number_format', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'invalid_phone_number_format'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         user = UserInfo.objects.get(phone_number=phone_number)
-        return Response({'message': 'phone_number_already_exists', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'phone_number_already_exists'}, status=status.HTTP_400_BAD_REQUEST)
     except UserInfo.DoesNotExist:
         pass
 
@@ -499,9 +499,9 @@ def mobile_send_auth_sms(request):
     result = send_sms(phone_number)
 
     if (result == 'send'):
-        return Response({'message': 'success', 'status': 200}, status=status.HTTP_200_OK)
+        return Response({'message': 'success'}, status=status.HTTP_200_OK)
     else:
-        return Response({'message': 'transmission failed', 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'message': 'transmission failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @swagger_auto_schema(**mobile_check_auth_sms_)
@@ -513,15 +513,15 @@ def mobile_check_auth_sms(request):
     auth_code = request.data.get('auth_code')
 
     if not phone_number or not auth_code:
-        return Response({'message': 'phone_number_or_auth_code_required', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'phone_number_or_auth_code_required'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         result = check_sms_code(phone_number, auth_code)
 
         if result:
-            return Response({'message': 'success', 'status': 200}, status=status.HTTP_200_OK)
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'transmission failed', 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': 'transmission failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     except Exception as e:
         return Response({'message': str(e), 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -539,20 +539,20 @@ def mobile_signup(request):
 
     # 전화번호 형식 검사 (010으로 시작하는 11자리)
     if not phone_number or not re.match(r'^010\d{8}$', phone_number):
-        return Response({'message': 'invalid_phone_number_format', 'status': 400}, status=status.HTTP_400_BAD_REQUEST) # 잘못된 전화번호 형식 - Error Code 2
+        return Response({'message': 'invalid_phone_number_format'}, status=status.HTTP_400_BAD_REQUEST) # 잘못된 전화번호 형식 - Error Code 2
 
     if not phone_number or not password:
-        return Response({'message': 'phone_number_and_password_required', 'status': 400}, status=status.HTTP_400_BAD_REQUEST) # 전화번호와 비밀번호 필수 - Error Code 4
+        return Response({'message': 'phone_number_and_password_required'}, status=status.HTTP_400_BAD_REQUEST) # 전화번호와 비밀번호 필수 - Error Code 4
 
     if dob is not None:
         # YYYY 형태의 문자열인지 확인 (년도만 입력받음)
         if len(str(dob)) != 4:
-            return Response({'message': 'invalid_dob_format', 'status': 400}, status=status.HTTP_400_BAD_REQUEST) # 잘못된 생년월일 형식 - Error Code 2
+            return Response({'message': 'invalid_dob_format'}, status=status.HTTP_400_BAD_REQUEST) # 잘못된 생년월일 형식 - Error Code 2
     
     if gender is not None:
         # 0, 1로 입력 받아서 확인을 거치고, 0: M, 1: F로 변환
         if gender not in ['0', '1']:
-            return Response({'message': 'invalid_gender_format', 'status': 400}, status=status.HTTP_400_BAD_REQUEST) # 잘못된 성별 형식 - Error Code 2
+            return Response({'message': 'invalid_gender_format'}, status=status.HTTP_400_BAD_REQUEST) # 잘못된 성별 형식 - Error Code 2
         else:
             gender_format = 'M' if gender == '0' else 'F'  # Correct assignment
 
@@ -577,4 +577,4 @@ def mobile_signup(request):
 
     authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
 
-    return Response({'message': 'success', 'status': 200}, status=status.HTTP_200_OK)
+    return Response({'message': 'success'}, status=status.HTTP_200_OK)

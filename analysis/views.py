@@ -1812,7 +1812,7 @@ def body_print_kiosk(request, id):
 
 
 @login_required
-def gait_print(request, id):
+def gait_print(request, id, detail=None):
     user = UserInfo.objects.filter(id=id).first()
     if not user:
         return render(request, '404.html', status=404)
@@ -1905,7 +1905,7 @@ def gait_print(request, id):
     }
 
     # 변화 추이 데이터 준비 (최근 5개 결과)
-    gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:5]
+    gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:4]
 
     if len(gait_trends) >= 1:  # 추이 데이터가 1개 이상인 경우에만 차트 생성
         trend_data = {
@@ -1979,5 +1979,11 @@ def gait_print(request, id):
         'normal_ranges': json.dumps(normal_ranges),
         'code_info': json.dumps(code_info_context, cls=DjangoJSONEncoder)
     }
-
+    if detail is not None:
+        return render(request, 'gait_print_kiosk.html', context)
     return render(request, 'gait_print.html', context)
+
+
+@login_required()
+def gait_print_kiosk(request, id):
+    return gait_print(request, id, detail=True)
