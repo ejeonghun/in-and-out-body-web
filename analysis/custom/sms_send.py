@@ -15,6 +15,7 @@ import requests
 import time
 import json
 import random
+import sentry_sdk
 
 class NCPSMSSender:
     _instance = None
@@ -85,6 +86,12 @@ class NCPSMSSender:
         # response의 JSON 응답값에 statusCode를 추출 
         
         print(result)
+
+        if result.get('statusCode') != '202':
+            # Sentry 트리거 
+            sentry_sdk.capture_exception(
+                Exception(result)
+            )
 
         return result.get('statusCode') == '202'
 

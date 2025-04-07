@@ -468,7 +468,6 @@ def send_sms(phone_number: str) -> str:
             return 'send'
 
         else:
-            write_log(f"SMS 전송 실패: {phone_number}, {send_result}")
             return 'error'
 
     except Exception as e:
