@@ -261,7 +261,8 @@
                 </td>
                 <td>
                     {% if result.analysis_valid %}
-                        <button class="view-details-btn" data-userid="{{ result.user.id }}">상세 보기</button>
+{#                        <button class="view-details-btn" data-userid="{{ result.user.id }}">상세 보기</button>#}
+                        <button class="view-details-btn" data-userid="{{ result.user.id }}">보고서</button>
                     {% else %}
                         <span class="no-data">데이터 없음</span>
                     {% endif %}
@@ -493,7 +494,10 @@
             detailButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const userId = this.getAttribute('data-userid');
-                    openUserDetailModal(userId);
+                    {#openUserDetailModal(userId);#}
+                    // 새탭에서 열기
+                    const url = `/gait-print-detail/${userId}/`;
+                    const newTab = window.open(url, '_blank');
                 });
             });
         }
