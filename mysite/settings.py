@@ -296,22 +296,30 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s, %(message)s',  # 시간과 메시지 포맷
-            'datefmt': '%Y-%m-%d %H:%M:%S',  # 날짜 형식
+            'format': '%(asctime)s, %(levelname)s, %(message)s',  # Updated format to include level
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
     },
     'handlers': {
-        'file': {
+        'bad_access_file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(f'{BASE_DIR}/logs', 'bad_access.log'),  # BASE_DIR에 bad_access.log 파일 경로
-            'formatter': 'verbose',  # 포맷터 적용
+            'filename': os.path.join(f'{BASE_DIR}/logs', 'bad_access.log'),  # Log file for bad access
+            'formatter': 'verbose',
+        },
+        'debug_file': {
+            'level': 'DEBUG',  # Set to DEBUG to capture all debug logs
+            'class': 'logging.handlers.RotatingFileHandler',  # Use RotatingFileHandler
+            'filename': os.path.join(f'{BASE_DIR}/logs', 'debug.log'),  # Log file for debug messages
+            'maxBytes': 2 * 1024 * 1024,  # 2 MB
+            'backupCount': 5,  # Keep 5 backup files
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
-            'level': 'WARNING',
+            'handlers': ['bad_access_file', 'debug_file'],  # Use both handlers
+            'level': 'DEBUG',  # Set to DEBUG to capture all logs
             'propagate': True,
         },
     },
