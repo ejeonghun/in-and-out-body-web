@@ -978,8 +978,8 @@
             const leftLegLength = baseLegLength * (1 + legLengthRatio / 100);
             const rightLegLength = baseLegLength * (1 - legLengthRatio / 100);
 
-            const leftLegX = centerX - legWidth / 2 - 12;
-            const rightLegX = centerX + legWidth / 2 + 12;
+            const leftLegX = centerX - legWidth / 2 - 8;
+            const rightLegX = centerX + legWidth / 2 + 8;
 
             // Determine color based on normal range (-3 to 3)
             const legColor = (legLengthRatio >= -3 && legLengthRatio < 3) ? '#38ACFF' : '#FF0202';
@@ -1096,8 +1096,8 @@
             const leftKneeX = leftHipX + Math.sin(leftAngleRad) * leftHipToKneeLength;
             const leftKneeY = leftHipY + Math.cos(leftAngleRad) * leftHipToKneeLength;
 
-            const leftAnkleX = leftHipX + 6;
-            const leftAnkleY = leftHipY + leftHipToKneeLength + leftKneeToAnkleLength - 80;
+            const leftAnkleX = leftHipX + 5;
+            const leftAnkleY = leftHipY + leftHipToKneeLength + leftKneeToAnkleLength - 55;
 
             // Right knee (moved to the left)
             const rightHipX = x + scaledWidth * 0.35;
@@ -1107,8 +1107,8 @@
             const rightKneeX = rightHipX + Math.sin(rightAngleRad) * rightHipToKneeLength;
             const rightKneeY = rightHipY + Math.cos(rightAngleRad) * rightHipToKneeLength;
 
-            const rightAnkleX = rightHipX + 32;
-            const rightAnkleY = rightHipY + rightHipToKneeLength + rightKneeToAnkleLength - 80;
+            const rightAnkleX = rightHipX + 21;
+            const rightAnkleY = rightHipY + rightHipToKneeLength + rightKneeToAnkleLength - 55;
 
             // Determine colors based on normal range (170 to 180)
             const leftKneeColor = (leftKneeAngle >= 170 && leftKneeAngle < 180) ? '#38ACFF' : '#FF0202';
