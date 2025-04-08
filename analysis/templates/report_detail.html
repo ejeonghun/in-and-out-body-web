@@ -318,6 +318,14 @@
                 color: #222222;
             }
         }
+        
+        @media print {
+            * { /* 인쇄 시 배경 그래픽 강제 적용 */
+                -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
+                color-adjust: exact !important; /* Firefox */
+                print-color-adjust: exact !important; /* 표준 속성 */
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-6" id="report-body">
@@ -331,14 +339,11 @@
     <script>
         document.getElementById('print-report').addEventListener('click', function() {
             // 인쇄 페이지를 새 창으로 열고 자동으로 인쇄 팝업 표시
-            var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
+            // var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
+            const printContainer = document.querySelector(".print-button-container");
+            printContainer.style.display = "none";
             
-            // 인쇄 페이지가 로드된 후 자동으로 인쇄 대화상자를 표시합니다
-            // printWindow.onload = function() {
-            //    setTimeout(function() {
-            //        printWindow.print();
-            //    }, 1000); // 1초 지연으로 페이지가 완전히 로드될 시간을 줍니다
-            // };
+            window.print();
         });
     </script>
     
