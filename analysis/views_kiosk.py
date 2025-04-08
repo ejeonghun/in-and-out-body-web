@@ -834,7 +834,7 @@ def kiosk_send_sms(request):
     
     result = send_sms(phone_number)
 
-    if (result == 'send'):
+    if (result):
         return JsonResponse({'message': 'success', 'status': 0}, status=HTTP_200_OK)
     else:
         return JsonResponse({'message': 'failed', 'status': 500}, status=HTTP_200_OK)
