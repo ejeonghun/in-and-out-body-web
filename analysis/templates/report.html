@@ -137,6 +137,7 @@
                     {% endif %}
                     <th>이름</th>
                     <th>체형 분석 결과</th>
+                    <th>인쇄용</th>
                 </tr>
             </thead>
             <tbody id="userResultsTableBody">
@@ -158,6 +159,23 @@
                                 </a> 
                             {% else %}
                                 <a href="{% url 'report_detail' result.user.id %}" class="icon-button success" aria-label="View Report">
+                                    <i class="fa-solid fa-check"></i>
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'no_result' %}" class="icon-button error" aria-label="No Result">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+                        {% endif %}
+                    </td>
+                <td>
+                        {% if result.analysis_valid %}
+                            {% if result.created_dt %}
+                            <a href="/body-print/{{ result.user.id }}/" class="icon-button success" aria-label="View Report">
+                                    <i class="fa-solid fa-check"></i>
+                                </a>
+                            {% else %}
+                                <a href="/body-print/{{ result.user.id }}/" class="icon-button success" aria-label="View Print page">
                                     <i class="fa-solid fa-check"></i>
                                 </a>
                             {% endif %}

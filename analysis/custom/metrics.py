@@ -1,6 +1,8 @@
 from prometheus_client import Counter, Gauge
 from django.utils.timezone import now, timedelta
 
+# from analysis.models import OrganizationInfo
+
 # 학교 별 체형 카운팅
 body_result_by_school = Counter(
     'django_model_body_result_by_school_total',
@@ -65,3 +67,7 @@ def calculate_active_users():
     select distinct(user_id) from analysis_bodyresult 
     where created_dt >= now() - INTERVAL '1 days' and mobile_yn = 'y';
     """
+
+
+# def count_org_register(orgInfo:OrganizationInfo):
+#     return

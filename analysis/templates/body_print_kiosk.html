@@ -1,0 +1,525 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>체형 분석 보고서 - 인쇄용</title>
+    <style>
+        /* 기본 스타일 */
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+
+        #all_content {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 8mm;
+            margin: 10mm auto;
+            border-radius: 5px;
+            background: #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #top-text {
+            margin: 0;
+        }
+
+        /* 헤더 스타일 */
+        #top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .top_left_container {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .top_left_container > h2 {
+            margin-left: 10px;
+            font-size: 20px;
+            color: #828282;
+        }
+
+        .top_left_container > img {
+            width: 84px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .userinfo {
+            margin-top: 20px;
+            border-bottom: 3px solid #000;
+            border-top: 3px solid #000;
+            padding: 4px;
+            display: table;
+        }
+
+        .userinfo div {
+            display: table-row;
+            text-align: left;
+        }
+
+        .userinfo div > div {
+            display: table-cell;
+            padding: 5px 10px;
+        }
+
+        .userinfo .header {
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+        }
+
+        /* 스캔 항목 카드 스타일 */
+        .scan-section {
+            margin-top: 20px;
+        }
+
+        .scan-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 5px 10px;
+            background-color: #f0f7fc;
+            border-left: 5px solid #38ACFF;
+        }
+
+        .scan-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .scan-card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .scan-header {
+            background: linear-gradient(to right, #38ACFF, #FFD166);
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scan-title-text {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .scan-value {
+            font-size: 14px;
+            font-weight: bold;
+            background-color: white;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 15px;
+        }
+
+        .scan-body {
+            padding: 12px;
+            background-color: white;
+        }
+
+        .scan-metric {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .scan-slider {
+            position: relative;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .scan-slider-track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
+        }
+
+        .scan-slider-indicator {
+            position: absolute;
+            height: 20px;
+            width: 2px;
+            background-color: black;
+            top: -5px;
+        }
+
+        .scan-slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .scan-chart {
+            height: 120px;
+            margin: 10px 0;
+        }
+
+        .scan-description {
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        .scan-description h4 {
+            color: #ffffff;
+            margin: 10px 0 5px 0;
+            font-size: 13px;
+        }
+
+        .scan-description p {
+            margin: 5px 0;
+        }
+
+        /* 인쇄 설정 */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
+                color-adjust: exact !important; /* Firefox */
+                print-color-adjust: exact !important; /* 표준 속성 */
+            }
+
+            html, body {
+                width: 210mm;
+                height: 297mm;
+            }
+
+            #all_content {
+                margin: 0;
+                border: initial;
+                border-radius: initial;
+                width: initial;
+                min-height: initial;
+                box-shadow: initial;
+                page-break-after: always;
+            }
+
+            .scan-card {
+                break-inside: avoid; /* 카드가 페이지 사이에서 분리되지 않도록 함 */
+            }
+
+            .scan-grid {
+                page-break-after: auto; /* 그리드 후 자동 페이지 나누기 */
+            }
+
+            h3, h2 {
+                page-break-after: avoid; /* 제목 후 바로 페이지 나누기 방지 */
+            }
+        }
+
+        .accordion-item {
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 8px;
+        }
+
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: linear-gradient(to right, #38ACFF, #FFD166);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .accordion-header h4 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .accordion-item.active .accordion-content {
+            padding: 10px;
+            max-height: 500px;
+        }
+
+        .accordion-item.active .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+
+    </style>
+</head>
+<body>
+<div id="all_content">
+    <!-- 헤더 -->
+    <div id="top">
+        <div>
+            <div class="top_left_container"><img src="{% static 'images/AICU_CI.png' %}" alt="logo">
+                <h2>바디스캐너</h2></div>
+            <div class="top_left_container"><h1 id="top-text">체형분석 결과</h1></div>
+        </div>
+        <div class="userinfo">
+            <div class="header">
+                <div>연령</div>
+                <div>성별</div>
+                <div class="date">검사일시</div>
+            </div>
+            <div>
+                <div>{{ user.dob|calc_age }}</div>
+                <div>
+                    {% if user.gender == 'M' %}
+                        남성
+                    {% elif user.gender == 'F' %}
+                        여성
+                    {% else %}
+                        정보없음
+                    {% endif %}
+                </div>
+                <div class="date">{{ dates }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스캔 결과 섹션 -->
+    <div class="scan-section">
+        <h3 class="scan-title">체형 분석 상세 결과</h3>
+
+        <!-- 스캔 결과 그리드 -->
+        <div class="scan-grid">
+            {% for item in report_items %}
+                <div class="scan-card">
+                    <div class="scan-header">
+                        <h3 class="scan-title-text">{{ item.title }}</h3>
+                        <span class="scan-value">{{ item.result|safe }}</span>
+                    </div>
+                    <div class="scan-body">
+                        <div class="scan-metric"><strong>측정 항목:</strong> {{ item.metric }}</div>
+
+                        <!-- 슬라이더 -->
+                        <div class="scan-slider">
+                            <div class="scan-slider-track" id="track-{{ item.alias }}"></div>
+                            <div class="scan-slider-indicator" id="indicator-{{ item.alias }}"></div>
+                        </div>
+                        <div class="scan-slider-labels">
+                            <span>{{ item.value_range.0 }}{{ item.unit }}</span>
+                            <span>{{ item.value_range.1 }}{{ item.unit }}</span>
+                        </div>
+
+                        <!-- 차트 -->
+                        <div class="scan-chart">
+                            <canvas id="chart-{{ item.alias }}"></canvas>
+                        </div>
+
+                        <!-- 설명 섹션 -->
+                        <!-- 설명 섹션 -->
+                        <div class="scan-description">
+                            {% for title, content in item.sections.items %}
+                                <div class="accordion-item active">
+                                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                                        <h4>{{ title }}</h4>
+                                        <span class="toggle-icon">▼</span>
+                                    </div>
+                                    <div class="accordion-content">
+                                        {% if title == '권장계획' and content|is_list %}
+                                            <ul>
+                                                {% for item in content %}
+                                                    <li>{{ item }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <p>{{ content|linebreaks }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <script>
+                            function toggleAccordion(element) {
+                                const item = element.parentElement;
+                                item.classList.toggle('active');
+                            }
+
+
+                        </script>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 트렌드 데이터 가져오기
+        const trendDataDict = {{ trend_data_dict|safe }};
+
+        // 각 항목별 슬라이더 및 차트 초기화
+        {% for item in report_items %}
+            // 슬라이더 설정
+            updateSlider('{{ item.alias }}', {{ item.value_range|safe }}, {{ item.normal_range|safe }},
+                {% if item.alias == 'spinal_imbalance' or item.alias == 'o_x_legs' or item.alias == 'knee_angle' %}
+                    trendDataDict['{{ item.alias }}'].val1[trendDataDict['{{ item.alias }}'].val1.length - 1]
+                {% else %}
+                    trendDataDict['{{ item.alias }}'].values[trendDataDict['{{ item.alias }}'].values.length - 1]
+                {% endif %}
+            );
+
+            console.log('{{ item.title }}');
+
+            // 차트 설정
+            initChart('{{ item.alias }}', {{ item.normal_range|safe }}, {{ item.value_range|safe }}, '{{ item.title }}');
+        {% endfor %}
+
+        // 인쇄 자동 실행 (필요시 주석 해제)
+        // window.print();
+    });
+
+    // 슬라이더 업데이트 함수
+    function updateSlider(alias, valueRange, normalRange, currentValue) {
+        const track = document.getElementById(`track-${alias}`);
+        const indicator = document.getElementById(`indicator-${alias}`);
+
+        if (!track || !indicator) return;
+
+        // 트랙 색상 설정 (정상 범위 표시)
+        const minValue = valueRange[0];
+        const maxValue = valueRange[1];
+        const normalStartPercent = ((normalRange[0] - minValue) / (maxValue - minValue)) * 100;
+        const normalEndPercent = ((normalRange[1] - minValue) / (maxValue - minValue)) * 100;
+
+        track.style.background = `
+            linear-gradient(to right,
+                red ${normalStartPercent}%,
+                #38ACFF ${normalStartPercent}%,
+                #38ACFF ${normalEndPercent}%,
+                red ${normalEndPercent}%
+            )
+        `;
+
+        // 인디케이터 위치 설정
+        const percent = ((currentValue - minValue) / (maxValue - minValue)) * 100;
+        indicator.style.left = `${percent}%`;
+    }
+
+    // 차트 초기화 함수
+    function initChart(alias, normalRange, valueRange, item_title) {
+        const ctx = document.getElementById(`chart-${alias}`).getContext('2d');
+        const trendDataDict = {{ trend_data_dict|safe }};
+
+        // 날짜 포맷 조정
+        let labels, datasets;
+
+        if (['spinal_imbalance', 'o_x_legs', 'knee_angle'].includes(alias)) {
+            // 두 값이 있는 경우 (예: 양쪽 무릎 각도)
+            labels = trendDataDict[alias].dates.map(date => date.slice(0, 10));
+
+            datasets = [
+                {
+                    label: trendDataDict[alias].part[0],
+                    data: trendDataDict[alias].val1,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 2,
+                    pointRadius: 4
+                },
+                {
+                    label: trendDataDict[alias].part[1],
+                    data: trendDataDict[alias].val2,
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderWidth: 2,
+                    pointRadius: 4
+                }
+            ];
+        } else {
+            // 단일 값인 경우
+            labels = trendDataDict[alias].dates.map(date => date.slice(0, 10));
+
+            datasets = [{
+                label: item_title,
+                data: trendDataDict[alias].values,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderWidth: 2,
+                pointRadius: 4
+            }];
+        }
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: valueRange[0],
+                        max: valueRange[1],
+                        ticks: {
+                            font: {size: 9}
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {size: 9},
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {size: 9}
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

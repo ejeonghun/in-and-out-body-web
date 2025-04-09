@@ -22,7 +22,7 @@ class IsAllowedIP(BasePermission):
         # IP 체크 로직
         if (ip.startswith('192.168.0.') and 1 <= int(ip.split('.')[-1]) <= 254) or \
                 (ip.startswith('172.21.0.') and 1 <= int(ip.split('.')[-1]) <= 254) or \
-                ip in ['211.229.120.122', '127.0.0.1']:
+                ip in ['14.46.152.143', '127.0.0.1']:
             return True
 
         # 허용되지 않은 IP일 경우 로깅 및 404 Page not found 에러 발생

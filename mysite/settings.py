@@ -14,8 +14,6 @@ import os
 from pathlib import Path
 
 import dotenv
-import sentry_sdk
-
 dotenv.load_dotenv(override=True)
 
 
@@ -26,19 +24,15 @@ dev : 개발 환경
 
 ENVIRONMENT = os.getenv('ENVIRONMENT') # 운영 환경
 SECRETKEY = os.getenv('SECRET_KEY') # 시크릿
-LOCAL = os.getenv('LOCAL') # 로컬 환경
+LOCAL = os.getenv('LOCAL')
 
 print(f'운영환경 : {ENVIRONMENT} 으로 시작됨')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIRONMENT == 'dev' or ENVIRONMENT == 'debug':
+if ENVIRONMENT == 'dev' or ENVIRONMENT == 'debug' or LOCAL == 'true':
     DEBUG = True
 else:
     DEBUG = False
-
-if LOCAL == 'true':
-    DEBUG = True
-    print('로컬 환경에서 실행됨')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -269,7 +263,9 @@ CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'https://body.aicu.life',
     'http://aicu-office.iptime.org:65002',
     'https://test-body.aicu.life',
-    'http://10.0.2.2'
+    'http://10.0.2.2',
+    'http://localhost:8000',
+    'http://localhost'
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
@@ -288,11 +284,10 @@ ALLOWED_HOSTS = [
     'www.body.aicu.life',
     'aicu-office.iptime.org',
     'localhost',
+    '127.0.0.1',
     'test-body.aicu.life',
-    '10.0.2.2', # Android Emulator
-    'host.docker.internal', # Docker HOST OS addr
-    '172.17.0.1', # Docker Host addr
-    '54.180.114.131'
+    'www.test-body.aicu.life',
+    '10.0.2.2' # Android Emulator
 ]
 
 
@@ -302,27 +297,28 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s, %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S',
+            'format': '%(asctime)s, %(message)s',  # 시간과 메시지 포맷
+            'datefmt': '%Y-%m-%d %H:%M:%S',  # 날짜 형식
         },
     },
     'handlers': {
         'file': {
-            'level': 'ERROR',
+            'level': 'WARNING',
             'class': 'logging.FileHandler',
             'filename': os.path.join(f'{BASE_DIR}/logs', 'bad_access.log'),  # BASE_DIR에 bad_access.log 파일 경로
-            'formatter': 'verbose',
+            'formatter': 'verbose',  # 포맷터 적용
         },
     },
     'loggers': {
-        'django.request': {
+        'django': {
             'handlers': ['file'],
-            'level': 'ERROR',
-            'propagate': False,
+            'level': 'WARNING',
+            'propagate': True,
         },
     },
 }
 
+import sentry_sdk
 
 # 모니터링 SDK 설정
 sentry_sdk.init(
@@ -331,3 +327,5 @@ sentry_sdk.init(
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
     send_default_pii=True,
 )
+
+CSRF_FAILURE_VIEW = 'analysis.custom.custom_interceptor.custom_csrf_failure_view'

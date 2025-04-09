@@ -364,8 +364,8 @@ def create_body_result(request) -> Response:
             body_data['student_class'] = user_info.student_number
             body_data['student_number'] = user_info.student_number
 
-        body_data['image_front_url'] = 'Not_yet_queried'  # 임시 데이터
-        body_data['image_side_url'] = 'Not_yet_queried'  # 추후 체형 분석 결과 쿼리 시 Image URL로 변경됨
+        body_data['image_front_url'] = 'N'  # 임시 데이터
+        body_data['image_side_url'] = 'N'  # 추후 체형 분석 결과 쿼리 시 Image URL로 변경됨
 
         # BodyResult 생성
         serializer = BodyResultSerializer(data=body_data)

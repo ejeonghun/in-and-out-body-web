@@ -431,3 +431,45 @@ def session_check_expired(session: SessionInfo, check=None) -> bool:
 #         cache.set('KIOSK_LATEST_VERSION', version, timeout=30 * 60)
 
 #     return version
+
+
+from .custom.sms_send import NCPSMSSender
+from .custom.redis_func import RedisClient
+
+
+def send_sms(phone_number: str) -> str:
+    ncp_client = NCPSMSSender()  # 싱글톤 객체 생성
+    redis_client = RedisClient()  # 싱글톤 객체 생성
+
+    # SMS 전송 여부 확인 (7일동안 총 10통만 전송 가능) -
+    SMSPossible = redis_client.can_send_sms(phone_number)
+
+    if not SMSPossible:
+        return 'limit'
+
+    try:
+        # (6자리 int 형태의 인증코드 생성)
+        from random import randint
+
+        auth_code = randint(100000, 999999)
+
+        send_result = ncp_client.send(phone=phone_number, verification_code=auth_code)
+
+        if send_result:
+            # Redis에 인증코드 저장
+            redis_client.save_code(phone_number=phone_number, verification_code=auth_code)
+            return 'sent'
+
+        else:
+            return 'not_sent'
+
+    except Exception as e:
+        raise e
+        return ''
+        # return JsonResponse({'message': f'error: {str(e)}', 'status': 500}, status=HTTP_200_OK)
+
+
+def check_sms_code(phone_number: str, verification_code: str) -> bool:
+    redis_client = RedisClient()  # 싱글톤 객체 생성
+
+    return redis_client.check_code(phone_number, verification_code)
