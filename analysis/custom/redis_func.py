@@ -13,7 +13,7 @@ class RedisClient:
             # 환경 변수에서 Redis 정보 가져오기
             rd_host = os.environ.get("REDIS_HOST", "localhost")
             rd_pw = os.environ.get("REDIS_PASSWORD", None)
-
+            
             # Redis 연결 생성
             cls._instance = super(RedisClient, cls).__new__(cls)
             cls._instance.client = redis.StrictRedis(
@@ -44,7 +44,12 @@ class RedisClient:
 
         current_count = int(current_count)
 
-        if current_count < 2:
+        # 개발 환경에서는 10회 제한 해제
+        environment = os.environ.get("ENVIRONMENT")
+        if environment == "dev":
+            return True
+
+        if current_count < 11:
             # 횟수 증가
             redis_client.incr(key)
             return True

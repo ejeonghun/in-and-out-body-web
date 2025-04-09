@@ -1096,6 +1096,12 @@ mobile_send_auth_sms_ = dict(
                 'message': openapi.Schema(type=openapi.TYPE_STRING, example='phone_number_required')
             }
         )),
+        429: openapi.Response('Too Many Requests', openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, example='too_many_requests')
+            }
+        )),
         500: openapi.Response('Internal Server Error', openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
