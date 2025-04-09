@@ -34,6 +34,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', views.home, name='home'),
+
+    path('qr', views.qr, name='qr'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html', redirect_authenticated_user=True, next_page='main'), name='login'),
     path('signup/', views.signup, name='signup'),
     # path('register/', views.register, name='register'), 기존 사용자등록 페이지
@@ -49,10 +51,10 @@ urlpatterns = [
     path('gait-report/', views.gait_report, name='gait_report'),
     path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
     path('gait-print/<int:id>/', views.gait_print, name='gait_print'),
-    path('gait-print-detail/<int:id>/', views.gait_print_kiosk, name='gait_print_detail'),
+    path('gait-print-detail/<int:id>/', views.gait_print_kiosk, name='gait_print_detail'), # 헤더에 JWT 토큰 넣을 시 모바일에서 요청 가능
 
-    path('body-print/<int:id>/', views.body_print, name='body_print'),
-    path('body-print-detail/<int:id>/', views.body_print_kiosk, name='body_print_detail'),
+    path('body-print/<int:id>/', views.body_print, name='body_print'), # 헤더에 JWT 토큰 넣을 시 모바일에서 요청 가능
+    path('body-print-detail/<int:id>/', views.body_print_kiosk, name='body_print_detail'), # 헤더에 JWT 토큰 넣을 시 모바일에서 요청 가능
 
 
     path('no-result/', views.no_result, name='no_result'),
@@ -114,6 +116,8 @@ urlpatterns = [
     path('api/mobile/auth/sms_send/',        views_mobile.mobile_send_auth_sms,              name='mobile-auth-send_sms'),           # SMS 인증 요청
     path('api/mobile/auth/sms_check/',       views_mobile.mobile_check_auth_sms,        name='mobile-auth-check_sms'),          # SMS 인증 확인
     path('api/mobile/auth/signup/',       views_mobile.mobile_signup,            name='mobile-auth-signup'),             # 회원가입
+    path('api/mobile/auth/password_check/', views_mobile.is_default_Password, name="mobile-auth-init_password_check"), # 초기 비밀번호 확인
+    path('api/mobile/auth/change_password/', views_mobile.change_password, name="mobile-auth-change_password"), # 비밀번호 변경
 
 
 

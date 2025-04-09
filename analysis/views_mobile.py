@@ -31,7 +31,7 @@ import re
 from analysis.swagger import (login_mobile_, login_mobile_id_pw_, login_mobile_uuid_, delete_user_, get_user_,
                               get_code_, get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_,
                               delete_body_result_
-, mobile_send_auth_sms_, mobile_check_auth_sms_, mobile_signup_)
+, mobile_send_auth_sms_, mobile_check_auth_sms_, mobile_signup_, mobile_is_default_password_, mobile_password_change_)
 
 kst = pytz.timezone('Asia/Seoul')
 
@@ -483,6 +483,7 @@ def delete_body_result(request):
 @permission_classes([permissions.AllowAny])
 def mobile_send_auth_sms(request):
     phone_number = request.data.get('phone_number', None)
+    type = request.data.get('type', None)  # 'password' , 'None' 등으로 구분 None이면 signup, password는 type:password
     # 추후 모바일의 UUID 등으로 기기 확인 처리 해야할 것 같음.
 
     if phone_number is None:
@@ -492,19 +493,20 @@ def mobile_send_auth_sms(request):
     if not re.match(r'^010\d{8}$', phone_number):
         return Response({'message': 'invalid_phone_number_format'}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        user = UserInfo.objects.get(phone_number=phone_number)
-        return Response({'message': 'phone_number_already_exists'}, status=status.HTTP_400_BAD_REQUEST)
-    except UserInfo.DoesNotExist:
-        pass
+    if type == None:
+        try:
+            user = UserInfo.objects.get(phone_number=phone_number)
+            return Response({'message': 'phone_number_already_exists'}, status=status.HTTP_400_BAD_REQUEST)
+        except UserInfo.DoesNotExist:
+            pass
 
     result = send_sms(phone_number)
 
-    if (result == 'sent'): # 정상 전송
+    if (result == 'sent'):  # 정상 전송
         return Response({'message': 'success'}, status=status.HTTP_200_OK)
-    elif (result == 'limit'): # 발송 제한(7일 총 10총 까지 가능) - 비정상 사용 방지
+    elif (result == 'limit'):  # 발송 제한(7일 총 10총 까지 가능) - 비정상 사용 방지
         return Response({"message": "too_many_requests"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-    else: # 그 외 경우
+    else:  # 그 외 경우
         return Response({'message': 'not sent'}, status=status.HTTP_200_OK)  # 여러 오류
 
 
@@ -585,3 +587,51 @@ def mobile_signup(request):
     authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
 
     return Response({'message': 'success'}, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(**mobile_is_default_password_)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def is_default_Password(request):
+    phone_number = request.data.get('phone_number')
+
+    if not phone_number:
+        return Response({'message': 'phone_number_required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        user = UserInfo.objects.get(phone_number=phone_number)
+        init_passwd_status = check_password(os.environ['DEFAULT_PASSWORD'], user.password)
+        return Response({'is_default_password': init_passwd_status}, status=status.HTTP_200_OK)
+
+    except UserInfo.DoesNotExist:
+        return Response({'message': 'user_not_found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@swagger_auto_schema(**mobile_password_change_)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def change_password(request):
+    phone_number = request.data.get('phone_number')
+    new_password = request.data.get('new_password')
+    auth_code = request.data.get('auth_code')
+
+    if not phone_number or not new_password or not auth_code:
+        return Response({'message': 'phone_number_new_password_auth_code_required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        # 유저 검색
+        user = UserInfo.objects.get(phone_number=phone_number)
+
+        # SMS 인증번호 검사
+        isSuccess = check_sms_code(phone_number, auth_code)
+
+        if not isSuccess:
+            return Response({'message': 'auth_code_incorrect'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 비밀번호 변경
+        user.password = make_password(new_password)
+        user.save()
+        return Response({'message': 'success'}, status=status.HTTP_200_OK)
+
+    except UserInfo.DoesNotExist:
+        return Response({'message': 'user_not_found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
