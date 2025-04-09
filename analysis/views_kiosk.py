@@ -661,9 +661,9 @@ def kiosk_send_sms(request):
     result = send_sms(phone_number)
 
     if (result == 'sent'): # 정상 전송
-        return Response({'message': 'success'}, status=HTTP_200_OK)
+        return Response({'message': 'success', 'status': 0}, status=HTTP_200_OK)
     elif (result == 'limit'): # 발송 제한(7일 총 10총 까지 가능) - 비정상 사용 방지
-        return Response({"message": "too_many_requests"}, status=HTTP_429_TOO_MANY_REQUESTS)
+        return Response({"message": "too_many_requests", 'status': '4'}, status=HTTP_429_TOO_MANY_REQUESTS)
     else: # 그 외 경우
         return Response({'message': 'not sent', 'status': 500}, status=HTTP_200_OK)  # 여러 오류
 

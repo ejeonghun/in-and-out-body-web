@@ -600,7 +600,7 @@ def is_default_Password(request):
     try:
         user = UserInfo.objects.get(phone_number=phone_number)
         init_passwd_status = check_password(os.environ['DEFAULT_PASSWORD'], user.password)
-        return Response({'is_default_password': init_passwd_status}, status=status.HTTP_200_OK)
+        return Response({"data": {'is_default_password': init_passwd_status}}, status=status.HTTP_200_OK)
 
     except UserInfo.DoesNotExist:
         return Response({'message': 'user_not_found'}, status=status.HTTP_404_NOT_FOUND)
