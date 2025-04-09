@@ -1565,6 +1565,8 @@ def body_print(request, id, detail=None):
         return render(request, 'no_result.html', status=404)
     body_result_latest = body_result_queryset[len(body_result_queryset) - 1]
 
+    print(len(body_result_queryset))
+
     report_items = []
     dates = ''
 
@@ -1576,6 +1578,7 @@ def body_print(request, id, detail=None):
             body_code_id_ = body_info.code_id
             alias = body_info.code_id
             unit = body_info.unit_name
+        
             if 'leg_alignment' in body_code_id_ or 'back_knee' in body_code_id_ or 'scoliosis' in body_code_id_:
                 is_paired = True
                 if 'scoliosis' in body_code_id_:

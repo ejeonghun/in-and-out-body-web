@@ -497,6 +497,7 @@
         const frontSlidersContainer = document.getElementById('front-sliders-container');
         const sideSlidersContainer = document.getElementById('side-sliders-container');
 
+
         // 슬라이더 데이터를 저장할 배열
         const slidersData = [];
         const sideSlidersData = [];
@@ -784,7 +785,13 @@
 
             const percent =
                 ((value - minValue) / (maxValue - minValue)) * 100;
-            indicator.style.left = `${percent}%`;
+                console.log(percent);
+            if (percent < 100) {
+                indicator.style.left = `${percent}%`;
+            } else {
+                indicator.style.left = '99%';
+            }
+            
             console.log(`Updating slider position for ID: ${id}, value: ${value}`);
         }
 

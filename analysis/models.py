@@ -28,6 +28,7 @@ class CodeInfo(models.Model):
     title_improve = models.CharField(max_length=100, null=True)
     title_recommended = models.CharField(max_length=100, null=True)
     unit_name = models.CharField(max_length=20, null=True)
+    measurement_type = models.CharField(max_length=100, null=True)        # 측정 항목에 대한 값 "얼굴 좌우 대칭 정도"
     seq_no = models.IntegerField(null=True)
     display_ticks = ArrayField(
         models.IntegerField(null=True, blank=True),
