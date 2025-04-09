@@ -44,7 +44,7 @@ class RedisClient:
 
         current_count = int(current_count)
 
-        if current_count < 11:
+        if current_count < 2:
             # 횟수 증가
             redis_client.incr(key)
             return True

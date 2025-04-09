@@ -488,7 +488,7 @@ def mobile_send_auth_sms(request):
     # 전화번호 형식 검사 (010으로 시작하는 11자리 문자열)
     if not re.match(r'^010\d{8}$', phone_number):
         return Response({'message': 'invalid_phone_number_format'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         user = UserInfo.objects.get(phone_number=phone_number)
         return Response({'message': 'phone_number_already_exists'}, status=status.HTTP_400_BAD_REQUEST)
@@ -497,10 +497,12 @@ def mobile_send_auth_sms(request):
 
     result = send_sms(phone_number)
 
-    if (result):
+    if (result == 'sent'): # 정상 전송
         return Response({'message': 'success'}, status=status.HTTP_200_OK)
-    else:
-        return Response({'message': 'not sent'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) # 여러 오류
+    elif (result == 'limit'): # 발송 제한(7일 총 10총 까지 가능) - 비정상 사용 방지
+        return Response({"message": "too_many_requests"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    else: # 그 외 경우
+        return Response({'message': 'not sent'}, status=status.HTTP_200_OK)  # 여러 오류
 
 
 @swagger_auto_schema(**mobile_check_auth_sms_)
