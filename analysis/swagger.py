@@ -1178,6 +1178,114 @@ mobile_signup_ = dict(
 
 
 
+mobile_password_change_ = dict(
+    method='POST',
+    operation_summary='비밀번호 변경',
+    tags=['mobile'],
+    description='Allows a user to change their password using their phone number and an authentication code.',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='User phone number'),
+            'new_password': openapi.Schema(type=openapi.TYPE_STRING, description='New password for the user'),
+            'auth_code': openapi.Schema(type=openapi.TYPE_STRING, description='Authentication code sent to the user'),
+        },
+        required=['phone_number', 'new_password', 'auth_code'],
+    ),
+    responses={
+        200: openapi.Response(
+            description='Password changed successfully',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, example='success'),
+                },
+            ),
+        ),
+        400: openapi.Response(
+            description='Bad Request',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+        404: openapi.Response(
+            description='User not found',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+        500: openapi.Response(
+            description='Internal Server Error',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+    },
+)
+
+
+mobile_is_default_password_ = dict(
+    method='post',
+    operation_summary='초기 비밀번호 확인',
+    tags=['mobile'],
+    description='Checks if the user\'s password is the default password using their phone number.',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='User phone number'),
+        },
+        required=['phone_number'],
+    ),
+    responses={
+        200: openapi.Response(
+            description='Password check successful',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'is_default_password': openapi.Schema(type=openapi.TYPE_BOOLEAN, example=True),
+                },
+            ),
+        ),
+        400: openapi.Response(
+            description='Bad Request',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+        404: openapi.Response(
+            description='User not found',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+        500: openapi.Response(
+            description='Internal Server Error',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+    },
+)
+
+
 ############################################################################################################
 ############################################################################################################
 ##################################               체형분석앱                ####################################

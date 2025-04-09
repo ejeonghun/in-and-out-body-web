@@ -9,12 +9,16 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password, check_password
 import requests
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.views import PasswordChangeView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from datetime import datetime, timedelta
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from .helpers import extract_digits, generate_presigned_url, parse_userinfo_kiosk, upload_image_to_s3, verify_image, \
     calculate_normal_ratio, create_excel_report, session_check_expired
 from .models import BodyResult, CodeInfo, GaitResult, OrganizationInfo, SchoolInfo, UserInfo, SessionInfo, UserHist, \
@@ -27,7 +31,7 @@ from django.db.models import Min, Max, Exists, OuterRef, Count
 from django.db.models.functions import ExtractYear
 from django.db import transaction
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from datetime import datetime as dt
 from collections import defaultdict
@@ -1538,6 +1542,9 @@ def gait_report(request):
     })
 
 
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, JWTAuthentication])
+@permission_classes([IsAuthenticated])
 @login_required
 def body_print(request, id, detail=None):
     max_count = 4  # 최대 4개까지 보여줌
@@ -1805,9 +1812,12 @@ def body_print(request, id, detail=None):
     return render(request, 'body_print.html', context)
 
 
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, JWTAuthentication])
+@permission_classes([IsAuthenticated])
 @login_required()
 def body_print_kiosk(request, id):
-    return body_print(request, id, detail=True)
+    return body_print(request._request, id, detail=True)
 
 
 @login_required
@@ -1983,6 +1993,13 @@ def gait_print(request, id, detail=None):
     return render(request, 'gait_print.html', context)
 
 
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, JWTAuthentication])
+@permission_classes([IsAuthenticated])
 @login_required()
 def gait_print_kiosk(request, id):
     return gait_print(request, id, detail=True)
+
+
+def qr(request):
+    return render(request, 'qr.html')
