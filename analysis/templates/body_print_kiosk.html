@@ -301,8 +301,16 @@
                 <div class="date">검사일시</div>
             </div>
             <div>
-                <div>만 {{ user.age }}세</div>
-                <div>{{ user.gender }}</div>
+                <div>{{ user.dob|calc_age }}</div>
+                <div>
+                    {% if user.gender == 'M' %}
+                        남성
+                    {% elif user.gender == 'F' %}
+                        여성
+                    {% else %}
+                        정보없음
+                    {% endif %}
+                </div>
                 <div class="date">{{ dates }}</div>
             </div>
         </div>

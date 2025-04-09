@@ -34,6 +34,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', views.home, name='home'),
+
+    path('qr', views.qr, name='qr'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html', redirect_authenticated_user=True, next_page='main'), name='login'),
     path('signup/', views.signup, name='signup'),
     # path('register/', views.register, name='register'), 기존 사용자등록 페이지
@@ -49,10 +51,10 @@ urlpatterns = [
     path('gait-report/', views.gait_report, name='gait_report'),
     path('api/gait-data/<int:user_id>/', views.get_user_gait_data, name='view_get_gait_data'),
     path('gait-print/<int:id>/', views.gait_print, name='gait_print'),
-    path('gait-print-detail/<int:id>/', views.gait_print_kiosk, name='gait_print_detail'),
+    path('gait-print-detail/<int:id>/', views.gait_print_kiosk, name='gait_print_detail'), # 헤더에 JWT 토큰 넣을 시 모바일에서 요청 가능
 
-    path('body-print/<int:id>/', views.body_print, name='body_print'),
-    path('body-print-detail/<int:id>/', views.body_print_kiosk, name='body_print_detail'),
+    path('body-print/<int:id>/', views.body_print, name='body_print'), # 헤더에 JWT 토큰 넣을 시 모바일에서 요청 가능
+    path('body-print-detail/<int:id>/', views.body_print_kiosk, name='body_print_detail'), # 헤더에 JWT 토큰 넣을 시 모바일에서 요청 가능
 
 
     path('no-result/', views.no_result, name='no_result'),

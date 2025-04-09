@@ -7,6 +7,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>체형 분석 보고서 - 인쇄용</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .container {
             display: grid;
@@ -25,6 +27,7 @@
         .top_left_container > h2 { /* 최상단 바디스캐너 텍스트  */
             margin-left: 10px;
             font-size: 20px;
+            font-weight: 600;
             color: #828282;
         }
 
@@ -35,8 +38,9 @@
         }
 
         .top_left_container > #top-text {
-            margin-top: -15px;
-            text-weight: bold;
+            font-size: 25px;
+            font-weight: 600;
+            margin: -5px 0 0 10px;
         }
 
         .userinfo {
@@ -231,6 +235,7 @@
         }
 
         .card-icon img {
+                display: inline-block; /* ← 중요! */
             width: auto;
             height: 60px; /* 이미지 크기 고정 */
             filter: brightness(0);
@@ -300,7 +305,7 @@
         }
 
         @media print {
-            * {
+            * {       /* 인쇄 시 배경 그래픽 강제 적용 */
                 -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
                 color-adjust: exact !important; /* Firefox */
                 print-color-adjust: exact !important; /* 표준 속성 */
@@ -321,12 +326,30 @@
                 page-break-after: always;
             }
 
-            /* 인쇄 시 배경 그래픽을 클릭해줘야지 그래프가 나옴 */
+
         }
     </style>
 </head>
 <body>
 <div id="all_content">
+    <!-- 새로운 인쇄 버튼 추가 -->
+    <div class="print-button-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button id="print-report" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200 flex items-center">
+            <i class="bi bi-printer mr-2"></i> 인쇄하기
+        </button>
+    </div>
+
+    <script>
+        document.getElementById('print-report').addEventListener('click', function() {
+            // 인쇄 페이지를 새 창으로 열고 자동으로 인쇄 팝업 표시
+            // var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
+            const printContainer = document.querySelector(".print-button-container");
+            printContainer.style.display = "none";
+            
+            window.print();
+        });
+    </script>
+
     <div id="top">
         <div>
             <div class="top_left_container"><img src="/static/images/AICU_CI.png" alt="logo">
