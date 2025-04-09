@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>웰니스 바디스캐너</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .btn-deep-link {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-deep-link:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-deep-link:active {
+            transform: translateY(0);
+        }
+
+        .logo {
+            margin-bottom: 20px;
+        }
+
+        .description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <img src="/static/images/AICU_CI.png" alt="App Logo" class="logo">
+    <h1>키오스크 로그인</h1>
+    <p class="description">해당 키오스크에 로그인을 위해 아래 버튼을 클릭해주세요.</p>
+    <button class="btn-deep-link" onclick="triggerDeepLink()">앱으로 로그인하기</button>
+
+    <div class="footer">
+    </div>
+</div>
+
+<script>
+    window.onload = function () {
+        if (new URLSearchParams(window.location.search).get('auto') === '1') {
+            triggerDeepLink();
+        }
+    };
+
+    function triggerDeepLink() {
+        // URL에서 sk 파라미터 값을 추출
+        const sessionKeyFromURL = new URLSearchParams(window.location.search).get('sk');
+        // sk 파라미터가 있으면 그 값을 사용, 없으면 기본값 사용
+        const sessionKey = sessionKeyFromURL || "2ad7af44a2e146feb1cec9df04a75700";
+        const packageName = "life.aicu.bodyscanner";
+        const appStoreId = "6736388751"; // 앱스토어 ID 입력 필요
+
+        // iOS 디바이스 확인
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isIOS) {
+            // iOS 유니버셜 링크 처리
+            // 앱 URL 스킴 형식으로 먼저 시도
+            const iosAppUrl = `bodyscanner://deep_link?session_key=${sessionKey}`;
+            // 유니버셜 링크 URL (도메인은 실제 설정한 도메인으로 변경 필요)
+            const universalLinkUrl = `https://body.aicu.life/qr?sk=${sessionKey}`;
+
+            // 유니버셜 링크 시도
+            window.location.href = universalLinkUrl;
+
+            // 일정 시간 후 앱스토어로 리디렉션
+            setTimeout(function() {
+                window.location.href = `https://apps.apple.com/app/id${appStoreId}`;
+            }, 2000);
+        } else {
+            // 안드로이드 인텐트 처리 (기존 코드)
+            const deepLinkUrl =
+                `intent://deep_link?session_key=${sessionKey}` +
+                `#Intent;` +
+                `scheme=bodyscanner;` +
+                `package=${packageName};` +
+                `S.browser_fallback_url=${encodeURIComponent(`https://play.google.com/store/apps/details?id=${packageName}`)};` +
+                `end`;
+
+            window.location.href = deepLinkUrl;
+
+            setTimeout(function () {
+                window.location.href = `https://play.google.com/store/apps/details?id=${packageName}`;
+            }, 4000);
+        }
+    }
+
+    triggerDeepLink();
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import os
+import re
 
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
@@ -12,7 +13,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from analysis.custom.metrics import calculate_active_users
 from analysis.helpers import generate_presigned_url, measure_time, parse_userinfo_mobile, upload_image_to_s3, \
-    verify_image
+    verify_image, check_sms_code, send_sms
 from analysis.models import GaitResult, AuthInfo, UserInfo, CodeInfo, BodyResult, SessionInfo, SchoolInfo
 from analysis.serializers import GaitResultSerializer, CodeInfoSerializer, BodyResultSerializer, KeypointSerializer
 
@@ -23,9 +24,14 @@ from django.db.models import Subquery
 from datetime import datetime as dt
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
 
-from analysis.swagger import login_mobile_, login_mobile_id_pw_, login_mobile_uuid_, delete_user_, get_user_, get_code_, \
-    get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_, delete_body_result_
+import re
+
+from analysis.swagger import (login_mobile_, login_mobile_id_pw_, login_mobile_uuid_, delete_user_, get_user_,
+                              get_code_, get_gait_result_, login_mobile_qr_, get_body_result_, delete_gait_result_,
+                              delete_body_result_
+, mobile_send_auth_sms_, mobile_check_auth_sms_, mobile_signup_)
 
 kst = pytz.timezone('Asia/Seoul')
 
@@ -453,6 +459,7 @@ def delete_body_result(request):
     serializer = BodyResultSerializer(current_result)
     return Response({'data': serializer.data}, status=status.HTTP_200_OK)
 
+
 # @api_view(['GET'])
 # @permission_classes([permissions.IsAuthenticated])
 # def mobile_gait_sync(request):  # 아직 사용 X
@@ -468,3 +475,113 @@ def delete_body_result(request):
 
 #     except UserInfo.DoesNotExist:
 #         return Response({'data': {'message': 'user_not_found'}}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@swagger_auto_schema(**mobile_send_auth_sms_)
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def mobile_send_auth_sms(request):
+    phone_number = request.data.get('phone_number', None)
+    # 추후 모바일의 UUID 등으로 기기 확인 처리 해야할 것 같음.
+
+    if phone_number is None:
+        return Response({'message': 'phone_number_required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 전화번호 형식 검사 (010으로 시작하는 11자리 문자열)
+    if not re.match(r'^010\d{8}$', phone_number):
+        return Response({'message': 'invalid_phone_number_format'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = UserInfo.objects.get(phone_number=phone_number)
+        return Response({'message': 'phone_number_already_exists'}, status=status.HTTP_400_BAD_REQUEST)
+    except UserInfo.DoesNotExist:
+        pass
+
+    result = send_sms(phone_number)
+
+    if (result == 'sent'): # 정상 전송
+        return Response({'message': 'success'}, status=status.HTTP_200_OK)
+    elif (result == 'limit'): # 발송 제한(7일 총 10총 까지 가능) - 비정상 사용 방지
+        return Response({"message": "too_many_requests"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    else: # 그 외 경우
+        return Response({'message': 'not sent'}, status=status.HTTP_200_OK)  # 여러 오류
+
+
+@swagger_auto_schema(**mobile_check_auth_sms_)
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def mobile_check_auth_sms(request):
+    phone_number = request.data.get('phone_number')
+    auth_code = request.data.get('auth_code')
+
+    if not phone_number or not auth_code:
+        return Response({'message': 'phone_number_or_auth_code_required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        result = check_sms_code(phone_number, auth_code)
+
+        if result:
+            return Response({'message': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'auth_code incorrect'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({'message': str(e), 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@swagger_auto_schema(**mobile_signup_)
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def mobile_signup(request):
+    phone_number = request.data.get('phone_number')
+    password = request.data.get('password')
+    dob = request.data.get('dob', None)
+    gender = request.data.get('gender', None)
+
+    # 전화번호 형식 검사 (010으로 시작하는 11자리)
+    if not phone_number or not re.match(r'^010\d{8}$', phone_number):
+        return Response({'message': 'invalid_phone_number_format'},
+                        status=status.HTTP_400_BAD_REQUEST)  # 잘못된 전화번호 형식 - Error Code 2
+
+    if not phone_number or not password:
+        return Response({'message': 'phone_number_and_password_required'},
+                        status=status.HTTP_400_BAD_REQUEST)  # 전화번호와 비밀번호 필수 - Error Code 4
+
+    if dob is not None:
+        # YYYY 형태의 문자열인지 확인 (년도만 입력받음)
+        if len(str(dob)) != 4:
+            return Response({'message': 'invalid_dob_format'},
+                            status=status.HTTP_400_BAD_REQUEST)  # 잘못된 생년월일 형식 - Error Code 2
+
+    if gender is not None:
+        # 0, 1로 입력 받아서 확인을 거치고, 0: M, 1: F로 변환
+        if gender not in ['0', '1']:
+            return Response({'message': 'invalid_gender_format'},
+                            status=status.HTTP_400_BAD_REQUEST)  # 잘못된 성별 형식 - Error Code 2
+        else:
+            gender_format = 'M' if gender == '0' else 'F'  # Correct assignment
+
+    authorized_user_info, user_created = UserInfo.objects.get_or_create(
+        phone_number=phone_number,
+        defaults=dict(
+            username=phone_number,
+            password=make_password(password),
+            student_name=phone_number,
+            user_type='G',
+            dob=dob if dob is not None else None,
+            gender=gender_format if gender is not None else None
+        ))
+
+    if authorized_user_info.school is not None:
+        authorized_user_info.user_type = 'S'
+    elif authorized_user_info.organization is not None:
+        authorized_user_info.user_type = 'O'
+    else:
+        authorized_user_info.user_type = 'G'
+
+    authorized_user_info.save()  # 사용자 타입 변경 후 저장 추가
+
+    return Response({'message': 'success'}, status=status.HTTP_200_OK)

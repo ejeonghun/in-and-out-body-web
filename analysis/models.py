@@ -107,6 +107,9 @@ class KioskInfo(models.Model):
     Org = models.ForeignKey(OrganizationInfo, on_delete=models.SET_NULL, null=True, blank=True)  # 관리자
     created_dt = models.DateTimeField(auto_now_add=True)  # 생성일
 
+    def __str__(self):
+        return f"{self.id}번 - {self.Org.organization_name if self.Org is not None else '학교/기관 없음'} - {self.kiosk_id}_{self.version + 'ver' if self.version is not None else '버전 정보 없음'}"
+
 
 class SessionInfo(models.Model):
     req_type = models.CharField(max_length=1, null=True, blank=True)

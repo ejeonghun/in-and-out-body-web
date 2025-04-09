@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뇌인지 관련 AI 보행 스캔 결과</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 기본 스타일 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0 auto!important;
+            padding: 20px;
+            background-color: #f5f5f5;
+            width: 210mm; /* A4 너비 */
+            color: #333;
+        }
+
+        h1 {
+            font-size: 24px!important;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* 일반 화면용 스타일 */
+        @media screen {
+            .chart-container {
+                width: calc(100% - 10px); /* 화면에서는 약간 줄인 너비 */
+            }
+        }
+
+        /* 인쇄용 스타일 */
+        @media print {  
+            * {
+                -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
+                color-adjust: exact !important; /* Firefox */
+                print-color-adjust: exact !important; /* 표준 속성 */
+            }
+            
+            .chart-container {
+                width: 100%; /* 인쇄 시 원래 너비로 복원 */
+            }
+
+            /* 인쇄 시 추가 스타일 지정 가능 */
+            body {
+                width: 210mm; /* A4 너비 */
+                margin: 0 auto;
+            }
+        }
+
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            max-width: 210mm;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .divider {
+            height: 2px;
+            background-color: #3498db;
+            margin: 10px 0 20px 0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 30px 0 5px 0;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        /* 점수 원형 차트 */
+        .score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            background: conic-gradient(#FFA500 0% 65%, #e0e0e0 65% 100%);
+        }
+
+        .score-inner {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFA500;
+        }
+
+        .score-status {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFA500;
+        }
+
+        /* 점수 바 */
+        .score-bar-container {
+            width: 100%;
+            height: 30px;
+            position: relative;
+            margin: 10px 0;
+        }
+
+        .score-bar-danger {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 40%;
+            background-color: #FF4136;
+        }
+
+        .score-bar-warning {
+            position: absolute;
+            left: 40%;
+            top: 0;
+            height: 100%;
+            width: 30%;
+            background-color: #FFA500;
+        }
+
+        .score-bar-normal {
+            position: absolute;
+            left: 70%;
+            top: 0;
+            height: 100%;
+            width: 30%;
+            background-color: #4c9cfa;
+        }
+
+        .score-marker {
+            position: absolute;
+            top: -10px;
+            height: 50px;
+            width: 2px;
+            background-color: #333;
+        }
+
+        .score-scale {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        /* 메시지 박스 */
+        .message-box {
+            border: 1px solid #3498db;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #f8f9fa;
+        }
+
+        /* 지표 그룹 */
+        .metric-group {
+            margin-bottom: 20px;
+        }
+
+        .metric-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .metric-group-title {
+            font-weight: bold;
+            width: 140px;
+        }
+
+        .metric-group-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .metric-group-status.normal {
+            background-color: #4c9cfa;
+        }
+
+        .metric-group-status.warning {
+            background-color: #FFA500;
+        }
+
+        .metric-group-status.danger {
+            background-color: #FF4136;
+        }
+
+        /* 지표 항목 */
+        .metric-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .metric-side {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .metric-bar-container {
+            flex-grow: 1;
+            height: 20px;
+            position: relative;
+            margin: 0 10px;
+        }
+
+        .metric-bar-segment {
+            position: absolute;
+            height: 100%;
+            top: 0;
+        }
+
+        .metric-marker {
+            position: absolute;
+            top: -5px;
+            width: 4px;
+            height: 30px;
+            background-color: #333;
+            z-index: 10;
+        }
+
+        .metric-value {
+            width: 70px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .metric-scale {
+            display: flex;
+            justify-content: space-between;
+            width: calc(100% - 100px);
+            margin-left: 30px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        /* 차트 영역 */
+        .chart-container {
+            margin: 30px 0;
+            height: 250px;
+            padding: 10px;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+        /* 테이블 스타일 */
+        .trend-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .trend-table th, .trend-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .trend-table th {
+            background-color: #f2f2f2;
+        }
+
+        .trend-table .negative {
+            color: #FF4136;
+        }
+
+        /* 푸터 */
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        /* 버튼 */
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .button {
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 45%;
+            text-align: center;
+        }
+
+        .button-exit {
+            background-color: #e74c3c;
+        }
+
+        .button-retest {
+            background-color: #3498db;
+        }
+
+        /* 구분선 */
+        .metric-divider {
+            height: 1px;
+            background-color: #3498db;
+            margin: 20px 0;
+            opacity: 0.5;
+        }
+
+        /* 차트 레이아웃 */
+        .chart-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .chart-label {
+            width: 100px;
+            text-align: left;
+        }
+
+        .chart-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .chart-subtitle {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .chart-container {
+            flex: 1;
+            height: 200px;
+        }
+
+        /* 인쇄 시 스타일 */
+        @media print {
+            .chart-container {
+                width: 100%;
+            }
+        }
+
+        @media screen {
+            .chart-container {
+                width: calc(100% - 10px);
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>뇌인지 관련 AI 보행 스캔 결과</h1>
+    <div class="divider"></div>
+
+    <div class="print-button-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button id="print-report" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200 flex items-center">
+            <i class="bi bi-printer mr-2"></i> 인쇄하기
+        </button>
+    </div>
+
+    <script>
+        document.getElementById('print-report').addEventListener('click', function() {
+            // 인쇄 페이지를 새 창으로 열고 자동으로 인쇄 팝업 표시
+            // var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
+            const printContainer = document.querySelector(".print-button-container");
+            printContainer.style.display = "none";
+
+            window.print();
+        });
+    </script>
+
+    <!-- 점수 원형 차트 -->
+    <div class="score-container">
+        <div id="scoreCircle" class="score-circle">
+            <div class="score-inner">
+                <div class="score-label">보행점수</div>
+                <div id="scoreValue" class="score-value">65.0 점</div>
+                <div id="scoreStatus" class="score-status">주의</div>
+            </div>
+        </div>
+
+        <!-- 점수 바 -->
+        <div class="score-bar-container">
+            <div class="score-bar-danger"></div>
+            <div class="score-bar-warning"></div>
+            <div class="score-bar-normal"></div>
+            <div id="scoreMarker" class="score-marker" style="left: 65%;"></div>
+        </div>
+        <div class="score-scale">
+            <div>0.0</div>
+            <div>40.0</div>
+            <div>70.0</div>
+            <div>100.0</div>
+        </div>
+    </div>
+
+    <!-- 메시지 박스 -->
+    <div class="message-box">
+        <p>뇌인지 기능과 관련된 현재 보행 상태는 <span id="statusText">주의</span>군에 속합니다.</p>
+        <p>정확한 진단을 위해 신경과 전문의와의 상담이 필요합니다.</p>
+    </div>
+
+    <!-- 보행 상세 상태 -->
+    <div class="section-title">보행 상세 상태</div>
+    <div class="section-subtitle">(Gait Detail Condition)</div>
+
+    <div id="metricsContainer">
+        <!-- JavaScript로 동적 생성 -->
+    </div>
+
+    <!-- 보행 상태 변화 -->
+    <div class="section-divider"></div>
+    <!-- 보행 상태 변화 -->
+    <div class="section-title">보행 상태 변화</div>
+    <div class="section-subtitle">(History of Gait Condition)</div>
+
+    <!-- 범례 -->
+    <div class="chart-legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #4c9cfa;"></div>
+            <span>양호</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #FFA500;"></div>
+            <span>주의</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #FF4136;"></div>
+            <span>위험</span>
+        </div>
+    </div>
+
+    <!-- 차트 영역 -->
+    <div class="chart-row">
+        <div class="chart-label">
+            <div class="chart-title">보행점수</div>
+            <div class="chart-subtitle">(Gait Score)</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="gaitScoreChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-row">
+        <div class="chart-label">
+            <div class="chart-title">보행속도</div>
+            <div class="chart-subtitle">(Gait Speed)</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="gaitSpeedChart"></canvas>
+        </div>
+    </div>
+
+
+    <!-- 스캔 일시 테이블 -->
+    <table class="trend-table" id="trendTable">
+        <tr>
+            <th>스캔일시</th>
+        </tr>
+        <tr>
+            <th>변화율(20%)</th>
+        </tr>
+    </table>
+
+    <!-- 주의 문구 -->
+    <div class="footer">
+        * 위 내용은 스캔 결과는 의학적 판단 및 진단과는 무관합니다.<br>
+        * 건강관리 목적이 아닌 의료적인 진단을 위해서는 의사와 상담하시기 바랍니다.
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 데이터 가져오기 (서버에서 전달받은 데이터)
+    const gaitData = {{ gait_data|safe }};
+    const gaitTrendData = {{ gait_trend_data|safe }} || {dates: [], velocity: [], cadence: [], score: []};
+    const normalRanges = {{ normal_ranges|safe }};
+    const codeInfo = {{ code_info|safe }};
+
+    console.log(gaitData);
+    console.log(normalRanges);
+    console.log(codeInfo);
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function () {
+        // 원래 toFixed 메서드 저장
+        const originalToFixed = Number.prototype.toFixed;
+
+// toFixed 메서드 오버라이딩
+        Number.prototype.toFixed = function (digits) {
+            // 버림 처리를 위한 로직
+            const factor = Math.pow(10, digits);
+            const truncated = Math.floor(this * factor) / factor;
+
+            // 원래 toFixed 메서드를 호출하여 문자열 포맷팅
+            return originalToFixed.call(truncated, digits);
+        };
+
+
+        setupScoreCircle();
+        createMetricBars();
+        createCharts();
+        createTrendTable();
+    });
+
+    // 점수 원형 차트 설정
+    function setupScoreCircle() {
+        const score = gaitData.score * 10;
+        const scoreValue = document.getElementById('scoreValue');
+        const scoreStatus = document.getElementById('scoreStatus');
+        const scoreMarker = document.getElementById('scoreMarker');
+        const statusText = document.getElementById('statusText');
+
+        // 점수 표시
+        scoreValue.textContent = score.toFixed(1) + ' 점';
+
+        // 상태 결정
+        let status, color;
+        if (score >= normalRanges.score.normal_min) {
+            status = '정상';
+            color = '#4c9cfa';
+        } else if (score >= 40.0) {
+            status = '주의';
+            color = '#FFA500';
+        } else {
+            status = '위험';
+            color = '#FF4136';
+        }
+
+        scoreStatus.textContent = status;
+        statusText.textContent = status;
+        scoreStatus.style.color = color;
+
+        // 원형 차트 색상 설정
+        const scoreCircle = document.getElementById('scoreCircle');
+        scoreCircle.style.background = `conic-gradient(${color} 0% ${score}%, #e0e0e0 ${score}% 100%)`;
+
+        // 점수 마커 위치 설정
+        scoreMarker.style.left = `${score}%`;
+    }
+
+    // 지표 상태 결정 함수
+    function getMetricStatus(value, min, max, normalMin, normalMax, cautionMin, cautionMax, direction) {
+        if (direction === 'positive') {
+            // 높을수록 좋은 지표
+            if (value >= normalMin && value <= normalMax) {
+                return {status: '양호', class: 'normal'};
+            } else if ((value >= cautionMin && value < normalMin) || (value > normalMax && value <= cautionMax)) {
+                return {status: '주의', class: 'warning'};
+            } else {
+                return {status: '위험', class: 'danger'};
+            }
+        } else {
+            // 낮을수록 좋은 지표 (negative)
+            if (value >= normalMin && value <= normalMax) {
+                return {status: '양호', class: 'normal'};
+            } else if ((value >= cautionMin && value < normalMin) || (value > normalMax && value <= cautionMax)) {
+                return {status: '주의', class: 'warning'};
+            } else {
+                return {status: '위험', class: 'danger'};
+            }
+        }
+    }
+
+    // 지표 바 생성 함수
+    function createMetricBars() {
+        const container = document.getElementById('metricsContainer');
+        container.innerHTML = ''; // 컨테이너 초기화
+
+        // 보행속도 (단일 항목)
+        createSingleMetric(container, '보행속도', gaitData.velocity, 'cm/sec', codeInfo.velocity);
+
+        // 구분선 추가
+        container.innerHTML += '<div class="metric-divider"></div>';
+
+        // 보폭 (좌/우)
+        createDualMetric(container, '보폭', gaitData.stride_len_l, gaitData.stride_len_r, 'cm', codeInfo.stride_len_l);
+
+        // 구분선 추가
+        container.innerHTML += '<div class="metric-divider"></div>';
+
+        // 스윙시간비율 (좌/우)
+        createDualMetric(container, '스윙시간비율', gaitData.swing_perc_l, gaitData.swing_perc_r, '%', codeInfo.swing_perc_l);
+
+        // 구분선 추가
+        container.innerHTML += '<div class="metric-divider"></div>';
+
+        // 접지시간비율 (좌/우)
+        createDualMetric(container, '접지시간비율', gaitData.stance_perc_l, gaitData.stance_perc_r, '%', codeInfo.stance_perc_l);
+
+        // 구분선 추가
+        container.innerHTML += '<div class="metric-divider"></div>';
+
+        // 양발접지시간비율 (좌/우)
+        createDualMetric(container, '양발접지시간비율', gaitData.d_supp_perc_l, gaitData.d_supp_perc_r, '%', codeInfo.d_supp_perc_l);
+    }
+
+    // 단일 지표 생성 함수 (보행속도)
+    function createSingleMetric(container, title, value, unit, codeData) {
+        // 값이 범위를 벗어나지 않도록 조정
+        value = Math.max(codeData.min_value, Math.min(codeData.max_value, value));
+
+        const statusInfo = getMetricStatus(
+            value,
+            codeData.min_value,
+            codeData.max_value,
+            codeData.normal_min_value,
+            codeData.normal_max_value,
+            codeData.caution_min_value,
+            codeData.caution_max_value,
+            codeData.direction
+        );
+
+        // HTML 생성
+        const html = `
+        <div class="metric-group">
+            <div class="metric-group-header">
+                <div class="metric-group-title">${title}</div>
+                <div class="metric-group-status ${statusInfo.class}">${statusInfo.status}</div>
+            </div>
+
+            <div class="metric-item">
+                <div class="metric-side"></div>
+                <div class="metric-bar-container">
+                    ${createBarSegments(
+            codeData.min_value,
+            codeData.max_value,
+            codeData.normal_min_value,
+            codeData.normal_max_value,
+            codeData.caution_min_value,
+            codeData.caution_max_value,
+            codeData.direction
+        )}
+                    <div class="metric-marker" style="left: ${getPercentage(value, codeData.min_value, codeData.max_value)}%;"></div>
+                </div>
+                <div class="metric-value" style="color: ${getValueColor(statusInfo.class)}">${value.toFixed(1)}${unit}</div>
+            </div>
+
+            <div class="metric-scale">
+                <div>${codeData.min_value.toFixed(1)}</div>
+                <div>${codeData.max_value.toFixed(1)}</div>
+            </div>
+        </div>
+    `;
+
+        container.innerHTML += html;
+    }
+
+    // 이중 지표 생성 함수 (좌/우)
+    function createDualMetric(container, title, leftValue, rightValue, unit, codeData) {
+        // 값이 범위를 벗어나지 않도록 조정
+        leftValue = Math.max(codeData.min_value, Math.min(codeData.max_value, leftValue));
+        rightValue = Math.max(codeData.min_value, Math.min(codeData.max_value, rightValue));
+
+        const leftStatus = getMetricStatus(
+            leftValue,
+            codeData.min_value,
+            codeData.max_value,
+            codeData.normal_min_value,
+            codeData.normal_max_value,
+            codeData.caution_min_value,
+            codeData.caution_max_value,
+            codeData.direction
+        );
+
+        const rightStatus = getMetricStatus(
+            rightValue,
+            codeData.min_value,
+            codeData.max_value,
+            codeData.normal_min_value,
+            codeData.normal_max_value,
+            codeData.caution_min_value,
+            codeData.caution_max_value,
+            codeData.direction
+        );
+
+        // 전체 상태 결정 (좌/우 중 더 심각한 상태)
+        let overallStatus, overallClass;
+        if (leftStatus.class === 'danger' || rightStatus.class === 'danger') {
+            overallStatus = '위험';
+            overallClass = 'danger';
+        } else if (leftStatus.class === 'warning' || rightStatus.class === 'warning') {
+            overallStatus = '주의';
+            overallClass = 'warning';
+        } else {
+            overallStatus = '양호';
+            overallClass = 'normal';
+        }
+
+        // HTML 생성
+        const html = `
+        <div class="metric-group">
+            <div class="metric-group-header">
+                <div class="metric-group-title">${title}</div>
+                <div class="metric-group-status ${overallClass}">${overallStatus}</div>
+            </div>
+
+            <div class="metric-item">
+                <div class="metric-side">좌</div>
+                <div class="metric-bar-container">
+                    ${createBarSegments(
+            codeData.min_value,
+            codeData.max_value,
+            codeData.normal_min_value,
+            codeData.normal_max_value,
+            codeData.caution_min_value,
+            codeData.caution_max_value,
+            codeData.direction
+        )}
+                    <div class="metric-marker" style="left: ${getPercentage(leftValue, codeData.min_value, codeData.max_value)}%;"></div>
+                </div>
+                <div class="metric-value" style="color: ${getValueColor(leftStatus.class)}">${leftValue.toFixed(1)}${unit}</div>
+            </div>
+
+            <div class="metric-item">
+                <div class="metric-side">우</div>
+                <div class="metric-bar-container">
+                    ${createBarSegments(
+            codeData.min_value,
+            codeData.max_value,
+            codeData.normal_min_value,
+            codeData.normal_max_value,
+            codeData.caution_min_value,
+            codeData.caution_max_value,
+            codeData.direction
+        )}
+                    <div class="metric-marker" style="left: ${getPercentage(rightValue, codeData.min_value, codeData.max_value)}%;"></div>
+                </div>
+                <div class="metric-value" style="color: ${getValueColor(rightStatus.class)}">${rightValue.toFixed(1)}${unit}</div>
+            </div>
+
+            <div class="metric-scale">
+                <div>${codeData.min_value.toFixed(1)}</div>
+                <div>${codeData.max_value.toFixed(1)}</div>
+            </div>
+        </div>
+    `;
+
+        container.innerHTML += html;
+    }
+
+    // 값 색상 결정 함수
+    function getValueColor(statusClass) {
+        switch (statusClass) {
+            case 'normal':
+                return '#000000'; // 정상은 검은색
+            case 'warning':
+                return '#FFA500'; // 주의는 노란색
+            case 'danger':
+                return '#FF4136';  // 위험은 빨간색
+            default:
+                return '#000000';
+        }
+    }
+
+    // 바 세그먼트 HTML 생성 함수
+    function createBarSegments(min, max, normalMin, normalMax, cautionMin, cautionMax, direction) {
+        const range = max - min;
+
+        if (direction === 'positive') {
+            // 높을수록 좋은 지표
+            const normalWidth = ((normalMax - normalMin) / range) * 100;
+            const normalLeft = ((normalMin - min) / range) * 100;
+
+            // 위험 구간 (왼쪽)
+            const dangerWidth1 = ((cautionMin - min) / range) * 100;
+            // 주의 구간 (왼쪽 정상 사이)
+            const warningWidth1 = ((normalMin - cautionMin) / range) * 100;
+            // 주의 구간 (오른쪽 정상 이후)
+            const warningWidth2 = ((cautionMax - normalMax) / range) * 100;
+            // 위험 구간 (오른쪽)
+            const dangerWidth2 = ((max - cautionMax) / range) * 100;
+
+            return `
+            <div class="metric-bar-segment" style="left: 0; width: ${dangerWidth1}%; background-color: #FF4136;"></div>
+            <div class="metric-bar-segment" style="left: ${dangerWidth1}%; width: ${warningWidth1}%; background-color: #FFA500;"></div>
+            <div class="metric-bar-segment" style="left: ${normalLeft}%; width: ${normalWidth}%; background-color: #4c9cfa;"></div>
+            <div class="metric-bar-segment" style="left: ${normalLeft + normalWidth}%; width: ${warningWidth2}%; background-color: #FFA500;"></div>
+            <div class="metric-bar-segment" style="left: ${normalLeft + normalWidth + warningWidth2}%; width: ${dangerWidth2}%; background-color: #FF4136;"></div>
+        `;
+        } else {
+            // 낮을수록 좋은 지표 (negative)
+            const normalWidth = ((normalMax - normalMin) / range) * 100;
+            const normalLeft = ((normalMin - min) / range) * 100;
+
+            // 위험 구간 (왼쪽)
+            const dangerWidth1 = ((cautionMin - min) / range) * 100;
+            // 주의 구간 (왼쪽 정상 사이)
+            const warningWidth1 = ((normalMin - cautionMin) / range) * 100;
+            // 주의 구간 (오른쪽 정상 이후)
+            const warningWidth2 = ((cautionMax - normalMax) / range) * 100;
+            // 위험 구간 (오른쪽)
+            const dangerWidth2 = ((max - cautionMax) / range) * 100;
+
+            return `
+            <div class="metric-bar-segment" style="left: 0; width: ${dangerWidth1}%; background-color: #FF4136;"></div>
+            <div class="metric-bar-segment" style="left: ${dangerWidth1}%; width: ${warningWidth1}%; background-color: #FFA500;"></div>
+            <div class="metric-bar-segment" style="left: ${normalLeft}%; width: ${normalWidth}%; background-color: #4c9cfa;"></div>
+            <div class="metric-bar-segment" style="left: ${normalLeft + normalWidth}%; width: ${warningWidth2}%; background-color: #FFA500;"></div>
+            <div class="metric-bar-segment" style="left: ${normalLeft + normalWidth + warningWidth2}%; width: ${dangerWidth2}%; background-color: #FF4136;"></div>
+        `;
+        }
+    }
+
+    // 퍼센트 계산 함수 - 범위를 벗어나지 않도록 제한
+    function getPercentage(value, min, max) {
+        // 값이 최소값보다 작으면 0%로 제한
+        if (value < min) return 0;
+        // 값이 최대값보다 크면 100%로 제한
+        if (value > max) return 100;
+        // 정상 범위 내에 있으면 비율 계산
+        return ((value - min) / (max - min)) * 100;
+    }
+
+    // 차트 생성
+// 차트 생성
+function createCharts() {
+    // --- 공통 설정 ---
+    const backgroundColors = {
+        normal: 'rgba(76, 156, 250, 0.2)',  // 파란색 (정상)
+        caution: 'rgba(255, 165, 0, 0.2)',  // 노란색 (주의)
+        danger: 'rgba(255, 65, 54, 0.2)'    // 빨간색 (위험)
+    };
+
+    // 하드코딩된 임계값
+    const scoreThresholds = {
+        max: 100,
+        normal_min: 70,
+        caution_min: 40,
+        min: 0
+    };
+
+    const speedThresholds = {
+        max: 120,
+        normal_min: 71,
+        caution_min: 50,
+        min: 25
+    };
+
+    // --- 배경 그리기 플러그인 생성 함수 ---
+   function createBackgroundPlugin(pluginId, thresholds, colors) {
+    return {
+        id: pluginId,
+        beforeDatasetsDraw: (chart, args, options) => {
+            const { ctx, chartArea, scales: { y: yAxis } } = chart;
+
+            // 여기서 numericThresholds 변수를 정의
+            const numericThresholds = {
+                max: Number(thresholds.max),
+                normal_min: Number(thresholds.normal_min),
+                caution_min: Number(thresholds.caution_min),
+                min: Number(thresholds.min)
+            };
+
+            if (!chartArea || !yAxis) {
+                return;
+            }
+
+            const chartWidth = chartArea.right - chartArea.left;
+
+            // Y축 값에 해당하는 픽셀 위치 계산
+            const maxPixel = yAxis.getPixelForValue(numericThresholds.max);
+            const normalMinPixel = yAxis.getPixelForValue(numericThresholds.normal_min);
+            const cautionMinPixel = yAxis.getPixelForValue(numericThresholds.caution_min);
+            const minPixel = yAxis.getPixelForValue(numericThresholds.min);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(chartArea.left, chartArea.top, chartWidth, chartArea.bottom - chartArea.top);
+            ctx.clip();
+
+            // 1. 정상 영역 (파란색)
+            ctx.fillStyle = colors.normal;
+            ctx.fillRect(chartArea.left, maxPixel, chartWidth, normalMinPixel - maxPixel);
+
+            // 2. 주의 영역 (노란색)
+            ctx.fillStyle = colors.caution;
+            ctx.fillRect(chartArea.left, normalMinPixel, chartWidth, cautionMinPixel - normalMinPixel);
+
+            // 3. 위험 영역 (빨간색)
+            ctx.fillStyle = colors.danger;
+            ctx.fillRect(chartArea.left, cautionMinPixel, chartWidth, minPixel - cautionMinPixel);
+
+            ctx.restore();
+        }
+    };
+}
+
+
+    // --- 보행 점수 차트 ---
+    const scoreCtx = document.getElementById('gaitScoreChart').getContext('2d');
+    const scoreBackgroundPlugin = createBackgroundPlugin('scoreBackground', scoreThresholds, backgroundColors);
+
+    // Chart.js에 플러그인 등록 (중요: 전역 등록)
+    Chart.register(scoreBackgroundPlugin);
+
+    const scoreChartConfig = {
+        type: 'line',
+        data: {
+            labels: gaitTrendData.dates || [],
+            datasets: [{
+                label: '보행 점수',
+                data: (gaitTrendData.score || []).map(score => parseFloat((score * 10).toFixed(1))),
+                borderColor: '#3498db',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointBackgroundColor: '#3498db',
+                pointRadius: 4,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: scoreThresholds.min,
+                    max: scoreThresholds.max,
+                    ticks: { stepSize: 10 }
+                },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    };
+
+    if (window.scoreChartInstance) {
+        window.scoreChartInstance.destroy();
+    }
+    window.scoreChartInstance = new Chart(scoreCtx, scoreChartConfig);
+
+    // --- 보행 속도 차트 ---
+    const speedCtx = document.getElementById('gaitSpeedChart').getContext('2d');
+    const speedBackgroundPlugin = createBackgroundPlugin('speedBackground', speedThresholds, backgroundColors);
+
+    // Chart.js에 플러그인 등록 (중요: 전역 등록)
+    Chart.register(speedBackgroundPlugin);
+
+    const speedChartConfig = {
+        type: 'line',
+        data: {
+            labels: gaitTrendData.dates || [],
+            datasets: [{
+                label: '보행 속도',
+                data: (gaitTrendData.velocity || []).map(v => parseFloat(v.toFixed(1))),
+                borderColor: '#2ecc71',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointBackgroundColor: '#2ecc71',
+                pointRadius: 4,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: speedThresholds.min,
+                    max: speedThresholds.max
+                },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    };
+
+    if (window.speedChartInstance) {
+        window.speedChartInstance.destroy();
+    }
+    window.speedChartInstance = new Chart(speedCtx, speedChartConfig);
+}
+
+
+
+    // 트렌드 테이블 생성
+    function createTrendTable() {
+        const table = document.getElementById('trendTable');
+        const dateRow = table.rows[0];
+        const changeRow = table.rows[1];
+
+        // 기존 셀 제거 (헤더 제외)
+        while (dateRow.cells.length > 1) {
+            dateRow.deleteCell(1);
+        }
+        while (changeRow.cells.length > 1) {
+            changeRow.deleteCell(1);
+        }
+
+        // 새 셀 추가
+        gaitTrendData.dates.forEach((date, index) => {
+            const dateCell = dateRow.insertCell(-1);
+            dateCell.textContent = date;
+
+            const changeCell = changeRow.insertCell(-1);
+            if (index === 0) {
+                changeCell.textContent = '-';
+            } else {
+                const prevScore = gaitTrendData.score[index - 1];
+                const currentScore = gaitTrendData.score[index];
+                const changePercent = ((currentScore - prevScore) / prevScore * 100).toFixed(1);
+
+                if (parseFloat(changePercent) < -20) {
+                    changeCell.textContent = '악화';
+                    changeCell.className = 'negative';
+                } else {
+                    changeCell.textContent = '양호';
+                }
+            }
+        });
+    }
+
+</script>
+</body>
+</html>

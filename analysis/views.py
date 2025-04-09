@@ -1539,9 +1539,11 @@ def gait_report(request):
 
 
 @login_required
-def body_print(request, id):
-    max_count = 20
+def body_print(request, id, detail=None):
+    max_count = 4  # 최대 4개까지 보여줌
     body_info_queryset = CodeInfo.objects.filter(group_id='01').order_by('seq_no')
+
+    user = get_object_or_404(UserInfo, id=id)
 
     # 해당 유저의 모든 검사 결과를 쿼리
     body_result_queryset = BodyResult.objects.filter(
@@ -1557,6 +1559,8 @@ def body_print(request, id):
     body_result_latest = body_result_queryset[len(body_result_queryset) - 1]
 
     report_items = []
+    dates = ''
+
     for body_info in body_info_queryset:
         trend_data = []
         is_paired = False
@@ -1564,6 +1568,7 @@ def body_print(request, id):
         for body_result in body_result_queryset:
             body_code_id_ = body_info.code_id
             alias = body_info.code_id
+            unit = body_info.unit_name
             if 'leg_alignment' in body_code_id_ or 'back_knee' in body_code_id_ or 'scoliosis' in body_code_id_:
                 is_paired = True
                 if 'scoliosis' in body_code_id_:
@@ -1679,7 +1684,8 @@ def body_print(request, id):
                     'value_range': [body_info.min_value, body_info.max_value],
                     'trend': trend_data,
                     'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
-                                 ['outline', 'risk', 'improve', 'recommended']}
+                                 ['outline', 'risk', 'improve', 'recommended']},
+                    "unit": unit
                 })
         else:
             result_val = getattr(body_result_latest, body_info.code_id)
@@ -1730,7 +1736,8 @@ def body_print(request, id):
                 'value_range': [body_info.min_value, body_info.max_value],
                 'trend': trend_data,
                 'sections': {getattr(body_info, f'title_{name}'): getattr(body_info, name) for name in
-                             ['outline', 'risk', 'improve', 'recommended']}
+                             ['outline', 'risk', 'improve', 'recommended']},
+                "unit": unit
             })
 
     user = UserInfo.objects.filter(id=id).first()
@@ -1742,41 +1749,69 @@ def body_print(request, id):
 
     # Prepare trend data for each report item
     trend_data_dict = {}
+    side_data_dict = {}
     for item in report_items:
         alias = item['alias']
         trend_data = item['trend']
 
-        if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']:
+        if alias in ['spinal_imbalance', 'o_x_legs', 'knee_angle']:  # 어깨-골반, 휜다리, 무릎 기울기
             trend_data_dict[alias] = {
                 'val1': [value[0] for value in trend_data],  # 왼쪽 또는 상부
                 'val2': [value[1] for value in trend_data],  # 오른쪽 또는 하부
                 'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
                 'part': ['어깨', '골반'] if alias == 'spinal_imbalance' else ['왼쪽', '오른쪽']
             }
+
+            if alias == 'knee_angle':
+                side_data_dict[alias + "_left"] = {
+                    'val1': [value[0] for value in trend_data],  # 왼쪽
+                    'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
+                    'part': ['왼쪽']
+                }
+
+                side_data_dict[alias + "_right"] = {
+                    'val2': [value[1] for value in trend_data],  # 오른쪽
+                    'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
+                    'part': ['오른쪽']
+                }
+
         else:
             trend_data_dict[alias] = {
                 'values': [value[0] for value in trend_data],
                 'dates': [value[1] for value in trend_data]
             }
+            dates = trend_data[-1][1]  # 마지막 날짜를 가져옴
 
     created_dt = body_result_latest.created_dt.strftime('%Y%m%dT%H%M%S%f')
 
     front_img_url = generate_presigned_url(file_keys=['front', created_dt])
     side_img_url = generate_presigned_url(file_keys=['side', created_dt])
 
+    # 날짜 형식 변경 YYYY년 MM월 DD일
+    dates = datetime.strptime(dates, '%Y-%m-%d %H:%M:%S').strftime('%Y년 %m월 %d일')
+
     context = {
         'user': user,
         'report_items': report_items,
         'trend_data_dict': trend_data_dict,
+        'side_data_dict': side_data_dict,
         'image_front_url': front_img_url,
-        'image_side_url': side_img_url
+        'image_side_url': side_img_url,
+        'dates': dates,
     }
 
+    if detail is not None:
+        return render(request, 'body_print_kiosk.html', context)
     return render(request, 'body_print.html', context)
 
 
+@login_required()
+def body_print_kiosk(request, id):
+    return body_print(request, id, detail=True)
+
+
 @login_required
-def gait_print(request, id):
+def gait_print(request, id, detail=None):
     user = UserInfo.objects.filter(id=id).first()
     if not user:
         return render(request, '404.html', status=404)
@@ -1869,7 +1904,7 @@ def gait_print(request, id):
     }
 
     # 변화 추이 데이터 준비 (최근 5개 결과)
-    gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:5]
+    gait_trends = GaitResult.objects.filter(user_id=id).order_by('-created_dt')[:4]
 
     if len(gait_trends) >= 1:  # 추이 데이터가 1개 이상인 경우에만 차트 생성
         trend_data = {
@@ -1943,5 +1978,11 @@ def gait_print(request, id):
         'normal_ranges': json.dumps(normal_ranges),
         'code_info': json.dumps(code_info_context, cls=DjangoJSONEncoder)
     }
-
+    if detail is not None:
+        return render(request, 'gait_print_kiosk.html', context)
     return render(request, 'gait_print.html', context)
+
+
+@login_required()
+def gait_print_kiosk(request, id):
+    return gait_print(request, id, detail=True)
