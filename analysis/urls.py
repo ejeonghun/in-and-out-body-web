@@ -116,6 +116,8 @@ urlpatterns = [
     path('api/mobile/auth/sms_send/',        views_mobile.mobile_send_auth_sms,              name='mobile-auth-send_sms'),           # SMS 인증 요청
     path('api/mobile/auth/sms_check/',       views_mobile.mobile_check_auth_sms,        name='mobile-auth-check_sms'),          # SMS 인증 확인
     path('api/mobile/auth/signup/',       views_mobile.mobile_signup,            name='mobile-auth-signup'),             # 회원가입
+    path('api/mobile/auth/password_check/', views_mobile.is_default_Password, name="mobile-auth-init_password_check"), # 초기 비밀번호 확인
+    path('api/mobile/auth/change_password/', views_mobile.change_password, name="mobile-auth-change_password"), # 비밀번호 변경
 
 
 
