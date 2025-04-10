@@ -33,13 +33,13 @@
         }
 
         /* 인쇄용 스타일 */
-        @media print {  
+        @media print {
             * {
                 -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
                 color-adjust: exact !important; /* Firefox */
                 print-color-adjust: exact !important; /* 표준 속성 */
             }
-            
+
             .chart-container {
                 width: 100%; /* 인쇄 시 원래 너비로 복원 */
             }
@@ -48,6 +48,25 @@
             body {
                 width: 210mm; /* A4 너비 */
                 margin: 0 auto;
+            }
+
+            /* 인쇄 버튼 숨기기 */
+            .print-button-container {
+                display: none !important;
+            }
+
+            /* 인쇄 시 원형 차트 표시 개선 */
+            .score-circle {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* SVG 요소가 인쇄에서 제대로 표시되도록 설정 */
+            svg {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
         }
 
@@ -93,7 +112,7 @@
             margin-bottom: 30px;
         }
 
-        .score-circle {
+        {% comment %} .score-circle {
             width: 150px;
             height: 150px;
             border-radius: 50%;
@@ -113,7 +132,40 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+        } {% endcomment %}
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        .score-circle svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .score-inner {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
 
         .score-label {
             font-size: 14px;
@@ -415,7 +467,6 @@
 <div class="container">
     <h1>뇌인지 관련 AI 보행 스캔 결과</h1>
     <div class="divider"></div>
-
     <div class="print-button-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
         <button id="print-report" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200 flex items-center">
             <i class="bi bi-printer mr-2"></i> 인쇄하기
@@ -423,22 +474,169 @@
     </div>
 
     <script>
-        document.getElementById('print-report').addEventListener('click', function() {
-            // 인쇄 페이지를 새 창으로 열고 자동으로 인쇄 팝업 표시
-            // var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
+        // 모바일 환경 감지 함수
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   (navigator.userAgent.includes('Mobile') && navigator.userAgent.includes('WebView'));
+        }
+
+
+
+
+        // PDF 생성 및 다운로드 함수
+        function generatePDF() {
+            // 인쇄 버튼 숨기기
             const printContainer = document.querySelector(".print-button-container");
             printContainer.style.display = "none";
 
-            window.print();
+            // 모바일에서는 PDF 생성, 데스크톱에서는 일반 인쇄
+            if (isMobileDevice()) {
+                // 컨테이너 요소 가져오기
+                const container = document.querySelector('.container');
+
+                // 점수 원 상태 가져오기
+                const scoreCircle = document.getElementById('scoreCircle');
+                const score = parseFloat(scoreCircle.dataset.score || '65');
+                const color = scoreCircle.dataset.color || '#FFA500';
+
+                // 점수 원 상태를 저장해둡니다
+                const scoreState = {
+                    score: score,
+                    color: color
+                };
+
+                // PDF 생성 옵션
+                const options = {
+                    scale: 2, // 고해상도를 위한 스케일 조정
+                    useCORS: true, // 외부 이미지 허용
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false, // 로깅 끄기
+                    imageTimeout: 0, // 이미지 로딩 시간제한 없음
+                    removeContainer: true, // 임시 컨테이너 제거
+                    onclone: function(clonedDoc) {
+                        try {
+                            // 복사된 문서에서 SVG 요소 처리
+                            const scoreIndicator = clonedDoc.getElementById('scoreIndicator');
+                            const scoreInner = clonedDoc.querySelector('.score-inner');
+
+                            if (scoreIndicator) {
+                                // 원의 둘레 계산 (2πr)
+                                const circumference = 2 * Math.PI * 65;
+
+                                // 점수에 따른 채워진 부분 계산
+                                const fillPercentage = scoreState.score / 100;
+                                const dashArray = `${fillPercentage * circumference} ${circumference}`;
+
+                                // 색상 및 대시 어레이 설정 (모든 가능한 방법 사용)
+                                scoreIndicator.setAttribute('stroke', scoreState.color);
+                                scoreIndicator.setAttribute('stroke-dasharray', dashArray);
+                                scoreIndicator.style.stroke = scoreState.color;
+                                scoreIndicator.style.strokeDasharray = dashArray;
+                            }
+
+                            // 점수 원 레이아웃 고정
+                            if (scoreInner) {
+                                scoreInner.style.position = 'absolute';
+                                scoreInner.style.top = '50%';
+                                scoreInner.style.left = '50%';
+                                scoreInner.style.transform = 'translate(-50%, -50%)';
+                                scoreInner.style.zIndex = '10';
+                            }
+                        } catch (e) {
+                            console.error('SVG 원 처리 오류:', e);
+                        }
+                    }
+                };
+
+                // SVG 요소를 정확하게 처리하기 위한 지연 추가
+                setTimeout(() => {
+                    // html2canvas로 HTML을 이미지로 변환
+                    html2canvas(container, options).then(function(canvas) {
+                    // 인쇄 버튼 다시 표시
+                    printContainer.style.display = "block";
+
+                    // jsPDF 인스턴스 생성 (A4 사이즈)
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+
+                    // A4 사이즈 (210mm x 297mm)
+                    const pdfWidth = 210;
+                    const pdfHeight = 297;
+
+                    // 캔버스 이미지를 데이터 URL로 변환
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // 이미지 비율 계산
+                    const imgWidth = pdfWidth;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                    // 여러 페이지로 나누기
+                    let heightLeft = imgHeight;
+                    let position = 0;
+                    let pageNumber = 1;
+
+                    // 첫 페이지 추가
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+
+                    // 필요한 경우 추가 페이지 생성
+                    while (heightLeft > 0) {
+                        position = -pdfHeight * pageNumber;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pdfHeight;
+                        pageNumber++;
+                    }
+
+                    // PDF 파일 생성 및 새 창에서 열기
+                    const pdfBlob = pdf.output('blob');
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    window.open(pdfUrl, '_blank');
+                    }).catch(error => {
+                        console.error('PDF 생성 오류:', error);
+                        printContainer.style.display = "block";
+                    });
+                }, 100); // 100ms 지연으로 SVG 렌더링 완료 확인
+            } else {
+                // 데스크톱에서는 기본 인쇄 기능 사용
+                window.print();
+
+                // 인쇄 후 버튼 다시 표시
+                setTimeout(() => {
+                    printContainer.style.display = "block";
+                }, 1000);
+            }
+        }
+
+
+        document.getElementById('print-report').addEventListener('click', function() {
+            // 인쇄 버튼 클릭 시 새로운 함수 호출
+            generatePDF();
         });
+
     </script>
 
     <!-- 점수 원형 차트 -->
     <div class="score-container">
         <div id="scoreCircle" class="score-circle">
+            <svg width="150" height="150" viewBox="0 0 150 150" id="scoreSvg" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <clipPath id="circleClip">
+                        <circle cx="75" cy="75" r="75"/>
+                    </clipPath>
+                </defs>
+                <g clip-path="url(#circleClip)">
+                    <!-- 배경 원 -->
+                    <circle cx="75" cy="75" r="65" fill="none" stroke="#e0e0e0" stroke-width="15"/>
+                    <!-- 점수 원 -->
+                    <circle cx="75" cy="75" r="65" fill="none" stroke="#FFA500" stroke-width="15"
+                        stroke-dasharray="0 408" id="scoreIndicator" transform="rotate(-90 75 75)"/>
+                </g>
+            </svg>
             <div class="score-inner">
                 <div class="score-label">보행점수</div>
-                <div id="scoreValue" class="score-value">65.0 점</div>
+                <div id="scoreValue" class="score-value">65.0점</div>
                 <div id="scoreStatus" class="score-status">주의</div>
             </div>
         </div>
@@ -534,6 +732,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
     // 데이터 가져오기 (서버에서 전달받은 데이터)
     const gaitData = {{ gait_data|safe }};
@@ -595,13 +795,51 @@
         statusText.textContent = status;
         scoreStatus.style.color = color;
 
-        // 원형 차트 색상 설정
+        // SVG 원형 차트 설정
+        const scoreIndicator = document.getElementById('scoreIndicator');
+        if (scoreIndicator) {
+            // 원의 둘레 계산 (2πr)
+            const circumference = 2 * Math.PI * 65;
+
+            // 점수에 따른 채워진 부분 계산
+            const fillPercentage = score / 100;
+            const dashArray = `${fillPercentage * circumference} ${circumference}`;
+
+            // 색상 및 대시 어레이 설정
+            scoreIndicator.setAttribute('stroke', color);
+            scoreIndicator.setAttribute('stroke-dasharray', dashArray);
+
+            // 속성 직접 설정 (호환성 개선)
+            scoreIndicator.style.stroke = color;
+            scoreIndicator.style.strokeDasharray = dashArray;
+        }
+
+        // 폴백: SVG가 제대로 렌더링되지 않는 경우를 대비
         const scoreCircle = document.getElementById('scoreCircle');
-        scoreCircle.style.background = `conic-gradient(${color} 0% ${score}%, #e0e0e0 ${score}% 100%)`;
+        if (scoreCircle) {
+            // 데이터 속성에 점수와 색상 저장 (후처리용)
+            scoreCircle.dataset.score = score;
+            scoreCircle.dataset.color = color;
+
+            // 모바일 환경에서 레이아웃 문제 방지
+            if (isMobileDevice()) {
+                // 점수 원 내부 요소 위치 고정
+                const scoreInner = document.querySelector('.score-inner');
+                if (scoreInner) {
+                    scoreInner.style.position = 'absolute';
+                    scoreInner.style.top = '50%';
+                    scoreInner.style.left = '50%';
+                    scoreInner.style.transform = 'translate(-50%, -50%)';
+                    scoreInner.style.zIndex = '10';
+                }
+            }
+        }
 
         // 점수 마커 위치 설정
         scoreMarker.style.left = `${score}%`;
     }
+
+
 
     // 지표 상태 결정 함수
     function getMetricStatus(value, min, max, normalMin, normalMax, cautionMin, cautionMax, direction) {
