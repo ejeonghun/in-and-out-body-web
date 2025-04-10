@@ -267,6 +267,10 @@ CSRF_TRUSTED_ORIGINS = [ # CSRF 토큰 허용 Origin
     'http://localhost'
 ]
 
+# 환경 변수에서 추가 CSRF 출처 가져오기 (ngrok 등)
+if os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS'):
+    CSRF_TRUSTED_ORIGINS.extend(os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS').split(','))
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # 프록시 허용
 
 
@@ -278,6 +282,7 @@ CSRF_COOKIE_SECURE = False
 
 
 
+# 기본 ALLOWED_HOSTS 설정
 ALLOWED_HOSTS = [
     'body.aicu.life',
     'www.body.aicu.life',
@@ -288,6 +293,10 @@ ALLOWED_HOSTS = [
     'www.test-body.aicu.life',
     '10.0.2.2' # Android Emulator
 ]
+
+# 환경 변수에서 추가 호스트 가져오기 (ngrok 등)
+if os.environ.get('DJANGO_ALLOWED_HOSTS'):
+    ALLOWED_HOSTS.extend(os.environ.get('DJANGO_ALLOWED_HOSTS').split(','))
 
 
 # 부정접속 로깅 설정
