@@ -1,48 +1,58 @@
 from django.contrib import admin
-from .models import UserInfo, GaitResult, BodyResult, SessionInfo, SchoolInfo, UserHist, KioskInfo
+from .models import UserInfo, GaitResult, BodyResult, SessionInfo, SchoolInfo, UserHist, KioskInfo, OrganizationInfo, KioskCount
+from django.contrib.auth.hashers import make_password
+from django.forms import ModelForm
 
 
 @admin.register(BodyResult)
 class BodyResultAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user_id', 'created_dt')
+    list_display = ('id', 'user_id', 'formatted_created_dt')
 
     @staticmethod
     def user_id(user):
         return user.id
 
+    @staticmethod
+    def formatted_created_dt(obj):
+        return obj.created_dt.strftime('%Y-%m-%d %H:%M:%S')  # 한국 형식으로 포맷팅
+
+class UserInfoForm(ModelForm): # 비밀번호를 암호화해서 저장하도록 하는 커스텀 폼 
+    class Meta:
+        model = UserInfo
+        fields = '__all__'  # 모든 필드 포함
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            return make_password(password)  # 비밀번호를 암호화하여 저장
+        return self.instance.password  # 기존 비밀번호 유지
 
 @admin.register(UserInfo)
 class UserInfoAdmin(admin.ModelAdmin):
-    actions = ['update_display_name']
+    form = UserInfoForm
+    list_display = ('username', 'phone_number', 'formatted_created_dt')
 
-    def update_display_name(self, request, queryset):
-        # 학교와 기관 정보를 prefetch_related로 한 번에 가져옴
-        users = UserInfo.objects.select_related('organization', 'school').all()
-        users_to_update = []
+    @staticmethod
+    def formatted_created_dt(obj):
+        return obj.created_dt.strftime('%Y-%m-%d %H:%M:%S')  # 한국 형식으로 포맷팅
+    
 
-        for user in users:
-            if user.user_type == 'O' and user.organization:
-                if user.department:
-                    user.user_display_name = f"{user.organization.organization_name} {user.department} {user.student_name}"
-                else:
-                    user.user_display_name = f"{user.organization.organization_name} " + (
-                        user.student_name if user.student_name else '관리자')
-                    # dept가 없으면
+@admin.register(KioskCount)
+class KioskCountAdmin(admin.ModelAdmin):
+    list_display = ('formatted_kiosk','formatted_created_dt')
 
-                users_to_update.append(user)
-            elif user.user_type == 'S' and user.school:
-                if user.student_grade and user.student_class and user.student_number:
-                    user.user_display_name = f"{user.school.school_name} {user.student_grade}학년 {user.student_class}반 {user.student_number}번 {user.student_name}"
-                else:
-                    user.user_display_name = f"{user.school.school_name} " + (
-                        user.student_name if user.student_name else '관리자')
-                users_to_update.append(user)
+    @staticmethod
+    def formatted_kiosk(obj):
+        kiosk = KioskInfo.objects.filter(id=obj.kiosk_id)
+        print(kiosk.get().kiosk_id)
+        print(kiosk.get().Org)
+        if kiosk.get().Org != None:
+            return f"{kiosk.get().Org} - {kiosk.get().kiosk_id} (회원 보행/체형 : {obj.type1}회, {obj.type2}회 /// 비회원 보행/체형 : {obj.type3}회, {obj.type4}회)"
+        else:
+            return f"기관/학교 정보 없음 - {kiosk.get().kiosk_id} (회원 보행/체형 : {obj.type1}회, {obj.type2}회 /// 비회원 보행/체형 : {obj.type3}회, {obj.type4}회)"
+    
+    @staticmethod
+    def formatted_created_dt(obj):
+        return obj.created_dt.strftime('%Y-%m-%d %H:%M:%S')  # 한국 형식으로 포맷팅
 
-        # bulk_update로 한 번에 처리
-        UserInfo.objects.bulk_update(users_to_update, ['user_display_name'])
-
-    update_display_name.short_description = "Update display names for all users"
-
-
-# Register your models here.
-admin.site.register([GaitResult, SessionInfo, SchoolInfo, UserHist, KioskInfo])
+admin.site.register([GaitResult, SessionInfo, SchoolInfo, UserHist, KioskInfo, OrganizationInfo])
