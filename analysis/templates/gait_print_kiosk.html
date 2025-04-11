@@ -785,7 +785,7 @@
 
         // 상태 결정
         let status, color;
-        if (score >= normalRanges.score.normal_min) {
+        if (score >= normalRanges.score.normal_min * 10) {
             status = '정상';
             color = '#4c9cfa';
         } else if (score >= 40.0) {
@@ -903,10 +903,9 @@
     }
 
     // 단일 지표 생성 함수 (보행속도)
-    function createSingleMetric(container, title, value, unit, codeData) {
+    function createSingleMetric(container, title, value, unit, codeData) { // 보행속도만 사용함
         // 값이 범위를 벗어나지 않도록 조정
         value = Math.max(codeData.min_value, Math.min(codeData.max_value, value));
-
         const statusInfo = getMetricStatus(
             value,
             codeData.min_value,
@@ -940,7 +939,7 @@
         )}
                     <div class="metric-marker" style="left: ${getPercentage(value, codeData.min_value, codeData.max_value)}%;"></div>
                 </div>
-                <div class="metric-value" style="color: ${getValueColor(statusInfo.class)}">${value.toFixed(1)}${unit}</div>
+                <div class="metric-value" style="color: ${getValueColor(statusInfo.class)}; font-size: 13px;">${value.toFixed(1)}${unit}</div>
             </div>
 
             <div class="metric-scale">
