@@ -96,6 +96,7 @@ urlpatterns = [
     path('api/search-organization/', views.search_organization, name='search_organization'),
     path('api/register-organization/', views.register_organization, name='register_organization'),
     path('api/get-organization-info/', views.get_organization_info, name='get_organization_info'),
+    # path('api/register-admin-organization/', views.register_admin_organization, name='register_admin_organization'),
 
     # 서비스 모니터링 (prometheus)
     path('', include('django_prometheus.urls')),
