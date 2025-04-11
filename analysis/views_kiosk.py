@@ -45,7 +45,7 @@ from analysis.swagger import (
 
 # 응답코드 관련
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, \
-    HTTP_500_INTERNAL_SERVER_ERROR, HTTP_429_TOO_MANY_REQUESTS
+    HTTP_500_INTERNAL_SERVER_ERROR
 
 
 # KIOSK_LATEST_VERSION = get_kiosk_latest_version()
@@ -305,6 +305,170 @@ def create_body_result(request):
         # Serializer 유효성 검사 실패
         return Response({'data': {'message': serializer.errors, 'status': HTTP_500_INTERNAL_SERVER_ERROR}},
                         status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# @swagger_auto_schema(**kiosk_create_body_result_)
+# @api_view(['POST'])
+# def create_body_result(request):
+#     session_key = request.data.get('session_key')
+#     # session_key가 없는 경우
+#     if not session_key:
+#         return Response({'data': {'message': 'session_key_required', 'status': HTTP_400_BAD_REQUEST}},
+#                         status=HTTP_400_BAD_REQUEST)
+
+
+#     body_data = request.data.get('body_data')
+#     front_data = request.data.get('front_data', {})
+#     side_data = request.data.get('side_data', {})
+
+#     # body_data가 없는 경우
+#     if not body_data:
+#         return Response({'data': {'message': 'body_data_required', 'status': HTTP_400_BAD_REQUEST}},
+#                         status=HTTP_400_BAD_REQUEST)
+
+#     if not front_data or not side_data:
+#         return Response({'data': {'message': 'front_and_side_data_required', 'status': HTTP_400_BAD_REQUEST}},
+#                         status=HTTP_400_BAD_REQUEST)
+
+#     try:
+#         # session_key를 기반으로 세션 정보 조회
+#         session_info = SessionInfo.objects.get(session_key=session_key)
+#     except SessionInfo.DoesNotExist:
+#         # 세션 정보가 없는 경우
+#         return Response({'data': {'message': 'session_key_not_found', 'status': HTTP_404_NOT_FOUND}},
+#                         status=HTTP_404_NOT_FOUND)
+
+#     if session_check_expired(session_info): # 세션 만료 체크 및 갱신
+#         return Response({'data': {'message': 'session_expired', 'status': 403}})
+
+#     try:
+#         # 세션 정보에서 사용자 정보 조회
+#         user_info = UserInfo.objects.get(id=session_info.user_id)
+#     except UserInfo.DoesNotExist:
+#         # 사용자 정보가 없는 경우
+#         return Response({'data': {'message': 'user_not_found', 'status': HTTP_401_UNAUTHORIZED}},
+#                         status=HTTP_401_UNAUTHORIZED)
+
+#     # 사용자의 학교 정보가 없는 경우에 채울 Temp School 정보
+#     null_school, created = SchoolInfo.objects.update_or_create(
+#         id=-1,
+#         defaults=dict(
+#             school_name='N/A',
+#             contact_number='N/A'
+#         )
+#     )
+
+#     data = body_data.copy()
+#     if user_info.school is None:  # 회원의 학교 정보가 없는 경우
+#         data['school'] = null_school.id
+#     else:  # 회원의 학교 정보가 있는 경우
+#         # 학교 id, 학년, 반, 번호를 저장
+#         data['school'] = user_info.school.id
+#         data['student_grade'] = user_info.student_grade
+#         data['student_class'] = user_info.student_class
+#         data['student_number'] = user_info.student_number
+#         data['image_front_url'] = 'N'
+#         data['image_side_url'] = 'N'
+#         data['front_data'] = front_data.get('results', {}),
+#         data['side_data'] = side_data.get('results', {}),
+
+#     data['user'] = user_info.id
+#     serializer = BodyResultSerializer(data=data)
+
+#     if serializer.is_valid():
+#         # 데이터 저장
+#         body_result = serializer.save()
+#         # print(serializer.data)
+
+#         # 저장된 데이터의 생성 시간으로 파일 이름 생성
+#         created_dt = dt.strptime(serializer.data['created_dt'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y%m%dT%H%M%S%f')
+#         image_front_bytes = request.data.get('image_front', None)
+#         image_side_bytes = request.data.get('image_side', None)
+
+#         try:
+#             # 이미지 검증 및 업로드
+#             if image_front_bytes and image_side_bytes:
+#                 try:
+#                     # 이미지 검증
+#                     verified_front = verify_image(image_front_bytes)
+#                     verified_side = verify_image(image_side_bytes)
+
+#                     # 검증된 이미지만 업로드
+#                     upload_image_to_s3(verified_front, file_keys=['front', created_dt])
+#                     upload_image_to_s3(verified_side, file_keys=['side', created_dt])
+#                 except ValueError as ve:
+#                     # 이미지 형식이 잘못된 경우
+#                     return Response(
+#                         {'data': {'message': f"Invalid image format: {str(ve)}", 'status': HTTP_400_BAD_REQUEST}},
+#                         status=HTTP_400_BAD_REQUEST)
+#             else:
+#                 # 누락된 이미지 확인
+#                 missing_images = []
+#                 if not image_front_bytes:
+#                     missing_images.append("image_front")
+#                 if not image_side_bytes:
+#                     missing_images.append("image_side")
+#                 return Response({'data': {'message': f"Missing images: {', '.join(missing_images)}",
+#                                           'status': HTTP_400_BAD_REQUEST}}, status=HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             # 기타 예외 발생 시
+#             return Response({'data': {'message': str(e), 'status': HTTP_500_INTERNAL_SERVER_ERROR}},
+#                             status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+#         try:
+#             # Front Keypoints 저장
+#             front_keypoints = front_data.get('keypoints', [])
+#             if len(front_keypoints) == 33:  # keypoints는 총 33개의 데이터여야 함
+#                 front_keypoint_data = {
+#                     'body_result': body_result.id,
+#                     'pose_type': 'front',
+#                     'x': [float(kp['x']) for kp in front_keypoints],
+#                     'y': [float(kp['y']) for kp in front_keypoints],
+#                     'z': [float(kp['z']) for kp in front_keypoints],
+#                     'visibility': [float(kp['visibility']) for kp in front_keypoints],
+#                     'presence': [float(kp['presence']) for kp in front_keypoints]
+#                     }
+#                 front_keypoint_serializer = KeypointSerializer(data=front_keypoint_data)
+#                 if not front_keypoint_serializer.is_valid():
+#                     raise ValueError(f"Invalid front keypoints: {front_keypoint_serializer.errors}")
+#                 front_response = front_keypoint_serializer.save()
+#                 print(front_response)
+#             else:
+#                 raise ValueError(f"Invalid front keypoints: {front_keypoints}")  # front_keypoints != 33
+
+#             # Side Keypoints 저장
+#             side_keypoints = side_data.get('keypoints', [])
+#             if len(side_keypoints) == 33:
+#                 side_keypoint_data = {
+#                     'body_result': body_result.id,
+#                     'pose_type': 'side',
+#                     'x': [float(kp['x']) for kp in side_keypoints],
+#                     'y': [float(kp['y']) for kp in side_keypoints],
+#                     'z': [float(kp['z']) for kp in side_keypoints],
+#                     'visibility': [float(kp['visibility']) for kp in side_keypoints],
+#                     'presence': [float(kp['presence']) for kp in side_keypoints]
+#                 }
+#                 side_keypoint_serializer = KeypointSerializer(data=side_keypoint_data)
+#                 if not side_keypoint_serializer.is_valid():
+#                     raise ValueError(f"Invalid side keypoints: {side_keypoint_serializer.errors}")
+#                 side_response = side_keypoint_serializer.save()
+#                 print(side_response)
+#             else:
+#                 raise ValueError(f"Invalid side keypoints: {side_keypoints}")
+#         except Exception as e:
+#         # 기타 예외 발생 시
+#             return Response({'data': {'message': str(e), 'status': HTTP_500_INTERNAL_SERVER_ERROR}},
+#                             status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+#         # 성공 응답
+#         return Response({'data': {'message': 'created_body_result', 'status': HTTP_200_OK}}, status=HTTP_200_OK)
+#     else:
+#         # Serializer 유효성 검사 실패
+#         return Response({'data': {'message': serializer.errors, 'status': HTTP_500_INTERNAL_SERVER_ERROR}},
+#                         status=HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @swagger_auto_schema(**kiosk_get_body_result_)
 @api_view(['GET'])
@@ -660,13 +824,10 @@ def kiosk_send_sms(request):
 
     result = send_sms(phone_number)
 
-    if (result == 'sent'): # 정상 전송
-        return Response({'message': 'success', 'status': 0}, status=HTTP_200_OK)
-    elif (result == 'limit'): # 발송 제한(7일 총 10총 까지 가능) - 비정상 사용 방지
-        return Response({"message": "too_many_requests", 'status': '4'}, status=HTTP_429_TOO_MANY_REQUESTS)
-    else: # 그 외 경우
-        return Response({'message': 'not sent', 'status': 500}, status=HTTP_200_OK)  # 여러 오류
-
+    if (result == 'sent'):
+        return JsonResponse({'message': 'success', 'status': 0}, status=HTTP_200_OK)
+    else:
+        return JsonResponse({'message': 'failed', 'status': 500}, status=HTTP_200_OK)
 
 
 @swagger_auto_schema(**kiosk_check_sms_)
@@ -695,3 +856,36 @@ def kiosk_check_sms(request):
 
     except Exception as e:
         return JsonResponse({'message': str(e), 'status': 500})
+
+
+@api_view(['POST'])
+def kiosk_make_test(request):  # 키오스크 납품전 제품등록을 위한 API (학교/기관)
+    if request.method == 'POST':
+        kiosk_id = request.data.get('kiosk_id')  # 키오스크 시리얼 번호 (unique한 값)
+        type = request.data.get('type')  # 키오스크 종류 ('O': 학교, 'S': 기관)
+
+        if not kiosk_id or not type:
+            return Response({'message': 'kiosk_id_and_type_required', 'status': 1}, status=HTTP_400_BAD_REQUEST)
+
+        try:
+            kiosk_info, created = KioskInfo.objects.create(
+                kiosk_id=kiosk_id,
+            )
+
+            if type == 'O':
+                kiosk_info.Org = OrganizationInfo.objects.filter(organization_name="에이아이씨유(기관)").first().id
+            # elif type == 'S':
+            #     kiosk_info.Org = SchoolInfo.objects.filter(school_name="에이아이씨유(학교)").first().id
+            else:
+                return Response({'message': 'invalid_type', 'status': 2}, status=HTTP_400_BAD_REQUEST)
+
+            kiosk_info.version = "test"
+            kiosk_info.location = "AICU-본사"
+            kiosk_info.save()
+
+            return Response({'message': 'success', 'status': 0}, status=HTTP_200_OK)
+
+        except IntegrityError as e:
+            print(f"IntegrityError: {e}")
+            return Response({'data': {'message': 'database_error', 'status': 500}})
+
