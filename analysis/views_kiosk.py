@@ -865,3 +865,38 @@ def kiosk_check_sms(request):
     
     except Exception as e:
         return JsonResponse({'message': str(e), 'status': 500})
+    
+
+
+
+@api_view(['POST'])
+def kiosk_make_test(request): # 키오스크 납품전 제품등록을 위한 API (학교/기관)
+    if request.method == 'POST':
+        kiosk_id = request.data.get('kiosk_id') # 키오스크 시리얼 번호 (unique한 값)
+        type = request.data.get('type') # 키오스크 종류 ('O': 학교, 'S': 기관)
+
+        if not kiosk_id or not type:
+            return Response({'message': 'kiosk_id_and_type_required', 'status': 1}, status=HTTP_400_BAD_REQUEST)
+        
+        try:
+            kiosk_info, created = KioskInfo.objects.create(
+                kiosk_id=kiosk_id,
+            )
+
+            if type == 'O':
+                kiosk_info.Org = OrganizationInfo.objects.filter(organization_name="에이아이씨유(기관)").first().id
+            # elif type == 'S':
+            #     kiosk_info.Org = SchoolInfo.objects.filter(school_name="에이아이씨유(학교)").first().id
+            else:
+                return Response({'message': 'invalid_type', 'status': 2}, status=HTTP_400_BAD_REQUEST)
+            
+            kiosk_info.version = "test"
+            kiosk_info.location = "AICU-본사"
+            kiosk_info.save()
+
+            return Response({'message': 'success', 'status': 0}, status=HTTP_200_OK)
+
+        except IntegrityError as e:
+            print(f"IntegrityError: {e}")
+            return Response({'data': {'message': 'database_error', 'status': 500}})
+        

@@ -96,6 +96,7 @@ urlpatterns = [
     path('api/search-organization/', views.search_organization, name='search_organization'),
     path('api/register-organization/', views.register_organization, name='register_organization'),
     path('api/get-organization-info/', views.get_organization_info, name='get_organization_info'),
+    # path('api/register-admin-organization/', views.register_admin_organization, name='register_admin_organization'),
 
     # 서비스 모니터링 (prometheus)
     path('', include('django_prometheus.urls')),
@@ -141,7 +142,7 @@ urlpatterns = [
     re_path(r'^docs/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
-    # re_path(r'^static/(?P<path>.*)$', serve, {'document_root':settings.STATIC_ROOT}),   
+    # re_path(r'^static/(?P<path>.*)$', serve, {'document_root':settings.STATIC_ROOT}),
 ]
 
 if settings.DEBUG:

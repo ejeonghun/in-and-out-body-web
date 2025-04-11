@@ -689,6 +689,9 @@ def get_organization_info(request):
     return JsonResponse(org_info)
 
 
+
+
+
 def no_result(request):
     return render(request, 'no_result.html')
 
@@ -1565,8 +1568,6 @@ def body_print(request, id, detail=None):
         return render(request, 'no_result.html', status=404)
     body_result_latest = body_result_queryset[len(body_result_queryset) - 1]
 
-    print(len(body_result_queryset))
-
     report_items = []
     dates = ''
 
@@ -1578,7 +1579,7 @@ def body_print(request, id, detail=None):
             body_code_id_ = body_info.code_id
             alias = body_info.code_id
             unit = body_info.unit_name
-        
+
             if 'leg_alignment' in body_code_id_ or 'back_knee' in body_code_id_ or 'scoliosis' in body_code_id_:
                 is_paired = True
                 if 'scoliosis' in body_code_id_:
@@ -1682,6 +1683,18 @@ def body_print(request, id, detail=None):
             else:
                 result = f'{result1} / {result2}'
             if all([i['title'] != title for i in report_items]):
+                # 특수 항목들에 대한 측정 항목 설정
+                custom_measurement_type = None
+                if alias == 'spinal_imbalance':
+                    if i == 0:  # 척추-어깨
+                        custom_measurement_type = ''
+                    else:  # 척추-골반
+                        custom_measurement_type = '척추-(골반/어깨) 정렬비율'
+                elif alias == 'o_x_legs':
+                    custom_measurement_type = '다리가 굽어진 정도'
+                elif alias == 'knee_angle':
+                    custom_measurement_type = '다리가 굽어진 정도'
+
                 report_items.append({
                     'title': title,
                     'alias': alias,
@@ -1689,6 +1702,7 @@ def body_print(request, id, detail=None):
                     'description': description_list,
                     'description_list': True,
                     'metric': metric,
+                    'measurement_type': custom_measurement_type or body_info.measurement_type,
                     'summary': [re.sub(r'\(.*?\)', '', x) for x in description_list],
                     'normal_range': [body_info.normal_min_value, body_info.normal_max_value],
                     'value_range': [body_info.min_value, body_info.max_value],
@@ -1741,6 +1755,7 @@ def body_print(request, id, detail=None):
                 'description': description,
                 'description_list': False,
                 'metric': metric,
+                'measurement_type': body_info.measurement_type,
                 'summary': re.sub(r'\(.*?\)', '', description),
                 'normal_range': normal_range,
                 'value_range': [body_info.min_value, body_info.max_value],
@@ -1784,7 +1799,7 @@ def body_print(request, id, detail=None):
                     'dates': [value[2] for value in trend_data],  # 날짜 (세 번째 요소)
                     'part': ['오른쪽']
                 }
-            
+
         else:
             trend_data_dict[alias] = {
                 'values': [value[0] for value in trend_data],
@@ -2006,3 +2021,100 @@ def gait_print_kiosk(request, id):
 
 def qr(request):
     return render(request, 'qr.html')
+
+
+
+
+
+
+# @api_view(['POST'])
+# def register_admin_organization(request):
+#     """기관 등록 및 관리자 계정 생성 API
+
+#     Python GUI(tkinter) 애플리케이션에서 호출하는 API로,
+#     기관 정보와 관리자 계정 정보를 받아 한 번에 처리합니다.
+#     """
+#     if request.method == 'POST':
+#         data = json.loads(request.body) if isinstance(request.body, bytes) else request.data
+
+#         org_name = data.get('org_name')
+#         address = data.get('address')
+#         contact_number = data.get('contact_number')
+#         admin_id = data.get('admin_id')
+#         admin_password = data.get('admin_password')
+
+#         # 필수 파라미터 검증
+#         if not all([org_name, address, admin_id, admin_password]):
+#             return JsonResponse({
+#                 'message': '필수 정보가 누락되었습니다. 기관명, 주소, 관리자 ID, 비밀번호는 필수입니다.',
+#                 'status': 'error'
+#             }, status=400)
+
+#         try:
+#             # 1. 기관 정보 등록
+#             if org_name.endswith('학교'):
+#                 # 학교인 경우
+#                 org, created = SchoolInfo.objects.update_or_create(
+#                     school_name=org_name,
+#                     defaults={'contact_number': contact_number, 'address': address}
+#                 )
+#                 user_type = 'S'
+#             else:
+#                 # 일반 기관인 경우
+#                 org, created = OrganizationInfo.objects.update_or_create(
+#                     organization_name=org_name,
+#                     defaults={'contact_number': contact_number, 'address': address}
+#                 )
+#                 user_type = 'O'
+
+#             # 2. 관리자 계정 생성
+#             user, user_created = UserInfo.objects.update_or_create(
+#                 username=admin_id,
+#                 defaults={
+#                     'password': make_password(admin_password),
+#                     'phone_number': admin_id,  # 전화번호 필드에 관리자 ID 사용
+#                     'user_type': user_type,
+#                     'student_name': f'{org_name} 관리자',
+#                     'department': '관리자',
+#                 }
+#             )
+
+#             # 3. 관리자 계정에 기관 연결
+#             if user_type == 'S':
+#                 user.school = org
+#                 user.organization = None
+#             else:
+#                 user.organization = org
+#                 user.school = None
+
+#             # 4. 키오스크 정보 생성 또는 업데이트
+#             kiosk_id = f"kiosk_{org_name.replace(' ', '_')}"
+#             kiosk, kiosk_created = KioskInfo.objects.update_or_create(
+#                 kiosk_id=kiosk_id,
+#                 defaults={
+#                     'location': address,
+#                     'remark': f'{org_name} 키오스크',
+#                     'active': True,
+#                     'Org': org if user_type == 'O' else None
+#                 }
+#             )
+
+#             user.save()
+
+#             return JsonResponse({
+#                 'message': '기관 및 관리자 계정이 성공적으로 등록되었습니다.',
+#                 'status': 'success',
+#                 'data': {
+#                     'org_name': org_name,
+#                     'admin_id': admin_id,
+#                     'kiosk_id': kiosk_id
+#                 }
+#             }, status=200)
+
+#         except Exception as e:
+#             return JsonResponse({
+#                 'message': f'오류가 발생했습니다: {str(e)}',
+#                 'status': 'error'
+#             }, status=500)
+
+#     return JsonResponse({'message': '잘못된 요청입니다.', 'status': 'error'}, status=400)

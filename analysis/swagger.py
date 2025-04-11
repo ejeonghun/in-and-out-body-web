@@ -1080,7 +1080,7 @@ mobile_send_auth_sms_ = dict(
         type=openapi.TYPE_OBJECT,
         properties={
             'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='전화번호 (010으로 시작하는 11자리)', example='01012345678'),
-            'type': openapi.Schema(type=openapi.TYPE_STRING, description='인증번호 발송 타입', example='password'),
+            'type': openapi.Schema(type=openapi.TYPE_STRING, example='password', description='password: 비밀번호 변경, None: 회원가입\n 회원가입 시에는 type을 생략 \n 회원가입인 경우에는 이미 가입된 회원이면 인증번호 발송 X'),
         },
         required=['phone_number']
     ),

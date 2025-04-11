@@ -340,14 +340,26 @@
     </div>
 
     <script>
-        document.getElementById('print-report').addEventListener('click', function() {
+        // 모바일 환경 감지 함수
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   (navigator.userAgent.includes('Mobile') && navigator.userAgent.includes('WebView'));
+        }
+
+        if (isMobileDevice()) {
+            const printContainer = document.querySelector(".print-button-container");
+            printContainer.style.display = "none";
+        }
+
+
+        {% comment %} document.getElementById('print-report').addEventListener('click', function() {
             // 인쇄 페이지를 새 창으로 열고 자동으로 인쇄 팝업 표시
             // var printWindow = window.open("/body-print/{{ user.id }}/", '_blank');
             const printContainer = document.querySelector(".print-button-container");
             printContainer.style.display = "none";
-            
+
             window.print();
-        });
+        }); {% endcomment %}
     </script>
 
     <div id="top">
@@ -410,7 +422,7 @@
                     <!-- 텍스트 영역 -->
                     <div class="card-content">
                         <h3>{{ item.title }}</h3>
-                        <p><strong>측정 항목:</strong> {{ item.metric }}</p>
+                        <p><strong>측정 항목:</strong> {{ item.measurement_type }}</p>
                         <p><strong>측정 결과:</strong> {{ item.result }}</p>
                         <p><strong>상세 설명:</strong> {{ item.description }}</p>
                         <p><strong>측정 기준:</strong> {{ item.metric }}</p>
@@ -427,10 +439,10 @@
                     <!-- 텍스트 영역 -->
                     <div class="card-content">
                         <h3>{{ item.title }} - 척추-어깨</h3>
-                        <p><strong>측정 항목:</strong> {{ item.metric }}</p>
+                        <p><strong>측정 항목:</strong> {{ item.measurement_type|default:item.metric }}</p>
                         <p><strong>측정 결과:</strong> {{ item.result|split_string:0|cut:"· 척추-어깨: " }}</p>
                         <p><strong>상세 설명:</strong> {{ item.description|get_item:0 }}</p>
-                        <p><strong>측정 기준:</strong> {{ item.metric }}</p>
+                        <p><strong>측정 기준:</strong> {{ item.measurement_type|default:item.metric }}</p>
                     </div>
 
                     <!-- 이미지 영역 -->
@@ -444,10 +456,10 @@
                     <!-- 텍스트 영역 -->
                     <div class="card-content">
                         <h3>{{ item.title }} - 척추-골반</h3>
-                        <p><strong>측정 항목:</strong> {{ item.metric }}</p>
+                        <p><strong>측정 항목:</strong> {{ item.measurement_type|default:item.metric }}</p>
                         <p><strong>측정 결과:</strong> {{ item.result|split_string:1|cut:"· 척추-골반: " }}</p>
                         <p><strong>상세 설명:</strong> {{ item.description|get_item:1 }}</p>
-                        <p><strong>측정 기준:</strong> {{ item.metric }}</p>
+                        <p><strong>측정 기준:</strong> {{ item.measurement_type|default:item.metric }}</p>
                     </div>
 
                     <!-- 이미지 영역 -->
@@ -791,7 +803,7 @@
             } else {
                 indicator.style.left = '99%';
             }
-            
+
             console.log(`Updating slider position for ID: ${id}, value: ${value}`);
         }
 
