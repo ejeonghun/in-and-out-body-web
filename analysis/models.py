@@ -65,6 +65,22 @@ class OrganizationInfo(ExportModelOperationsMixin('organization_info'), models.M
 
     def __str__(self):
         return self.organization_name
+    
+
+# class OrganizationInfo(ExportModelOperationsMixin('organization_info'), models.Model):
+#     id = models.AutoField(primary_key=True)
+#     Organization_TYPES = [
+#         ('S', 'School'),       # 학교
+#         ('O', 'Organization'), # 기관
+#     ]
+#     organization_name = models.CharField(max_length=100)
+#     contact_number = models.CharField(max_length=100, null=True)
+#     address = models.CharField(max_length=100, null=True)
+#     created_dt = models.DateTimeField(auto_now_add=True)
+#     institution_type = models.CharField(max_length=1, choices=Organization_TYPES)
+
+#     def __str__(self):
+#         return self.organization_name
 
 
 class UserInfo(ExportModelOperationsMixin('user_info'), AbstractUser):
